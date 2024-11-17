@@ -11,7 +11,8 @@
     "test": "node ace test",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prettiercheck": "prettier --check ."
   },
   "imports": {
     "#controllers/*": "./app/controllers/*.js",
