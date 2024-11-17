@@ -13,6 +13,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: copy env
+        run: cp .env.example .env
 
       - name: Install dependencies
         run: echo "make sure that you always have the latest version of package.json pushed to the repository, cause `npm ci` will install the exact versions of the dependencies that are in package-lock.json" && npm ci
@@ -24,7 +26,7 @@ jobs:
         run: npm run typecheck
 
       - name: Run tests
-        run: npm run test
+        run: NODE_ENV="test" npm run test
 
       - name: Run prettier
         run: npm run prettiercheck
