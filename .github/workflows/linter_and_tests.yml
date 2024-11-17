@@ -15,7 +15,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm ci # make sure that you always have the latest version of package.json pushed to the repository 
+        run: echo "make sure that you always have the latest version of package.json pushed to the repository, cause `npm ci` will install the exact versions of the dependencies that are in package-lock.json" && npm ci
 
       - name: Run Lint
         run: npm run lint
@@ -25,9 +25,6 @@ jobs:
 
       - name: Run tests
         run: npm run test
-      
+
       - name: Run prettier
         run: npm run prettiercheck
-    
-
-
