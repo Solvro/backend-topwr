@@ -5,6 +5,20 @@ on: [push, pull_request]
 jobs:
   lint:
     runs-on: ubuntu-latest
+
+    env:
+      TZ: UTC
+      PORT: 3333
+      HOST: localhost
+      LOG_LEVEL: info
+      APP_KEY: really-hard-key-to-guess-so-please-dont-do-it
+      NODE_ENV: development
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: postgres
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -13,8 +27,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: copy env
-        run: cp .env.example .env
 
       - name: Install dependencies
         run: echo "make sure that you always have the latest version of package.json pushed to the repository, cause `npm ci` will install the exact versions of the dependencies that are in package-lock.json" && npm ci
