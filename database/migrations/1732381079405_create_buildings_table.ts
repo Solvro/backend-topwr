@@ -1,4 +1,5 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
+import { BuildingIcon } from '../../app/enums/building_icon.js'
 
 export default class extends BaseSchema {
   protected tableName = 'buildings'
@@ -9,7 +10,7 @@ export default class extends BaseSchema {
       table.string('identifier', 10).notNullable()
       table.text('special_name').nullable()
       table
-        .enum('icon_type', ['ICON'], {
+        .enum('icon_type', Object.values(BuildingIcon), {
           useNative: true,
           enumName: 'building_icon',
           existingType: false,
