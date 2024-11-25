@@ -15,7 +15,7 @@ export default class extends BaseSchema {
       table.text('addres_line2').nullable()
 
       table.bigInteger('building_id').unsigned().nullable()
-      table.foreign('building_id').references('buildings.id').onDelete('CASCADE')
+      table.foreign('building_id').references('buildings.id').onDelete('SET NULL')
 
       table.timestamp('created_at')
       table.timestamp('updated_at')
