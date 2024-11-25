@@ -11,6 +11,8 @@ export default class extends BaseSchema {
       table.text('instructions').nullable()
       table.decimal('latitude').notNullable()
       table.decimal('longitude').notNullable()
+      table.text('addres_line1').notNullable()
+      table.text('addres_line2').nullable()
 
       table.bigInteger('building_id').unsigned().nullable()
       table.foreign('building_id').references('buildings.id').onDelete('CASCADE')
