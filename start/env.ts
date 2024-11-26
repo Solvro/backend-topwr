@@ -35,4 +35,5 @@ export default await Env.create(new URL('../', import.meta.url), {
   |----------------------------------------------------------
   */
   DRIVE_DISK: Env.schema.enum(['fs'] as const),
+  APP_URL: Env.schema.string(), // should be { format: 'url' } but it's not working with localhost
 })
