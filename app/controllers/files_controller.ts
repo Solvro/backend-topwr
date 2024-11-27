@@ -1,10 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import drive from '@adonisjs/drive/services/main'
+import { randomUUID } from 'node:crypto'
 
 export default class PhotosController {
   async post({ request, response }: HttpContext) {
     const file = request.file('file')
-    const key = `${new Date().getTime()}.${file?.extname}`
+    const key = `${randomUUID()}.${file?.extname}`
     if (file) {
       await file.moveToDisk(key)
     } else {
