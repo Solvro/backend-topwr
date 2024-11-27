@@ -11,6 +11,7 @@ For storing files we use LocalFile System -> just folder in our environment.
 Make sure that folder `storage` is added in gitignore and don't push it into github.
 
 ### How to use
+
 To unify our style of using storage we have `FilesService`
 
 ```
