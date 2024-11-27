@@ -1,21 +1,26 @@
 import type { HttpContext } from '@adonisjs/core/http'
-import drive from '@adonisjs/drive/services/main'
-import { randomUUID } from 'node:crypto'
+
+import FilesService from '#services/files_service'
 
 export default class PhotosController {
-  async post({ request, response }: HttpContext) {
+  async post({ request, response }: HttpContext, filesService: FilesService) {
     const file = request.file('file')
-    const key = `${randomUUID()}.${file?.extname}`
-    if (file) {
-      await file.moveToDisk(key)
-    } else {
-      return response.badRequest('File is required')
+    if (!file) {
+      return response.badRequest('No file provided')
     }
-    return response.created({ key })
+    const key = await filesService.uploadFile(file)
+    if (key instanceof Error) {
+      return response.badRequest(key.message)
+    }
+    return response.status(201).send({ key })
   }
 
-  async get({ params, response }: HttpContext) {
+  async get({ params, response }: HttpContext, filesService: FilesService) {
     const { key } = params
-    return response.status(200).send(await drive.use().getUrl(key))
+    const url = await filesService.getFileUrl(key)
+    if (url instanceof Error) {
+      return response.badRequest(url.message)
+    }
+    return response.status(200).send({ url })
   }
 }
