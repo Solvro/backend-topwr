@@ -7,13 +7,12 @@
 |
 */
 
+import env from '#start/env'
 import router from '@adonisjs/core/services/router'
 const FilesController = () => import('#controllers/files_controller')
 
 router.get('/', async () => {
-  return {
-    hello: 'world',
-  }
+  return { appName: env.get('APP_NAME'), version: env.get('APP_VERSION') }
 })
 
 router
