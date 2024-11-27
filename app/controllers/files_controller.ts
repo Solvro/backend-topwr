@@ -5,7 +5,10 @@ export default class PhotosController {
   async post({ request }: HttpContext) {
     const file = request.file('file')
     const key = `${new Date().getTime()}.${file?.extname}`
-    await file?.moveToDisk(key)
+    if (file) {
+      // await drive.use().put(key, file.tmpPath ?? '')
+      await file.moveToDisk(key)
+    }
     return key
   }
 
