@@ -1,8 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
 
 import FilesService from '#services/files_service'
+import { inject } from '@adonisjs/core'
 
-export default class PhotosController {
+export default class FilesController {
+  @inject()
   async post({ request, response }: HttpContext, filesService: FilesService) {
     const file = request.file('file')
     if (!file) {
@@ -15,6 +17,7 @@ export default class PhotosController {
     return response.status(201).send({ key })
   }
 
+  @inject()
   async get({ params, response }: HttpContext, filesService: FilesService) {
     const { key } = params
     const url = await filesService.getFileUrl(key)
