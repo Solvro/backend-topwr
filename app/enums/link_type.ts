@@ -1,3 +1,1 @@
-export enum LinkType {
-
-  }
+export enum LinkType {}
