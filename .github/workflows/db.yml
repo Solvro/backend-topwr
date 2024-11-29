@@ -1,10 +1,28 @@
 name: DB
-on: push
+
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['*']
 
 jobs:
   migration-check:
     runs-on: ubuntu-latest
     container: node:20-bookworm-slim
+
+    env:
+      TZ: UTC
+      PORT: 3333
+      HOST: localhost
+      LOG_LEVEL: info
+      APP_KEY: really-hard-key-to-guess-so-please-dont-do-it
+      NODE_ENV: development
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: postgres
 
     services:
       postgres:
@@ -31,10 +49,3 @@ jobs:
 
       - name: Run AdonisJS migrations
         run: node ace migration:run
-        env:
-          DB_CONNECTION: pg
-          PG_HOST: postgres
-          PG_PORT: 5432
-          PG_USER: postgres
-          PG_PASSWORD: postgres
-          PG_DB_NAME: your_database_name
