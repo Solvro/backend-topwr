@@ -1,23 +1,31 @@
-name: ESLint
+name: CI
 
-on: [push, pull_request]
+on:
+  pull_request:
+    branches: ['*']
+  push:
+    branches: ['main']
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout out repository code
         uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: copy env
-        run: cp .env.example .env
 
       - name: Install dependencies
-        run: echo "make sure that you always have the latest version of package.json pushed to the repository, cause `npm ci` will install the exact versions of the dependencies that are in package-lock.json" && npm ci
+        run: npm ci
+
+      - name: Set up AdonisJS environment
+        run: |
+          cp .env.example .env
+          node ace generate:key
 
       - name: Run Lint
         run: npm run lint
