@@ -17,8 +17,7 @@ export default class FilesService {
   async getFileUrl(key: string) {
     // Get file URL from storage
     try {
-      const url = await drive.use().getUrl(key)
-      return url
+      return await drive.use().getUrl(key)
     } catch (error) {
       return error
     }
