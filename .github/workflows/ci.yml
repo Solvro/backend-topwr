@@ -22,6 +22,10 @@ jobs:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: postgres
+      DRIVE_DISK: fs
+      APP_URL: http://localhost:3333
+      APP_NAME: ToPWR_Backend
+      APP_VERSION: 1.0.0
 
     steps:
       - name: Checkout repository
