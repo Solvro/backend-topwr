@@ -38,3 +38,5 @@ jobs:
 
       - name: Run AdonisJS migrations
         run: node ace migration:run
+        env:
+          DB_HOST: postgres
