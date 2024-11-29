@@ -6,7 +6,7 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments('id').notNullable
+      table.increments('id')
 
       table.integer('department_id').unsigned().references('departments.id').notNullable()
 
@@ -26,6 +26,7 @@ export default class extends BaseSchema {
   }
 
   async down() {
+    this.schema.raw('DROP TYPE IF EXISTS "link_type"')
     this.schema.dropTable(this.tableName)
   }
 }
