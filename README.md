@@ -15,7 +15,7 @@ Make sure that folder `storage` is added in gitignore and don't push it into git
 To unify our style of using storage we have `FilesService`
 Example of usage you can see in below or in `app/controllers/files_controller.ts` and `start/routes.ts`
 
-```
+```ts
 import type { HttpContext } from '@adonisjs/core/http'
 
 import FilesService from '#services/files_service'
@@ -45,5 +45,4 @@ export default class FilesController {
     return response.status(200).send({ url })
   }
 }
-
 ```
