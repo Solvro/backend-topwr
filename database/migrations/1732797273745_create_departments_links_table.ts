@@ -8,7 +8,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
 
-      table.foreign('department_id').references('departments.id').notNullable().onDelete('CASCADE')
+      table.foreign('department_id').references('departments.id').onDelete('CASCADE')
 
       table
         .enum('link_type', Object.values(LinkType), {
