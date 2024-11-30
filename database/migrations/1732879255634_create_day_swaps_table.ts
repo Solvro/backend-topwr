@@ -13,11 +13,13 @@ export default class extends BaseSchema {
 
       table.date('date').notNullable()
 
-      table.enum('changed_weekday', Object.values(Weekday), {
-        useNative: true,
-        enumName: 'weekday',
-        existingType: false
-      }).notNullable()
+      table
+        .enum('changed_weekday', Object.values(Weekday), {
+          useNative: true,
+          enumName: 'weekday',
+          existingType: false,
+        })
+        .notNullable()
 
       table.boolean('changed_day_is_even').notNullable()
 

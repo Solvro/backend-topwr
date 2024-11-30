@@ -29,9 +29,8 @@ export default class AcademicCalendar extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  
   @hasMany(() => DaySwap)
-  declare dayswaps: HasMany<typeof DaySwap>
+  declare daySwaps: HasMany<typeof DaySwap>
 
   @hasMany(() => Holiday)
   declare holidays: HasMany<typeof Holiday>

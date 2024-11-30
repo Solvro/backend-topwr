@@ -25,7 +25,6 @@ export default class Holiday extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-
   @belongsTo(() => AcademicCalendar)
   declare academicCalendar: BelongsTo<typeof AcademicCalendar>
 }
