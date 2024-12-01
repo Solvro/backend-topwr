@@ -21,8 +21,8 @@ export default class extends BaseSchema {
 
       table.text('link').notNullable()
 
-      table.timestamp('created_at').notNullable
-      table.timestamp('updated_at').notNullable
+      table.timestamp('created_at').notNullable()
+      table.timestamp('updated_at').notNullable()
     })
   }
 
