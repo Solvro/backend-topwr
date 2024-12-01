@@ -38,3 +38,8 @@ jobs:
         run: node ace migration:run
         env:
           DB_HOST: postgres
+
+      - name: Rollback AdonisJS migrations
+        run: node ace migration:reset
+        env:
+          DB_HOST: postgres

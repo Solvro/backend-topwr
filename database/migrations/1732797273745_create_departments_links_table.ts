@@ -1,8 +1,22 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
-import { LinkType } from '../../app/enums/link_type.js'
 
 export default class extends BaseSchema {
   protected tableName = 'departments_links'
+  protected linkTypes = [
+    'default',
+    'facebook',
+    'instagram',
+    'linkedin',
+    'mailto:',
+    'youtu',
+    'github',
+    'topwr:buildings',
+    'tel',
+    'https://x.com',
+    'tiktok',
+    'discord',
+    'twitch',
+  ]
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
@@ -12,7 +26,7 @@ export default class extends BaseSchema {
       table.foreign('department_id').references('departments.id').onDelete('CASCADE')
 
       table
-        .enum('link_type', Object.values(LinkType), {
+        .enum('link_type', this.linkTypes, {
           useNative: true,
           enumName: 'link_type',
           existingType: false,
@@ -27,7 +41,7 @@ export default class extends BaseSchema {
   }
 
   async down() {
-    this.schema.raw('DROP TYPE IF EXISTS "link_type"')
     this.schema.dropTable(this.tableName)
+    this.schema.raw('DROP TYPE IF EXISTS "link_type"')
   }
 }

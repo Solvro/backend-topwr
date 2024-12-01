@@ -1,8 +1,16 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
-import { Weekday } from '../../app/enums/weekday.js'
 
 export default class extends BaseSchema {
   protected tableName = 'day_swaps'
+  protected weekdays = [
+    'Monday',
+    'Tuesday',
+    'Wednesday',
+    'Thursday',
+    'Friday',
+    'Saturday',
+    'Sunday',
+  ]
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
@@ -14,7 +22,7 @@ export default class extends BaseSchema {
       table.date('date').notNullable()
 
       table
-        .enum('changed_weekday', Object.values(Weekday), {
+        .enum('changed_weekday', this.weekdays, {
           useNative: true,
           enumName: 'weekday',
           existingType: false,
@@ -29,7 +37,7 @@ export default class extends BaseSchema {
   }
 
   async down() {
-    this.schema.raw('DROP TYPE IF EXISTS "weekday"')
     this.schema.dropTable(this.tableName)
+    this.schema.raw('DROP TYPE IF EXISTS "weekday"')
   }
 }
