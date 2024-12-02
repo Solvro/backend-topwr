@@ -21,12 +21,7 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-      table
-        .integer('contributor_id')
-        .unsigned()
-        .notNullable()
-        .references('contributors.id')
-        .onDelete('CASCADE')
+      table.integer('contributor_id').unsigned().notNullable()
 
       table
         .enum('link_type', this.linkTypes, {
@@ -40,6 +35,9 @@ export default class extends BaseSchema {
 
       // prevent exact duplicates
       table.unique(['contributor_id', 'link_type', 'link'])
+
+      // foreign keys
+      table.foreign('contributor_id').references('contributors.id').onDelete('CASCADE')
 
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
