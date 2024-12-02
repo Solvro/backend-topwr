@@ -1,6 +1,7 @@
 import { DefaultAuthProvider, DefaultAuthenticatePayload } from 'adminjs'
 
 import componentLoader from './component_loader.js'
+import User from '#models/user'
 
 /**
  * Your "authenticate" function. Depending on the auth provider used, the payload may be different.
@@ -10,8 +11,16 @@ import componentLoader from './component_loader.js'
  *
  * The default implementation below will let any in, so make sure to update it.
  */
-const authenticate = async ({ email }: DefaultAuthenticatePayload) => {
-  return Promise.resolve({ email })
+const authenticate = async ({ email, password }: DefaultAuthenticatePayload) => {
+  try {
+    const user = await User.verifyCredentials(email, password)
+    return {
+      email: user.email,
+    }
+  } catch (error) {
+    console.log(error)
+    return null
+  }
 }
 
 const authProvider = new DefaultAuthProvider({
