@@ -9,8 +9,8 @@ export default class extends BaseSchema {
 
       table.text('title').notNullable()
       table.text('room').nullable()
-      table.text('addres_line1').notNullable()
-      table.text('addres_line2').nullable()
+      table.text('address_line1').notNullable()
+      table.text('address_line2').nullable()
       table.text('phone').nullable()
       table.text('email').nullable()
       table.decimal('latitude').notNullable()
