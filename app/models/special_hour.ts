@@ -7,7 +7,7 @@ export default class SpecialHour extends BaseModel {
   @column({ isPrimary: true })
   declare id: number
 
-  @column()
+  @column.date()
   declare specialDate: DateTime
 
   @column()

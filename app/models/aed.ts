@@ -14,10 +14,10 @@ export default class Aed extends BaseModel {
   declare longitude: number
 
   @column()
-  declare addresLine1: string
+  declare addressLine1: string
 
   @column()
-  declare addresLine2: string | null
+  declare addressLine2: string | null
 
   @column()
   declare photoUrl: string | null

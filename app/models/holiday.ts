@@ -10,11 +10,11 @@ export default class Holiday extends BaseModel {
   @column()
   declare academicCalendarId: number
 
-  @column()
-  declare startDate: Date
+  @column.date()
+  declare startDate: DateTime
 
-  @column()
-  declare lastDate: Date
+  @column.date()
+  declare lastDate: DateTime
 
   @column()
   declare description: string
