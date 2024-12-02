@@ -9,7 +9,7 @@ export default class FieldsOfStudy extends BaseModel {
   declare id: number
 
   @column()
-  declare department_id: string
+  declare department_id: number
 
   @column()
   declare name: string

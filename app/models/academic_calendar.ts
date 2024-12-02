@@ -11,14 +11,14 @@ export default class AcademicCalendar extends BaseModel {
   @column()
   declare name: string
 
-  @column()
-  declare semesterStartDate: Date
+  @column.date()
+  declare semesterStartDate: DateTime
 
-  @column()
-  declare examSessionStartDate: Date
+  @column.date()
+  declare examSessionStartDate: DateTime
 
-  @column()
-  declare examSessionLastDate: Date
+  @column.date()
+  declare examSessionLastDate: DateTime
 
   @column()
   declare isFirstWeekEven: boolean

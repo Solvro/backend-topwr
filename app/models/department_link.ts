@@ -9,7 +9,7 @@ export default class DepartmentsLink extends BaseModel {
   declare id: number
 
   @column()
-  declare department_id: string
+  declare department_id: number
 
   @column()
   declare link_type: LinkType

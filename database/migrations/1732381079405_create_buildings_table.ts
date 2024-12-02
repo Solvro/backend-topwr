@@ -20,8 +20,8 @@ export default class extends BaseSchema {
       table.bigInteger('campus_id').unsigned().notNullable()
       table.foreign('campus_id').references('campuses.id').onDelete('CASCADE')
 
-      table.text('addres_line1').notNullable()
-      table.text('addres_line2').nullable()
+      table.text('address_line1').notNullable()
+      table.text('address_line2').nullable()
       table.decimal('latitude').notNullable()
       table.decimal('longitude').notNullable()
       table.boolean('have_food').defaultTo(false)

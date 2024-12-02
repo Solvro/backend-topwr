@@ -16,10 +16,10 @@ export default class Library extends BaseModel {
   declare room: string | null
 
   @column()
-  declare addresLine1: string
+  declare addressLine1: string
 
   @column()
-  declare addresLine2: string | null
+  declare addressLine2: string | null
 
   @column()
   declare phone: string | null
