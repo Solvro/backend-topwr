@@ -1,0 +1,737 @@
+{
+  "author": "Unnamed",
+  "title": "ToPWR contributors & changelogs schema",
+  "date": "2024-12-02T01:15:43.249Z",
+  "tables": [
+    {
+      "id": 0,
+      "name": "contributors",
+      "x": 300.9999999999999,
+      "y": 123,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "photo_key",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "id": 2,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#175e7a",
+      "key": 1731796760892
+    },
+    {
+      "id": 1,
+      "name": "roles",
+      "x": -409,
+      "y": 147.99999999999994,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#175e7a",
+      "key": 1731796912895
+    },
+    {
+      "id": 2,
+      "name": "contributor_roles",
+      "x": -46.99999999999994,
+      "y": 153,
+      "fields": [
+        {
+          "name": "contributor_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "role_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "milestone_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 2,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#175e7a",
+      "key": 1731796972730
+    },
+    {
+      "id": 3,
+      "name": "contributor_social_links",
+      "x": -59.917158440486105,
+      "y": -145.79856187817916,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "contributor_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "link_type",
+          "type": "LINK_TYPE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 2,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "link",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 3,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [
+        {
+          "id": 0,
+          "name": "contributor_social_links_index_0",
+          "unique": true,
+          "fields": ["social_link_type", "link", "contributor"]
+        }
+      ],
+      "color": "#175e7a",
+      "key": 1731797117299
+    },
+    {
+      "id": 4,
+      "name": "versions",
+      "x": 1090.2993552792598,
+      "y": 182.52203346230203,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "milestone_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 2,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "release_date",
+          "type": "DATE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "id": 3,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "id": 4,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#ffe159",
+      "key": 1731797488690
+    },
+    {
+      "id": 5,
+      "name": "version_screenshots",
+      "x": 658.8661268580161,
+      "y": 152.2812315555227,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "version_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "image_key",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 2,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "subtitle",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "id": 3,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#ffe159",
+      "key": 1731797567441
+    },
+    {
+      "id": 6,
+      "name": "changes",
+      "x": 680.1583969542306,
+      "y": -112.45686873879737,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "version_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "type",
+          "type": "CHANGE_TYPE",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 2,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 3,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "description",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "id": 4,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#ffe159",
+      "key": 1731797850380
+    },
+    {
+      "id": 7,
+      "name": "change_screenshots",
+      "x": 1075.294648352109,
+      "y": -209.45199897699757,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "change_id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "image_key",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 2,
+          "size": "",
+          "values": []
+        },
+        {
+          "name": "subtitle",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": false,
+          "notNull": false,
+          "increment": false,
+          "comment": "",
+          "id": 3,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#ffe159",
+      "key": 1731798331090
+    },
+    {
+      "id": 8,
+      "name": "milestones",
+      "x": 634.7160953167147,
+      "y": 624.2930969068383,
+      "fields": [
+        {
+          "name": "id",
+          "type": "INTEGER",
+          "default": "",
+          "check": "",
+          "primary": true,
+          "unique": true,
+          "notNull": true,
+          "increment": true,
+          "comment": "",
+          "id": 0
+        },
+        {
+          "name": "name",
+          "type": "TEXT",
+          "default": "",
+          "check": "",
+          "primary": false,
+          "unique": true,
+          "notNull": true,
+          "increment": false,
+          "comment": "",
+          "id": 1,
+          "size": "",
+          "values": []
+        }
+      ],
+      "comment": "",
+      "indices": [],
+      "color": "#a751e8",
+      "key": 1731881802676
+    }
+  ],
+  "relationships": [
+    {
+      "startTableId": 2,
+      "startFieldId": 0,
+      "endTableId": 0,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Restrict",
+      "deleteConstraint": "Cascade",
+      "name": "contributor_roles_contributor_id_fk",
+      "id": 0
+    },
+    {
+      "startTableId": 2,
+      "startFieldId": 1,
+      "endTableId": 1,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Restrict",
+      "deleteConstraint": "Restrict",
+      "name": "contributor_roles_role_id_fk",
+      "id": 1
+    },
+    {
+      "startTableId": 3,
+      "startFieldId": 1,
+      "endTableId": 0,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Restrict",
+      "deleteConstraint": "Cascade",
+      "name": "contributor_social_links_contributor_id_fk",
+      "id": 2
+    },
+    {
+      "startTableId": 5,
+      "startFieldId": 1,
+      "endTableId": 4,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Restrict",
+      "deleteConstraint": "Cascade",
+      "name": "versions_id_fk",
+      "id": 3
+    },
+    {
+      "startTableId": 7,
+      "startFieldId": 1,
+      "endTableId": 6,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Restrict",
+      "deleteConstraint": "Cascade",
+      "name": "changes_id_fk",
+      "id": 4
+    },
+    {
+      "startTableId": 2,
+      "startFieldId": 2,
+      "endTableId": 8,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Restrict",
+      "deleteConstraint": "Restrict",
+      "name": "contributor_roles_milestone_fk",
+      "id": 5
+    },
+    {
+      "startTableId": 4,
+      "startFieldId": 1,
+      "endTableId": 8,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "Restrict",
+      "deleteConstraint": "Restrict",
+      "name": "versions_milestone_fk",
+      "id": 6
+    },
+    {
+      "startTableId": 6,
+      "startFieldId": 1,
+      "endTableId": 4,
+      "endFieldId": 0,
+      "cardinality": "many_to_one",
+      "updateConstraint": "No action",
+      "deleteConstraint": "No action",
+      "name": "changes_version_id_fk",
+      "id": 7
+    }
+  ],
+  "notes": [
+    {
+      "id": 0,
+      "x": -49.190338574978284,
+      "y": -281.9773975735308,
+      "title": "link types",
+      "content": "The link types enum is shared with departament links",
+      "color": "#fcf7ac",
+      "height": 112
+    },
+    {
+      "id": 1,
+      "x": 700.5205291658027,
+      "y": -246.01305066062537,
+      "title": "change types",
+      "content": "FIX\nFEATURE",
+      "color": "#fcf7ac",
+      "height": 90
+    },
+    {
+      "id": 2,
+      "x": 257.7433388339352,
+      "y": -282.24539117721696,
+      "title": "social links",
+      "content": "Multiple links of the same type can exist for the same contributor.\nUnique index on contributor + type + link prevents the creation of exact duplicates",
+      "color": "#fcf7ac",
+      "height": 280
+    },
+    {
+      "id": 3,
+      "x": -109.94198590771163,
+      "y": 418.6923827020332,
+      "title": "AdonisJS fields",
+      "content": "All tables contain additional created_at and updated_at DATETIME fields managed by AdonisJS/Lucid ORM",
+      "color": "#fcf7ac",
+      "height": 184
+    }
+  ],
+  "subjectAreas": [
+    {
+      "id": 0,
+      "name": "Contributors",
+      "x": -462.5536037529864,
+      "y": -324.8734059402216,
+      "width": 1038.0423375000005,
+      "height": 682.9949204544071,
+      "color": "#175e7a"
+    },
+    {
+      "id": 1,
+      "name": "Changelogs",
+      "x": 632.3184816645969,
+      "y": -288.14284909198676,
+      "width": 740.0148869896746,
+      "height": 733.5227381216273,
+      "color": "#ff9159"
+    },
+    {
+      "id": 2,
+      "name": "milestones",
+      "x": 561.5151155369845,
+      "y": 575.3239851337196,
+      "width": 378.92568479066927,
+      "height": 229.86960973083274,
+      "color": "#a751e8"
+    }
+  ],
+  "database": "postgresql",
+  "types": [],
+  "enums": [
+    {
+      "name": "CHANGE_TYPE",
+      "values": ["FIX", "FEATURE"]
+    },
+    {
+      "name": "LINK_TYPE",
+      "values": [
+        "default",
+        "facebook",
+        "instagram",
+        "linkedin",
+        "mailto:",
+        "youtu",
+        "github",
+        "topwr:buildings",
+        "tel",
+        "https://x.com",
+        "tiktok",
+        "discord",
+        "twitch"
+      ]
+    }
+  ]
+}
