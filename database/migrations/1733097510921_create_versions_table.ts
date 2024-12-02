@@ -1,0 +1,29 @@
+import { BaseSchema } from '@adonisjs/lucid/schema'
+
+export default class extends BaseSchema {
+  protected tableName = 'versions'
+
+  async up() {
+    this.schema.createTable(this.tableName, (table) => {
+      table.increments('id')
+
+      table
+        .integer('milestone_id')
+        .unsigned()
+        .notNullable()
+        .references('milestones.id')
+        .onDelete('RESTRICT')
+
+      table.text('name').notNullable()
+      table.date('release_date')
+      table.text('description')
+
+      table.timestamp('created_at').notNullable()
+      table.timestamp('updated_at').notNullable()
+    })
+  }
+
+  async down() {
+    this.schema.dropTable(this.tableName)
+  }
+}
