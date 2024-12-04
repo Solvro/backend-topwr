@@ -6,16 +6,16 @@ export default class CampusSeeder extends BaseSeeder {
     await Campus.createMany([
       {
         name: 'taki',
-        cover: 'http://example.com'
+        cover: 'http://example.com',
       },
       {
         name: 'siaki',
-        cover: 'http://example.com'
+        cover: 'http://example.com',
       },
       {
         name: 'i owaki',
-        cover: 'http://example.com'
-      }
+        cover: 'http://example.com',
+      },
     ])
   }
 }

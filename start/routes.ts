@@ -26,7 +26,6 @@ router
 
 router
   .group(() => {
-
     // fetches campuses specifically
     router.get('/campuses/:id', [BuildingsController, 'getByCampus'])
     router.get('/campuses', [BuildingsController, 'getCampuses'])

@@ -27,7 +27,7 @@ export default class Building extends BaseModel {
   @column({ columnName: 'address_line1' })
   declare addressLine1: string
 
-  @column({ columnName: 'address_line2'} )
+  @column({ columnName: 'address_line2' })
   declare addressLine2: string | null
 
   @column()
