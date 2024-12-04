@@ -2,9 +2,6 @@ import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import Building from '#models/building'
 import { BuildingIcon } from '../../app/enums/building_icon.js'
 
-
-
-
 export default class BuldingSeeder extends BaseSeeder {
   async run() {
     await Building.createMany([
@@ -16,9 +13,9 @@ export default class BuldingSeeder extends BaseSeeder {
         addressLine1: '123 University Ave',
         addressLine2: 'Building A',
         latitude: 40.7128,
-        longitude: -74.0060,
+        longitude: -74.006,
         haveFood: true,
-        cover: 'https://example.com/covers/building1.jpg'
+        cover: 'https://example.com/covers/building1.jpg',
       },
       {
         identifier: 'B002',
@@ -30,7 +27,7 @@ export default class BuldingSeeder extends BaseSeeder {
         latitude: 40.7129,
         longitude: -74.0061,
         haveFood: false,
-        cover: 'https://example.com/covers/building2.jpg'
+        cover: 'https://example.com/covers/building2.jpg',
       },
       {
         identifier: 'B003',
@@ -42,7 +39,7 @@ export default class BuldingSeeder extends BaseSeeder {
         latitude: 37.7749,
         longitude: -122.4194,
         haveFood: true,
-        cover: 'https://example.com/covers/building3.jpg'
+        cover: 'https://example.com/covers/building3.jpg',
       },
     ])
   }

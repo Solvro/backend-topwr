@@ -20,6 +20,5 @@ export default class Campus extends BaseModel {
   declare updatedAt: DateTime
 
   @hasMany(() => Building)
-  declare buildings: HasMany<typeof Building>;
-  
+  declare buildings: HasMany<typeof Building>
 }
