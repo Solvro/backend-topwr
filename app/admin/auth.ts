@@ -2,6 +2,7 @@ import { DefaultAuthProvider, DefaultAuthenticatePayload } from 'adminjs'
 
 import componentLoader from './component_loader.js'
 import User from '#models/user'
+import logger from '@adonisjs/core/services/logger'
 
 /**
  * Your "authenticate" function. Depending on the auth provider used, the payload may be different.
@@ -18,7 +19,7 @@ const authenticate = async ({ email, password }: DefaultAuthenticatePayload) => 
       email: user.email,
     }
   } catch (error) {
-    console.log(error)
+    logger.warn('Invalid admin panel credentials')
     return null
   }
 }

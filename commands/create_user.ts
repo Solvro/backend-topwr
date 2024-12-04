@@ -1,9 +1,14 @@
 import { args, BaseCommand } from '@adonisjs/core/ace'
 import User from '#models/user'
+import { CommandOptions } from '@adonisjs/core/types/ace'
 
 export default class CreateUser extends BaseCommand {
   static commandName = 'create:user'
   static description = 'Create a new user in the system'
+
+  static options: CommandOptions = {
+    startApp: true,
+  }
 
   @args.string({
     argumentName: 'email',
