@@ -10,7 +10,7 @@ export default class BuildingsController {
     try {
       const buildings = await Building.all()
       if (buildings.length === 0) {
-        return response.status(404).json({ message: 'No buildings in database' })
+        return response.status(400).json({ message: 'No buildings in database' })
       }
       return response.status(200).json(buildings)
     } catch (error) {
@@ -26,13 +26,13 @@ export default class BuildingsController {
     try {
       const id = request.param('id')
       if (!id) {
-        return response.status(400).json({ message: 'Building ID is required' })
+        return response.status(404).json({ message: 'Building ID is required' })
       }
       const building = await Building.find(id)
       if (building) {
         return response.status(200).json(building)
       }
-      return response.status(404).json({ message: `No building with id: ${id}` })
+      return response.status(400).json({ message: `No building with id: ${id}` })
     } catch (error) {
       return response
         .status(500)

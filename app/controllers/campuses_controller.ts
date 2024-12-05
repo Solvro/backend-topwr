@@ -8,7 +8,7 @@ export default class CampusesController {
   async index({ response }: HttpContext) {
     try {
       const campuses = await Campus.all()
-      if (!campuses.length) return response.status(404).json({ message: 'No campus in database' })
+      if (!campuses.length) return response.status(400).json({ message: 'No campus in database' })
       return response.status(200).json(campuses)
     } catch (error) {
       return response.status(500).json({ message: 'Failed to fetch campuses' })
