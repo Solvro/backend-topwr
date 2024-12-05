@@ -1,9 +1,24 @@
 import { BaseSeeder } from '@adonisjs/lucid/seeders'
 import Building from '#models/building'
 import { BuildingIcon } from '../../app/enums/building_icon.js'
+import Campus from '#models/campus'
 
 export default class BuldingSeeder extends BaseSeeder {
   async run() {
+    await Campus.createMany([
+      {
+        name: 'taki',
+        cover: 'http://example.com',
+      },
+      {
+        name: 'siaki',
+        cover: 'http://example.com',
+      },
+      {
+        name: 'i owaki',
+        cover: 'http://example.com',
+      },
+    ])
     await Building.createMany([
       {
         identifier: 'B001',
