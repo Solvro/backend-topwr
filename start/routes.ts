@@ -12,6 +12,7 @@ import router from '@adonisjs/core/services/router'
 
 const FilesController = () => import('#controllers/files_controller')
 const BuildingsController = () => import('#controllers/buildings_controller')
+const CampusesController = () => import('#controllers/campuses_controller')
 
 router.get('/', async () => {
   return { appName: env.get('APP_NAME'), version: env.get('APP_VERSION') }
@@ -26,13 +27,15 @@ router
 
 router
   .group(() => {
-    // fetches campuses specifically
-    router.get('/campuses/:id', [BuildingsController, 'getByCampus'])
-    router.get('/campuses', [BuildingsController, 'getCampuses'])
+    router.get('/:id', [CampusesController, 'show'])
+    router.get('/', [CampusesController, 'index'])
+  })
+  .prefix('api/v1/campuses')
 
-    // fetches buildings specifically
+router
+  .group(() => {
     router.get('in-campus/:id', [BuildingsController, 'getByCampus'])
-    router.get('/:id', [BuildingsController, 'getById'])
-    router.get('/', [BuildingsController, 'getAll'])
+    router.get('/:id', [BuildingsController, 'show'])
+    router.get('/', [BuildingsController, 'index'])
   })
   .prefix('api/v1/buildings')
