@@ -16,16 +16,17 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
       table.text('name').notNullable()
-      table.foreign('department_id').references('departments.id').onDelete('CASCADE')
+      table.integer('department_id').unsigned().notNullable()
       table.text('logo').nullable()
       table.text('cover').nullable()
       table.text('description').nullable()
       table.text('short_description').nullable()
       table.boolean('cover_preview').defaultTo(false).notNullable
       table.enum('source', this.sources, {useNative: true, enumName: 'source', existingType: false}).notNullable()
-      table.enum('type', this.organization_type, {useNative: true, enumName: 'organization_type', existingType: false}).notNullable()
+      table.enum('organization_type', this.organization_type, {useNative: true, enumName: 'organization_type', existingType: false}).notNullable()
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
+      table.foreign('department_id').references('departments.id').onDelete('CASCADE')
 
 
     })
@@ -33,5 +34,7 @@ export default class extends BaseSchema {
 
   async down() {
     this.schema.dropTable(this.tableName)
+    this.schema.raw('DROP TYPE IF EXISTS "source"')
+    this.schema.raw('DROP TYPE IF EXISTS "organization_type"')
   }
 }
