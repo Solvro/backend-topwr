@@ -20,11 +20,20 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
       table.integer('student_organisation_id').unsigned().notNullable()
-      table.enum('type', this.linkTypes, {useNative: true, enumName: 'organization_link_type', existingType: false}).notNullable()
+      table
+        .enum('type', this.linkTypes, {
+          useNative: true,
+          enumName: 'organization_link_type',
+          existingType: false,
+        })
+        .notNullable()
       table.text('link').notNullable()
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
-      table.foreign('student_organisation_id').references('student_organisations.id').onDelete('CASCADE')
+      table
+        .foreign('student_organisation_id')
+        .references('student_organisations.id')
+        .onDelete('CASCADE')
     })
   }
 

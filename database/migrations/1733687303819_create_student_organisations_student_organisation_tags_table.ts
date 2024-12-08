@@ -10,7 +10,10 @@ export default class extends BaseSchema {
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
       table.primary(['tag', 'student_organisation_id'])
-      table.foreign('student_organisation_id').references('student_organisations.id').onDelete('CASCADE')
+      table
+        .foreign('student_organisation_id')
+        .references('student_organisations.id')
+        .onDelete('CASCADE')
       table.foreign('tag').references('student_organisation_tags.tag').onDelete('CASCADE')
     })
   }

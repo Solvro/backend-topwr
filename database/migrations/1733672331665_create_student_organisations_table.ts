@@ -2,11 +2,9 @@ import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class extends BaseSchema {
   protected tableName = 'student_organisations'
-  protected sources = ['student_department',
-    'manual',
-    'pwr_active',
-    ]
-  protected organization_type = ['scientific_circle', 
+  protected sources = ['student_department', 'manual', 'pwr_active']
+  protected organization_type = [
+    'scientific_circle',
     'student_organization',
     'student_medium',
     'culture_agenda',
@@ -22,13 +20,19 @@ export default class extends BaseSchema {
       table.text('description').nullable()
       table.text('short_description').nullable()
       table.boolean('cover_preview').defaultTo(false).notNullable
-      table.enum('source', this.sources, {useNative: true, enumName: 'source', existingType: false}).notNullable()
-      table.enum('organization_type', this.organization_type, {useNative: true, enumName: 'organization_type', existingType: false}).notNullable()
+      table
+        .enum('source', this.sources, { useNative: true, enumName: 'source', existingType: false })
+        .notNullable()
+      table
+        .enum('organization_type', this.organization_type, {
+          useNative: true,
+          enumName: 'organization_type',
+          existingType: false,
+        })
+        .notNullable()
       table.timestamp('created_at').notNullable()
       table.timestamp('updated_at').notNullable()
       table.foreign('department_id').references('departments.id').onDelete('CASCADE')
-
-
     })
   }
 
