@@ -2,11 +2,11 @@ name: CI
 
 on:
   pull_request:
-    branches: ['*']
+    branches: [ '*' ]
   merge_group:
-    types: [checks_requested]
+    types: [ checks_requested ]
   push:
-    branches: ['main']
+    branches: [ 'main' ]
 
 jobs:
   lint:
@@ -22,7 +22,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Set up AdonisJS environment
         run: |

@@ -58,7 +58,7 @@
     "@adonisjs/cors": "^2.2.1",
     "@adonisjs/drive": "^3.2.0",
     "@adonisjs/hash": "^9.0.5",
-    "@adonisjs/lucid": "^21.3.0",
+    "@adonisjs/lucid": "^20.0.0",
     "@adonisjs/session": "^7.5.0",
     "@vinejs/vine": "^2.1.0",
     "adminjs": "^7.8.13",
