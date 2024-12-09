@@ -1,18 +1,19 @@
 import { AdminJSProviderConfig } from '@adminjs/adonis'
-
 import componentLoader from '../app/admin/component_loader.js'
 import authProvider from '../app/admin/auth.js'
+import { academicCalendarResource } from '../app/admin/resources/academic_calendar.js'
+import { buildingResource, campusResource } from '../app/admin/resources/buildings.js'
 
 const adminjsConfig: AdminJSProviderConfig = {
   adapter: {
-    enabled: false,
+    enabled: true,
   },
   adminjs: {
     rootPath: '/admin',
     loginPath: '/admin/login',
     logoutPath: '/admin/logout',
     componentLoader,
-    resources: [],
+    resources: [academicCalendarResource, buildingResource, campusResource],
     pages: {},
     locale: {
       availableLanguages: ['en'],
@@ -37,7 +38,7 @@ const adminjsConfig: AdminJSProviderConfig = {
       },
     },
     branding: {
-      companyName: 'AdminJS',
+      companyName: 'Solvro',
       theme: {},
     },
     settings: {

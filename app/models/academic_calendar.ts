@@ -11,23 +11,23 @@ export default class AcademicCalendar extends BaseModel {
   @column()
   declare name: string
 
-  @column.date()
+  @column.date({ prepare: (v: Date) => v.toISOString() })
   declare semesterStartDate: DateTime
 
-  @column.date()
+  @column.date({ prepare: (v: Date) => v.toISOString() })
   declare examSessionStartDate: DateTime
 
-  @column.date()
+  @column.date({ prepare: (v: Date) => v.toISOString() })
   declare examSessionLastDate: DateTime
 
   @column()
   declare isFirstWeekEven: boolean
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare createdAt: DateTime | null
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  declare updatedAt: DateTime | null
 
   @hasMany(() => DaySwap)
   declare daySwaps: HasMany<typeof DaySwap>
