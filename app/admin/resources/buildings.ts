@@ -8,15 +8,7 @@ export const buildingResource = {
   resource: new LucidResource(Building, 'postgres'),
   options: {
     properties: {
-      '*': {
-        isVisible: {
-          edit: true,
-          show: true,
-          list: true,
-          filter: true,
-        },
-      },
-      'iconType': {
+      iconType: {
         availableValues: [{ value: BuildingIcon.Icon, label: 'Icon' }],
       },
       ...readOnlyTimestamps,
