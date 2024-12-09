@@ -24,10 +24,10 @@ export default class AcademicCalendar extends BaseModel {
   declare isFirstWeekEven: boolean
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime | null
+  declare createdAt: DateTime
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime | null
+  declare updatedAt: DateTime
 
   @hasMany(() => DaySwap)
   declare daySwaps: HasMany<typeof DaySwap>

@@ -1,7 +1,7 @@
 import { AdminJSProviderConfig } from '@adminjs/adonis'
 import componentLoader from '../app/admin/component_loader.js'
 import authProvider from '../app/admin/auth.js'
-import { academicCalendarResource } from '../app/admin/resources/academic_calendar.js'
+import { academicCalendarResource } from '../app/admin/resources/academic_calendars.js'
 import { buildingResource, campusResource } from '../app/admin/resources/buildings.js'
 
 const adminjsConfig: AdminJSProviderConfig = {
