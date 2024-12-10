@@ -1,34 +1,47 @@
 import Campus from '#models/campus'
+import { indexValidator, showValidator } from '#validators/campus'
 import type { HttpContext } from '@adonisjs/core/http'
 
 export default class CampusesController {
   /**
    * Display a list of resource
    */
-  async index({ response }: HttpContext) {
-    try {
-      const campuses = await Campus.all()
-      if (!campuses.length) return response.status(400).json({ message: 'No campus in database' })
-      return response.status(200).json(campuses)
-    } catch (error) {
-      return response.status(500).json({ message: 'Failed to fetch campuses' })
+  async index({ request, response }: HttpContext) {
+    const { includeBuildings } = await request.validateUsing(indexValidator)
+
+    const campusesQuery = Campus.query()
+    const message = 'List of campuses'
+
+    if (includeBuildings) {
+      campusesQuery.preload('buildings')
     }
+
+    const campuses = await campusesQuery
+    return response.status(200).json({
+      message: message,
+      data: campuses,
+    })
   }
+
   /**
    * Show individual record
    */
-  async show({ params, response }: HttpContext) {
-    try {
-      const id = params.id
-      if (!id) return response.status(400).json({ message: 'campus ID is required' })
+  async show({ request, response }: HttpContext) {
+    const {
+      params: { id },
+      includeBuildings,
+    } = await request.validateUsing(showValidator)
 
-      const campus = await Campus.find(id)
-      await campus?.load('buildings')
-      if (!campus) return response.status(404).json({ message: 'Campus not found' })
+    const campusQuery = Campus.query().where('id', id)
 
-      return response.status(200).json(campus)
-    } catch (error) {
-      return response.status(500).json({ message: 'Failed to fetch campus by Id' })
+    if (includeBuildings) {
+      campusQuery.preload('buildings')
     }
+
+    const [campus] = await campusQuery
+    return response.status(200).json({
+      message: `Campus with id: ${id}`,
+      data: campus,
+    })
   }
 }

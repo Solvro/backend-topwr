@@ -34,7 +34,7 @@ router
 
 router
   .group(() => {
-    router.get('in-campus/:id', [BuildingsController, 'getByCampus'])
+    router.get('in-campus/:campusId', [BuildingsController, 'getByCampus'])
     router.get('/:id', [BuildingsController, 'show'])
     router.get('/', [BuildingsController, 'index'])
   })
