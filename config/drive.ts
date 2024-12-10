@@ -1,9 +1,10 @@
-import env from '#start/env'
-import app from '@adonisjs/core/services/app'
-import { defineConfig, services } from '@adonisjs/drive'
+import app from "@adonisjs/core/services/app";
+import { defineConfig, services } from "@adonisjs/drive";
+
+import env from "#start/env";
 
 const driveConfig = defineConfig({
-  default: env.get('DRIVE_DISK'),
+  default: env.get("DRIVE_DISK"),
 
   /**
    * The services object can be used to configure multiple file system
@@ -11,17 +12,17 @@ const driveConfig = defineConfig({
    */
   services: {
     fs: services.fs({
-      location: app.makePath('storage'),
+      location: app.makePath("storage"),
       serveFiles: true,
-      routeBasePath: '/uploads',
-      visibility: 'public',
-      appUrl: env.get('APP_URL'),
+      routeBasePath: "/uploads",
+      visibility: "public",
+      appUrl: env.get("APP_URL"),
     }),
   },
-})
+});
 
-export default driveConfig
+export default driveConfig;
 
-declare module '@adonisjs/drive/types' {
+declare module "@adonisjs/drive/types" {
   export interface DriveDisks extends InferDriveDisks<typeof driveConfig> {}
 }

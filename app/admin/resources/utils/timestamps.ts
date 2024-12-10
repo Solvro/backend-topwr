@@ -1,6 +1,6 @@
 export const readOnlyTimestamps = {
   createdAt: {
-    type: 'datetime',
+    type: "datetime",
     isVisible: {
       edit: false,
       show: true,
@@ -9,7 +9,7 @@ export const readOnlyTimestamps = {
     },
   },
   updatedAt: {
-    type: 'datetime',
+    type: "datetime",
     isVisible: {
       edit: false,
       show: true,
@@ -17,4 +17,4 @@ export const readOnlyTimestamps = {
       filter: true,
     },
   },
-}
+};
