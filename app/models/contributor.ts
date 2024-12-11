@@ -24,7 +24,7 @@ export default class Contributor extends BaseModel {
   declare updatedAt: DateTime;
 
   @hasMany(() => ContributorSocialLink)
-  declare social_links: HasMany<typeof ContributorSocialLink>;
+  declare socialLinks: HasMany<typeof ContributorSocialLink>;
 
   @manyToMany(() => Role, {
     pivotTable: "contributor_roles",

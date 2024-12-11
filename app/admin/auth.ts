@@ -23,7 +23,7 @@ const authenticate = async ({
     return {
       email: user.email,
     };
-  } catch (error) {
+  } catch {
     logger.warn("Invalid admin panel credentials");
     return null;
   }

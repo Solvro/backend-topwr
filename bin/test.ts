@@ -60,5 +60,5 @@ new Ignitor(APP_ROOT, { importer: IMPORTER })
   .run(() => run())
   .catch((error) => {
     process.exitCode = 1;
-    prettyPrintError(error);
+    void prettyPrintError(error);
   });

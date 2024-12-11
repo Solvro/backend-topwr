@@ -14,16 +14,16 @@ export default class Department extends BaseModel {
   declare name: string;
 
   @column()
-  declare address_line1: string;
+  declare addressLine1: string;
 
   @column()
-  declare address_line2: string | null;
+  declare addressLine2: string | null;
 
   @column()
   declare code: string;
 
   @column()
-  declare better_code: string;
+  declare betterCode: string;
 
   @column()
   declare logo: string | null;
@@ -32,10 +32,10 @@ export default class Department extends BaseModel {
   declare description: string | null;
 
   @column()
-  declare gradient_start: string;
+  declare gradientStart: string;
 
   @column()
-  declare gradient_stop: string;
+  declare gradientStop: string;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

@@ -10,7 +10,7 @@ export default class FieldsOfStudy extends BaseModel {
   declare id: number;
 
   @column()
-  declare department_id: number;
+  declare departmentId: number;
 
   @column()
   declare name: string;
@@ -19,16 +19,16 @@ export default class FieldsOfStudy extends BaseModel {
   declare url: string | null;
 
   @column()
-  declare semester_count: number;
+  declare semesterCount: number;
 
   @column()
-  declare is_english: boolean;
+  declare isEnglish: boolean;
 
   @column()
-  declare is_2nd_degree: boolean;
+  declare is2ndDegree: boolean;
 
   @column()
-  declare has_weekend_option: boolean;
+  declare hasWeekendOption: boolean;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

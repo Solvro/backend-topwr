@@ -10,6 +10,7 @@ export default class FilesController {
     if (!file) {
       return response.badRequest("No file provided");
     }
+
     const key = await filesService.uploadFile(file);
     if (key instanceof Error) {
       return response.badRequest(key.message);
@@ -20,6 +21,9 @@ export default class FilesController {
   @inject()
   async get({ params, response }: HttpContext, filesService: FilesService) {
     const { key } = params;
+    if (typeof key !== "string") {
+      return response.badRequest("Invalid key. Expected a string.");
+    }
     const url = await filesService.getFileUrl(key);
     if (url instanceof Error) {
       return response.badRequest(url.message);

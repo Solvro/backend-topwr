@@ -15,8 +15,5 @@ insert_final_newline = unset
 indent_style = unset
 insert_final_newline = unset
 
-[MakeFile]
-indent_style = space
-
 [*.md]
 trim_trailing_whitespace = false
