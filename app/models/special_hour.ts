@@ -1,30 +1,32 @@
-import { DateTime } from 'luxon'
-import { BaseModel, belongsTo, column } from '@adonisjs/lucid/orm'
-import Library from './library.js'
-import type { BelongsTo } from '@adonisjs/lucid/types/relations'
+import { DateTime } from "luxon";
+
+import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
+import type { BelongsTo } from "@adonisjs/lucid/types/relations";
+
+import Library from "./library.js";
 
 export default class SpecialHour extends BaseModel {
   @column({ isPrimary: true })
-  declare id: number
+  declare id: number;
 
   @column.date()
-  declare specialDate: DateTime
+  declare specialDate: DateTime;
 
   @column()
-  declare openTime: string
+  declare openTime: string;
 
   @column()
-  declare closeTime: string
+  declare closeTime: string;
 
   @column()
-  declare libraryId: number
+  declare libraryId: number;
 
   @belongsTo(() => Library)
-  declare library: BelongsTo<typeof Library>
+  declare library: BelongsTo<typeof Library>;
 
   @column.dateTime({ autoCreate: true })
-  declare createdAt: DateTime
+  declare createdAt: DateTime;
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
-  declare updatedAt: DateTime
+  declare updatedAt: DateTime;
 }
