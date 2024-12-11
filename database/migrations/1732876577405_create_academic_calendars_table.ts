@@ -10,7 +10,7 @@ export default class extends BaseSchema {
       table.date('semester_start_date').notNullable()
       table.date('exam_session_start_date').notNullable()
       table.date('exam_session_last_date').notNullable()
-      table.boolean('is_first_week_even').notNullable()
+      table.boolean('is_first_week_even').defaultTo(false).notNullable()
 
       table.timestamp('created_at')
       table.timestamp('updated_at')
