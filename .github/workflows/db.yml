@@ -2,11 +2,11 @@ name: DB
 
 on:
   pull_request:
-    branches: ['*']
+    branches: ["*"]
   merge_group:
     types: [checks_requested]
   push:
-    branches: ['main']
+    branches: ["main"]
 
 jobs:
   migration-check:

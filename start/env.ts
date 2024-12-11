@@ -8,22 +8,28 @@
 | to JavaScript data types.
 |
 */
+import { Env } from "@adonisjs/core/env";
 
-import { Env } from '@adonisjs/core/env'
-
-export default await Env.create(new URL('../', import.meta.url), {
-  NODE_ENV: Env.schema.enum(['development', 'production', 'test'] as const),
+export default await Env.create(new URL("../", import.meta.url), {
+  NODE_ENV: Env.schema.enum(["development", "production", "test"] as const),
   PORT: Env.schema.number(),
   APP_KEY: Env.schema.string(),
-  HOST: Env.schema.string({ format: 'host' }),
-  LOG_LEVEL: Env.schema.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
+  HOST: Env.schema.string({ format: "host" }),
+  LOG_LEVEL: Env.schema.enum([
+    "fatal",
+    "error",
+    "warn",
+    "info",
+    "debug",
+    "trace",
+  ]),
 
   /*
   |----------------------------------------------------------
   | Variables for configuring database connection
   |----------------------------------------------------------
   */
-  DB_HOST: Env.schema.string({ format: 'host' }),
+  DB_HOST: Env.schema.string({ format: "host" }),
   DB_PORT: Env.schema.number(),
   DB_USER: Env.schema.string(),
   DB_PASSWORD: Env.schema.string.optional(),
@@ -34,7 +40,7 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring the drive package
   |----------------------------------------------------------
   */
-  DRIVE_DISK: Env.schema.enum(['fs'] as const),
+  DRIVE_DISK: Env.schema.enum(["fs"] as const),
   APP_URL: Env.schema.string(), // should be { format: 'url' } but it's not working with localhost
 
   APP_NAME: Env.schema.string(),
@@ -45,5 +51,5 @@ export default await Env.create(new URL('../', import.meta.url), {
   | Variables for configuring session package
   |----------------------------------------------------------
   */
-  SESSION_DRIVER: Env.schema.enum(['cookie', 'memory'] as const),
-})
+  SESSION_DRIVER: Env.schema.enum(["cookie", "memory"] as const),
+});
