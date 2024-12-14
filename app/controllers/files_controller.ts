@@ -7,7 +7,7 @@ export default class FilesController {
   @inject()
   async post({ request, response }: HttpContext, filesService: FilesService) {
     const file = request.file("file");
-    if (!file) {
+    if (file === null) {
       return response.badRequest("No file provided");
     }
 
