@@ -7,10 +7,12 @@ export default class extends BaseSchema {
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments("id");
+      table.integer("article_id").unsigned().notNullable();
       table
         .foreign("article_id")
         .references("guide_articles.id")
         .onDelete("CASCADE");
+      table.integer("author_id").unsigned().notNullable();
       table
         .foreign("author_id")
         .references("guide_authors.id")

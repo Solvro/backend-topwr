@@ -8,6 +8,7 @@ export default class extends BaseSchema {
       table.increments("id");
       table.text("title").notNullable();
       table.text("answer").notNullable();
+      table.integer("article_id").unsigned().notNullable();
       table
         .foreign("article_id")
         .references("guide_articles.id")
