@@ -21,7 +21,7 @@ export default class extends BaseSchema {
         .enum("role", this.guideAuthorRoles, {
           useNative: true,
           enumName: "guide_author_role",
-          existingType: true,
+          existingType: false,
         })
         .notNullable();
 
@@ -32,5 +32,6 @@ export default class extends BaseSchema {
 
   async down() {
     this.schema.dropTable(this.tableName);
+    this.schema.raw('DROP TYPE IF EXISTS "guide_author_role"');
   }
 }
