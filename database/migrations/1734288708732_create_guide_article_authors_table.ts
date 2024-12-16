@@ -2,7 +2,7 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
 
 export default class extends BaseSchema {
   protected tableName = "guide_article_authors";
-  protected guideAuthorRoles = ["author", "redactor"];
+  protected guideAuthorRoles = ["AUTHOR", "REDACTOR"];
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
@@ -21,7 +21,7 @@ export default class extends BaseSchema {
         .enum("role", this.guideAuthorRoles, {
           useNative: true,
           enumName: "guide_author_role",
-          existingType: false,
+          existingType: true,
         })
         .notNullable();
 
