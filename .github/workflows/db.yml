@@ -1,17 +1,20 @@
-name: DB
+name: Migration check
 
 on:
   pull_request:
     branches: ["*"]
-  merge_group:
-    types: [checks_requested]
   push:
     branches: ["main"]
 
 jobs:
   migration-check:
     runs-on: ubuntu-latest
-    container: node:20-bookworm-slim
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: postgres
 
     services:
       postgres:
@@ -23,6 +26,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - name: Check out repository code
@@ -38,10 +43,6 @@ jobs:
 
       - name: Run AdonisJS migrations
         run: node ace migration:run
-        env:
-          DB_HOST: postgres
 
       - name: Rollback and rerun AdonisJS migrations
         run: node ace migration:refresh
-        env:
-          DB_HOST: postgres
