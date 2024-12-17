@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
 import * as relations from "@adonisjs/lucid/types/relations";
 
@@ -15,6 +17,12 @@ export default class GuideQuestion extends BaseModel {
 
   @column()
   declare articleId: number;
+
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime;
+
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime;
 
   @belongsTo(() => GuideArticle)
   declare guideArticle: relations.BelongsTo<typeof GuideArticle>;

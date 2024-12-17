@@ -11,8 +11,8 @@ export default class extends BaseSchema {
       table.text("description").notNullable();
       table.text("image_path").notNullable();
 
-      table.timestamp("created_at");
-      table.timestamp("updated_at");
+      table.timestamp("created_at").notNullable();
+      table.timestamp("updated_at").notNullable();
     });
   }
 

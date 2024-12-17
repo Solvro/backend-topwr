@@ -13,6 +13,9 @@ export default class extends BaseSchema {
         .foreign("article_id")
         .references("guide_articles.id")
         .onDelete("CASCADE");
+
+      table.timestamp("created_at").notNullable();
+      table.timestamp("updated_at").notNullable();
     });
   }
 

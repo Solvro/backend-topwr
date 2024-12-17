@@ -34,6 +34,7 @@ export default class GuideArticle extends BaseModel {
     pivotForeignKey: "article_id",
     pivotRelatedForeignKey: "author_id",
     relatedKey: "id",
+    pivotTimestamps: true,
   })
   declare guideAuthors: relations.ManyToMany<typeof GuideAuthor>;
 
