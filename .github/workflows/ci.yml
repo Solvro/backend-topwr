@@ -26,6 +26,10 @@ jobs:
           cp .env.example .env
           node ace generate:key
 
+      - name: Check commit name
+        if: github.event_name == 'pull_request'
+        run: npx commitlint -f ${{ github.event.pull_request.base.sha }}
+
       - name: Run prettier
         run: npm run format:check
         if: always()
