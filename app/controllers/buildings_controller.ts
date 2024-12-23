@@ -1,83 +1,57 @@
-import Building from '#models/building'
-import { showValidator, indexValidator, byCampusValidator } from '#validators/building'
-import { HttpContext } from '@adonisjs/core/http'
+import { HttpContext } from "@adonisjs/core/http";
+
+import Building from "#models/building";
+import { paginationValidator } from "#validators/pagination";
+import { showValidator } from "#validators/show";
 
 export default class BuildingsController {
   /**
    * Display a list of resource
    */
-  async index({ request, response }: HttpContext) {
-    const { page, limit, includeCampus } = await request.validateUsing(indexValidator)
-
-    const buildingsQuery = Building.query()
-    const message = 'List of buildings'
-
-    if (includeCampus) {
-      buildingsQuery.preload('campus')
-    }
-
+  async index({ request }: HttpContext) {
+    const { page, limit } = await request.validateUsing(paginationValidator);
+    const baseQuery = Building.query().withScopes((scopes) => {
+      scopes.handleSearchQuery(
+        request.only([
+          "id",
+          "identifier",
+          "specialName",
+          "campusId",
+          "addressLine1",
+          "addressLine2",
+          "latitude",
+          "longitude",
+          "haveFood",
+          "createdAt",
+          "updatedAt",
+        ]),
+      );
+      scopes.preloadRelations(request.only(["campus"]));
+      scopes.handleSortQuery(request.input("sort"));
+    });
+    let buildings;
     if (page) {
-      const buildings = await buildingsQuery.paginate(page, limit || 10)
-      return response.status(200).json({
-        message: message,
-        meta: buildings.getMeta(),
-        data: buildings.toJSON().data,
-      })
+      buildings = await baseQuery.paginate(page, limit ?? 10);
+    } else {
+      buildings = { data: await baseQuery };
     }
-
-    const buildings = await buildingsQuery
-    return response.status(200).json({
-      message: message,
-      data: buildings,
-    })
+    return buildings;
   }
 
   /**
    * Show individual record
    */
-  async show({ request, response }: HttpContext) {
+  async show({ request }: HttpContext) {
     const {
       params: { id },
-    } = await request.validateUsing(showValidator)
-    const building = await Building.find(id)
-
-    return response.status(200).json({
-      message: `Building with id: ${id}`,
-      data: building,
-    })
-  }
-
-  /**
-   * Show individual record
-   */
-  async getByCampus({ request, response }: HttpContext) {
-    const {
-      params: { campusId },
-      page,
-      limit,
-      includeCampus,
-    } = await request.validateUsing(byCampusValidator)
-
-    const buildingsQuery = Building.query().where('campus_id', campusId)
-    const message = `List of buildings within campus of id: ${campusId}`
-
-    if (includeCampus) {
-      buildingsQuery.preload('campus')
-    }
-
-    if (page) {
-      const buildings = await buildingsQuery.paginate(page, limit || 10)
-      return response.status(200).json({
-        message: message,
-        meta: buildings.getMeta(),
-        data: buildings.toJSON().data,
+    } = await request.validateUsing(showValidator);
+    const building = await Building.query()
+      .withScopes((scopes) => {
+        scopes.preloadRelations(request.only(["campus"]));
       })
-    }
+      .where("id", id)
+      .firstOrFail();
 
-    const buildings = await buildingsQuery
-    return response.status(200).json({
-      message: message,
-      data: buildings,
-    })
+    return { data: building };
   }
 }

@@ -1,47 +1,38 @@
-import Campus from '#models/campus'
-import { indexValidator, showValidator } from '#validators/campus'
-import type { HttpContext } from '@adonisjs/core/http'
+import type { HttpContext } from "@adonisjs/core/http";
+
+import Campus from "#models/campus";
+import { showValidator } from "#validators/show";
 
 export default class CampusesController {
   /**
    * Display a list of resource
    */
-  async index({ request, response }: HttpContext) {
-    const { includeBuildings } = await request.validateUsing(indexValidator)
+  async index({ request }: HttpContext) {
+    const campuses = await Campus.query().withScopes((scopes) => {
+      scopes.handleSearchQuery(
+        request.only(["id", "name", "createdAt", "updatedAt"]),
+      );
+      scopes.includeRelations(request.only(["buildings"]));
+      scopes.handleSortQuery(request.input("sort"));
+    });
 
-    const campusesQuery = Campus.query()
-    const message = 'List of campuses'
-
-    if (includeBuildings) {
-      campusesQuery.preload('buildings')
-    }
-
-    const campuses = await campusesQuery
-    return response.status(200).json({
-      message: message,
-      data: campuses,
-    })
+    return campuses;
   }
 
   /**
    * Show individual record
    */
-  async show({ request, response }: HttpContext) {
+  async show({ request }: HttpContext) {
     const {
       params: { id },
-      includeBuildings,
-    } = await request.validateUsing(showValidator)
+    } = await request.validateUsing(showValidator);
+    const campus = await Campus.query()
+      .withScopes((scopes) => {
+        scopes.includeRelations(request.only(["buildings"]));
+      })
+      .where("id", id)
+      .firstOrFail();
 
-    const campusQuery = Campus.query().where('id', id)
-
-    if (includeBuildings) {
-      campusQuery.preload('buildings')
-    }
-
-    const [campus] = await campusQuery
-    return response.status(200).json({
-      message: `Campus with id: ${id}`,
-      data: campus,
-    })
+    return { data: campus };
   }
 }
