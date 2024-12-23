@@ -1,4 +1,8 @@
-import { ColumnOptions, LucidModel } from "@adonisjs/lucid/types/model";
+import {
+  ColumnOptions,
+  LucidModel,
+  ModelColumnOptions,
+} from "@adonisjs/lucid/types/model";
 
 type ColumnType = "string" | "number" | "boolean" | "DateTime";
 
@@ -49,11 +53,11 @@ export interface ColumnDef extends ColumnOptions {
  */
 export function typedModel<T extends LucidModel>(options: TypedModelOptions) {
   return function (constructor: T): T {
-    // by the time class decorator runs, property decorators have already run,
-    const columns = constructor.$columnsDefinitions;
+    const columns: Map<string, ModelColumnOptions> | undefined =
+      constructor.$columnsDefinitions;
 
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    if (!columns) {
+    if (columns === undefined) {
       console.error(
         `No $columnsDefinitions found on model ${constructor.name}. ` +
           `Check if any @column decorator is used on columns and/or if model extends BaseModel`,
@@ -63,7 +67,7 @@ export function typedModel<T extends LucidModel>(options: TypedModelOptions) {
 
     for (const [propertyName, columnType] of Object.entries(options)) {
       const columnDef: ColumnDef | undefined = columns.get(propertyName);
-      if (!columnDef) {
+      if (columnDef === undefined) {
         console.error(
           `Mismatch: no ${propertyName} found in ${constructor.name}`,
         );

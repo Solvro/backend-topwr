@@ -30,7 +30,7 @@ export default class BuildingsController {
       scopes.handleSortQuery(request.input("sort"));
     });
     let buildings;
-    if (page) {
+    if (page !== undefined) {
       buildings = await baseQuery.paginate(page, limit ?? 10);
     } else {
       buildings = { data: await baseQuery };

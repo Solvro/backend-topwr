@@ -47,7 +47,7 @@ export const preloadRelations = <T extends LucidModel>(model: T) =>
  * @param query - current query to work on
  * @param {T} model - The Lucid model to validate NEXT related model preload
  * @param relationParts - array that holds further chained relations that remain to be loaded in that single path
- * @returns {ModelQueryBuilderContract<T>}
+ * @returns {ModelQueryBuilderContract<T>} query to chain other queries on
  */
 function preloadSinglePath<T extends LucidModel>(
   query: ModelQueryBuilderContract<T>,
@@ -55,12 +55,12 @@ function preloadSinglePath<T extends LucidModel>(
   relationParts: string[],
 ): ModelQueryBuilderContract<T> {
   const relation = relationParts.shift();
-  if (!relation) {
+  if (relation === undefined) {
     return query;
   }
 
   const relationDefinition = model.$relationsDefinitions.get(relation);
-  if (!relationDefinition) {
+  if (relationDefinition === undefined) {
     return query;
   }
 

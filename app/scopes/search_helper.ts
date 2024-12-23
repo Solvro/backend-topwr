@@ -82,14 +82,14 @@ export const handleSearchQuery = <T extends LucidModel>(model: T) =>
       params: Partial<
         Record<
           keyof ModelAttributes<InstanceType<T>>,
-          null | string | string[] | FromTo
+          undefined | string | string[] | FromTo
         >
       >,
     ) => {
       for (const param in params) {
-        const value = params[param];
+        const value: string | string[] | FromTo | undefined = params[param];
         const column = model.$getColumn(param);
-        if (!value || !column) {
+        if (value === undefined || column === undefined) {
           // empty string will not pass
           continue;
         } else if (Array.isArray(value)) {
@@ -146,10 +146,10 @@ function handleFromTo(
       const invalidFrom = invalid.find((val) => val === value.from);
       const invalidTo = invalid.find((val) => val === value.to);
       const invalidParts: string[] = [];
-      if (invalidFrom) {
+      if (invalidFrom !== undefined) {
         invalidParts.push(`'[from]=${invalidFrom}'`);
       }
-      if (invalidTo) {
+      if (invalidTo !== undefined) {
         invalidParts.push(`'[to]=${invalidTo}'`);
       }
       const invalidMessage = invalidParts.join(" and ");
@@ -160,18 +160,18 @@ function handleFromTo(
       );
     }
     if (columnType === "number") {
-      if (value.from) {
+      if (value.from !== undefined) {
         query = query.where(column.columnName, ">=", Number(value.from));
       }
-      if (value.to) {
+      if (value.to !== undefined) {
         query = query.where(column.columnName, "<=", Number(value.to));
       }
     } else {
-      if (value.from) {
+      if (value.from !== undefined) {
         const fromDate = new Date(value.from);
         query = query.where(column.columnName, ">=", fromDate);
       }
-      if (value.to) {
+      if (value.to !== undefined) {
         const toDate = new Date(value.to);
         query = query.where(column.columnName, "<=", toDate);
       }
@@ -251,14 +251,14 @@ function arrayTypeCheckHelper(
     }
     case "number": {
       invalid = values.filter(
-        (value) => value && Number.isNaN(Number(value)),
+        (value) => value !== undefined && Number.isNaN(Number(value)),
       ) as string[];
       break;
     }
     case "boolean": {
       invalid = values.filter(
         (value) =>
-          value &&
+          value !== undefined &&
           value !== "true" &&
           value !== "1" &&
           value !== "false" &&
@@ -268,7 +268,8 @@ function arrayTypeCheckHelper(
     }
     case "DateTime": {
       invalid = values.filter(
-        (value) => value && !DateTime.fromJSDate(new Date(value)).isValid,
+        (value) =>
+          value !== undefined && !DateTime.fromJSDate(new Date(value)).isValid,
       ) as string[];
       break;
     }
