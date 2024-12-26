@@ -186,57 +186,20 @@ function handleDirectValue(
   value: string,
 ) {
   const columnType = extractType(column);
-  let valid = true;
-  switch (columnType) {
-    case "string": {
-      query = query.whereILike(column.columnName, value);
-      break;
-    }
-    case "number": {
-      const number = Number(value);
-      if (!Number.isNaN(number)) {
-        query = query.where(column.columnName, number);
-      } else {
-        valid = false;
-      }
-      break;
-    }
-    case "boolean": {
-      if (
-        value === "true" ||
-        value === "1" ||
-        value === "false" ||
-        value === "0"
-      ) {
-        query = query.where(column.columnName, value);
-      } else {
-        valid = false;
-      }
-      break;
-    }
-    case "DateTime": {
-      const date = DateTime.fromJSDate(new Date(value));
-      if (date.isValid) {
-        query = query.where(column.columnName, date.toJSDate());
-      } else {
-        valid = false;
-      }
-      break;
-    }
-    default: {
-      throw new NotImplementedException(
-        `Unsupported column type '${columnType}' in arrayTypeCheckHelper.`,
-      );
-    }
-  }
-  if (valid) {
-    return query;
-  } else {
+  const invalid = arrayTypeCheckHelper([value], columnType);
+  if (invalid.length > 0) {
     throw new BadRequestException(
       `invalid filter value '${value}' ` +
         `for column: '${column.columnName}' ` +
         `of type: '${columnType}'`,
     );
+  } else {
+    if (columnType === "string") {
+      query = query.whereILike(column.columnName, value);
+    } else {
+      query = query.where(column.columnName, value);
+    }
+    return query;
   }
 }
 
