@@ -3,13 +3,31 @@ import { DateTime } from "luxon";
 import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
+import { typedModel } from "../decorators/typed_model.js";
 import { BuildingIcon } from "../enums/building_icon.js";
+import { preloadRelations } from "../scopes/preload_helper.js";
+import { handleSearchQuery } from "../scopes/search_helper.js";
+import { handleSortQuery } from "../scopes/sort_helper.js";
 import Aed from "./aed.js";
 import BicycleShower from "./bicycle_shower.js";
 import Campus from "./campus.js";
 import FoodSpot from "./food_spot.js";
 import Library from "./library.js";
 
+@typedModel({
+  id: "number",
+  identifier: "string",
+  specialName: "string",
+  campusId: "number",
+  addressLine1: "string",
+  addressLine2: "string",
+  latitude: "number",
+  longitude: "number",
+  haveFood: "boolean",
+  cover: "string",
+  createdAt: "DateTime",
+  updatedAt: "DateTime",
+})
 export default class Building extends BaseModel {
   @column({ isPrimary: true })
   declare id: number;
@@ -64,4 +82,10 @@ export default class Building extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  static preloadRelations = preloadRelations(Building);
+
+  static handleSearchQuery = handleSearchQuery(Building);
+
+  static handleSortQuery = handleSortQuery(Building);
 }

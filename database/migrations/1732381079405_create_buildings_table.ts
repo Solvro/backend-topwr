@@ -18,7 +18,11 @@ export default class extends BaseSchema {
         .notNullable();
 
       table.bigInteger("campus_id").unsigned().notNullable();
-      table.foreign("campus_id").references("campuses.id").onDelete("CASCADE");
+      table
+        .foreign("campus_id")
+        .references("id")
+        .inTable("campuses")
+        .onDelete("CASCADE");
 
       table.text("address_line1").notNullable();
       table.text("address_line2").nullable();
