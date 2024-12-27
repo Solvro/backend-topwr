@@ -1,3 +1,4 @@
+import logger from "@adonisjs/core/services/logger";
 import { scope } from "@adonisjs/lucid/orm";
 import {
   LucidModel,
@@ -60,6 +61,7 @@ function preloadSinglePath<T extends LucidModel>(
 
   const relationDefinition = model.$relationsDefinitions.get(relation);
   if (relationDefinition === undefined) {
+    logger.warn(`'${relation}' relation not defined in '${model.name}' model`);
     return query;
   }
 
