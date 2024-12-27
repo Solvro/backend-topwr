@@ -71,7 +71,7 @@ export type QueryValues =
  * - not defined type on column will result in NotImplemented response (501)
  * - [from]/[to] filtering applies only to numeric or date columns
  * - empty string value for filtering param is ignored
- * - filtering param non existend in model columns is ignored
+ * - filtering param non existent in model columns is ignored
  *
  * **Usage:**
  * ```typescript
