@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 
+import logger from "@adonisjs/core/services/logger";
 import { scope } from "@adonisjs/lucid/orm";
 import {
   LucidModel,
@@ -10,21 +11,29 @@ import {
 } from "@adonisjs/lucid/types/model";
 
 import BadRequestException from "#exceptions/bad_request_exception";
-import ColumnTypeNotImplementedException from "#exceptions/column_type_not_implemented_exception";
-import NotImplementedException from "#exceptions/not_implemented_exception";
+import env from "#start/env";
 
-import { ColumnDef } from "../decorators/typed_model.js";
+import { ColumnDef, ColumnType } from "../decorators/typed_model.js";
 
-/**
+/*
  *
  * Thanks to Dawid Linek for concept
  *
  */
 
+const types = new Set(["number", "string", "boolean", "DateTime"]);
+
+export interface ColumnDefExplicit extends ModelColumnOptions {
+  meta: {
+    type: ColumnType;
+  };
+}
+
 export interface FromTo {
   from?: string;
   to?: string;
 }
+
 export type QueryValues =
   | string
   | number
@@ -79,20 +88,22 @@ export const handleSearchQuery = <T extends LucidModel>(model: T) =>
   scope(
     (
       query,
-      params: Partial<
-        Record<
-          keyof ModelAttributes<InstanceType<T>>,
-          undefined | string | string[] | FromTo
-        >
-      >,
+      qs: Record<string, string | string[] | FromTo | undefined>,
+      ...excluded: Partial<keyof ModelAttributes<InstanceType<T>>>[]
     ) => {
-      for (const param in params) {
-        const value: string | string[] | FromTo | undefined = params[param];
-        const column = model.$getColumn(param);
-        if (value === undefined || column === undefined) {
-          // empty string will not pass
+      for (const [queryParam, queryValue] of Object.entries(qs)) {
+        const entry = extractEntry(
+          queryParam,
+          queryValue,
+          excluded as string[],
+          model,
+        );
+        if (entry === undefined) {
           continue;
-        } else if (Array.isArray(value)) {
+        }
+
+        const [column, value] = entry;
+        if (Array.isArray(value)) {
           query = handleArray(query, column, value);
         } else if (typeof value === "object") {
           query = handleFromTo(query, column, value);
@@ -105,10 +116,10 @@ export const handleSearchQuery = <T extends LucidModel>(model: T) =>
 
 function handleArray(
   query: ModelQueryBuilderContract<LucidModel, LucidRow>,
-  column: ModelColumnOptions,
+  column: ColumnDefExplicit,
   values: string[],
 ) {
-  const columnType = extractType(column);
+  const columnType = column.meta.type;
   const invalid = arrayTypeCheckHelper(values, columnType);
   if (invalid.length > 0) {
     throw new BadRequestException(
@@ -127,10 +138,10 @@ function handleArray(
 
 function handleFromTo(
   query: ModelQueryBuilderContract<LucidModel, LucidRow>,
-  column: ModelColumnOptions,
+  column: ColumnDefExplicit,
   value: FromTo,
 ) {
-  const columnType = extractType(column);
+  const columnType = column.meta.type;
   if (columnType !== "number" && columnType !== "DateTime") {
     // [from]/[to] make sense only on number or date
     throw new BadRequestException(
@@ -182,10 +193,11 @@ function handleFromTo(
 
 function handleDirectValue(
   query: ModelQueryBuilderContract<LucidModel, LucidRow>,
-  column: ModelColumnOptions,
+  column: ColumnDefExplicit,
   value: string,
 ) {
-  const columnType = extractType(column);
+  // const columnType = extractType(column);
+  const columnType = column.meta.type;
   const invalid = arrayTypeCheckHelper([value], columnType);
   if (invalid.length > 0) {
     throw new BadRequestException(
@@ -236,21 +248,47 @@ function arrayTypeCheckHelper(
       ) as string[];
       break;
     }
-    default: {
-      throw new NotImplementedException(
-        `Unsupported column type '${columnType}' in arrayTypeCheckHelper.`,
-      );
-    }
   }
   return invalid;
 }
 
-function extractType(column: ModelColumnOptions) {
-  const columnDef: ColumnDef = column;
-  const columnType = columnDef.meta?.type;
-  if (columnType === undefined) {
-    throw new ColumnTypeNotImplementedException(column.columnName);
-  } else {
-    return columnType;
+function extractEntry<T extends LucidModel>(
+  param: string,
+  value: string | string[] | FromTo | undefined,
+  excluded: string[],
+  model: T,
+): [ColumnDefExplicit, string | string[] | FromTo] | undefined {
+  if (excluded.includes(param) || param.trim() === "") {
+    return;
+  }
+  if (value === undefined || value === "") {
+    // empty string values are ignored
+    return;
+  }
+  // predicate for ts type safety
+  const isTypeValid = (column: ColumnDef): column is ColumnDefExplicit => {
+    return column.meta !== undefined
+      ? column.meta.type !== undefined
+        ? types.has(column.meta.type)
+        : false
+      : false;
+  };
+  const column = model.$getColumn(param);
+  if (column === undefined) {
+    return;
+  }
+  if (isTypeValid(column)) {
+    return [column, value];
+  }
+
+  // DEVELOPMENT LOGGING
+  const app = env.get("NODE_ENV");
+  if (["development", "testing"].includes(app)) {
+    logger.warn(
+      `\nColumn type for '${column.columnName}' not defined or not supported. \n` +
+        `Check 'meta: type' property in columnDefinitions. \n` +
+        `Supported types are ["string", "number", "boolean", "DateTime"]. \n` +
+        `Exclude explicitly unsupported types in the scope invoking level.`,
+    );
   }
 }
