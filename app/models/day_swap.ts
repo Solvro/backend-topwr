@@ -3,7 +3,8 @@ import { DateTime } from "luxon";
 import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
-import { Weekday } from "../enums/weekday.js";
+import { Weekday } from "#enums/weekday";
+
 import AcademicCalendar from "./academic_calendar.js";
 
 export default class DaySwap extends BaseModel {

@@ -3,7 +3,8 @@ import { DateTime } from "luxon";
 import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
-import { LinkType } from "../enums/link_type.js";
+import { LinkType } from "#enums/link_type";
+
 import Department from "./department.js";
 
 export default class DepartmentsLink extends BaseModel {
