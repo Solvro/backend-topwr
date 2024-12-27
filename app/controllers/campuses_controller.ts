@@ -8,15 +8,13 @@ export default class CampusesController {
    * Display a list of resource
    */
   async index({ request }: HttpContext) {
-    const campuses = await Campus.query().withScopes((scopes) => {
+    return await Campus.query().withScopes((scopes) => {
       scopes.handleSearchQuery(
         request.only(["id", "name", "createdAt", "updatedAt"]),
       );
       scopes.includeRelations(request.only(["buildings"]));
       scopes.handleSortQuery(request.input("sort"));
     });
-
-    return campuses;
   }
 
   /**
