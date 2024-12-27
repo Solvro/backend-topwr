@@ -3,7 +3,8 @@ import { DateTime } from "luxon";
 import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
-import { ChangeType } from "../enums/change_type.js";
+import { ChangeType } from "#enums/change_type";
+
 import ChangeScreenshot from "./change_screenshot.js";
 import Version from "./version.js";
 

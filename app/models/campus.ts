@@ -3,10 +3,11 @@ import { DateTime } from "luxon";
 import { BaseModel, column, hasMany } from "@adonisjs/lucid/orm";
 import type { HasMany } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "../decorators/typed_model.js";
-import { preloadRelations } from "../scopes/preload_helper.js";
-import { handleSearchQuery } from "../scopes/search_helper.js";
-import { handleSortQuery } from "../scopes/sort_helper.js";
+import { typedModel } from "#decorators/typed_model";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
+
 import Building from "./building.js";
 
 @typedModel({
