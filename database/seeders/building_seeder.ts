@@ -6,6 +6,8 @@ import Campus from "#models/campus";
 import { BuildingIcon } from "../../app/enums/building_icon.js";
 
 export default class BuildingSeeder extends BaseSeeder {
+  static environment = ["development", "testing"];
+
   async run() {
     await Campus.createMany([
       {
