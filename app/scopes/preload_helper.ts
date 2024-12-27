@@ -21,6 +21,7 @@ import { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
  * const buildings = await Building.query()
  *  .withScopes((scopes) => {
  *    scopes.preloadRelations(request.only(["campus"]));
+ *  });
  */
 export const preloadRelations = <T extends LucidModel>(model: T) =>
   scope(
@@ -28,9 +29,7 @@ export const preloadRelations = <T extends LucidModel>(model: T) =>
       query: ModelQueryBuilderContract<LucidModel, LucidRow>,
       relations: Partial<Record<string, string>>,
     ) => {
-      for (const relation in relations) {
-        const value = relations[relation];
-
+      for (const [relation, value] of Object.entries(relations)) {
         if (value === "1" || value === "true") {
           query = preloadSinglePath(query, model, relation.split("."));
         }
@@ -40,7 +39,7 @@ export const preloadRelations = <T extends LucidModel>(model: T) =>
   );
 
 /**
- * Helper function to work with recursively looaded chained relations
+ * Helper function to work with recursively loaded chained relations
  * - Base case [1] of function is the exhaustion of relationParts array (stack)
  * - Base case [2] of function is the mismatch in provided relation name
  *
