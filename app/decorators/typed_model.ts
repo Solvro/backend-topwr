@@ -4,13 +4,13 @@ import {
   ModelColumnOptions,
 } from "@adonisjs/lucid/types/model";
 
-type ColumnType = "string" | "number" | "boolean" | "DateTime";
+export type ColumnType = "string" | "number" | "boolean" | "DateTime";
 
-type TypedModelOptions = Record<string, ColumnType>;
+export type TypedModelOptions = Record<string, ColumnType>;
 
 export interface ColumnDef extends ColumnOptions {
   meta?: {
-    type?: string;
+    type?: ColumnType;
   };
 }
 
