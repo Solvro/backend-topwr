@@ -11,21 +11,7 @@ export default class BuildingsController {
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = Building.query().withScopes((scopes) => {
-      scopes.handleSearchQuery(
-        request.only([
-          "id",
-          "identifier",
-          "specialName",
-          "campusId",
-          "addressLine1",
-          "addressLine2",
-          "latitude",
-          "longitude",
-          "haveFood",
-          "createdAt",
-          "updatedAt",
-        ]),
-      );
+      scopes.handleSearchQuery(request.qs(), "iconType");
       scopes.preloadRelations(request.only(["campus"]));
       scopes.handleSortQuery(request.input("sort"));
     });
