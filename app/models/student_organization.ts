@@ -1,11 +1,23 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
-import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
+import {
+  BaseModel,
+  belongsTo,
+  column,
+  hasMany,
+  manyToMany,
+} from "@adonisjs/lucid/orm";
+import type {
+  BelongsTo,
+  HasMany,
+  ManyToMany,
+} from "@adonisjs/lucid/types/relations";
 
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
+import StudentOrganizationLink from "#models/student_organization_link";
+import StudentOrganizationTag from "#models/student_organization_tag";
 
 export default class StudentOrganization extends BaseModel {
   @column({ isPrimary: true })
@@ -40,6 +52,14 @@ export default class StudentOrganization extends BaseModel {
 
   @hasMany(() => StudentOrganizationLink)
   declare links: HasMany<typeof StudentOrganizationLink>;
+
+  @manyToMany(() => StudentOrganizationTag, {
+    pivotTable: "student_organizations_student_organization_tags",
+    localKey: "id",
+    pivotForeignKey: "student_organization_id",
+    pivotRelatedForeignKey: "tag",
+  })
+  declare tags: ManyToMany<typeof StudentOrganizationTag>;
 
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
