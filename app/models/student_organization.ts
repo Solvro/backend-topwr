@@ -58,6 +58,7 @@ export default class StudentOrganization extends BaseModel {
     localKey: "id",
     pivotForeignKey: "student_organization_id",
     pivotRelatedForeignKey: "tag",
+    pivotTimestamps: true,
   })
   declare tags: ManyToMany<typeof StudentOrganizationTag>;
 
