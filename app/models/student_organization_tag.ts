@@ -9,17 +9,18 @@ export default class StudentOrganizationTag extends BaseModel {
   @column({ isPrimary: true })
   declare tag: string;
 
-  @manyToMany(() => StudentOrganization, {
-    pivotTable: "student_organizations_student_organization_tags",
-    localKey: "tag",
-    pivotForeignKey: "tag",
-    pivotRelatedForeignKey: "student_organization_id",
-  })
-  declare organizations: ManyToMany<typeof StudentOrganization>;
-
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @manyToMany(() => StudentOrganization, {
+    pivotTable: "student_organizations_student_organization_tags",
+    localKey: "tag",
+    pivotForeignKey: "tag",
+    pivotRelatedForeignKey: "student_organization_id",
+    pivotTimestamps: true,
+  })
+  declare organizations: ManyToMany<typeof StudentOrganization>;
 }
