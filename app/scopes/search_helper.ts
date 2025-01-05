@@ -25,7 +25,7 @@ const types = new Set(["number", "string", "boolean", "DateTime"]);
 
 export interface ColumnDefExplicit extends ModelColumnOptions {
   meta: {
-    type: ColumnType;
+    declaredType: ColumnType;
   };
 }
 
@@ -119,7 +119,7 @@ function handleArray(
   column: ColumnDefExplicit,
   values: string[],
 ) {
-  const columnType = column.meta.type;
+  const columnType = column.meta.declaredType;
   const invalid = arrayTypeCheckHelper(values, columnType);
   if (invalid.length > 0) {
     throw new BadRequestException(
@@ -141,7 +141,7 @@ function handleFromTo(
   column: ColumnDefExplicit,
   value: FromTo,
 ) {
-  const columnType = column.meta.type;
+  const columnType = column.meta.declaredType;
   if (columnType !== "number" && columnType !== "DateTime") {
     // [from]/[to] make sense only on number or date
     throw new BadRequestException(
@@ -197,7 +197,7 @@ function handleDirectValue(
   value: string,
 ) {
   // const columnType = extractType(column);
-  const columnType = column.meta.type;
+  const columnType = column.meta.declaredType;
   const invalid = arrayTypeCheckHelper([value], columnType);
   if (invalid.length > 0) {
     throw new BadRequestException(
@@ -267,11 +267,10 @@ function extractEntry<T extends LucidModel>(
   }
   // predicate for ts type safety
   const isTypeValid = (column: ColumnDef): column is ColumnDefExplicit => {
-    return column.meta !== undefined
-      ? column.meta.type !== undefined
-        ? types.has(column.meta.type)
-        : false
-      : false;
+    return (
+      column.meta?.declaredType !== undefined &&
+      types.has(column.meta.declaredType)
+    );
   };
   const column = model.$getColumn(param);
   if (column === undefined) {
@@ -286,7 +285,7 @@ function extractEntry<T extends LucidModel>(
   if (["development", "testing"].includes(app)) {
     logger.warn(
       `\nColumn type for '${column.columnName}' not defined or not supported. \n` +
-        `Check 'meta: type' property in columnDefinitions. \n` +
+        `Check 'meta: declaredType' property in columnDefinitions. \n` +
         `Supported types are ["string", "number", "boolean", "DateTime"]. \n` +
         `Exclude explicitly unsupported types in the scope invoking level.`,
     );

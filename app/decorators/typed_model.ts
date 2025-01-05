@@ -10,7 +10,7 @@ export type TypedModelOptions = Record<string, ColumnType>;
 
 export interface ColumnDef extends ColumnOptions {
   meta?: {
-    type?: ColumnType;
+    declaredType?: ColumnType;
   };
 }
 
@@ -74,7 +74,7 @@ export function typedModel<T extends LucidModel>(options: TypedModelOptions) {
         continue;
       }
       columnDef.meta = columnDef.meta ?? {};
-      columnDef.meta.type = columnType;
+      columnDef.meta.declaredType = columnType;
     }
     return constructor;
   };
