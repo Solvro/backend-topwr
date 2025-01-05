@@ -13,12 +13,27 @@ import type {
   ManyToMany,
 } from "@adonisjs/lucid/types/relations";
 
+import { typedModel } from "#decorators/typed_model";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
 
+@typedModel({
+  id: "number",
+  name: "string",
+  departmentId: "number",
+  logo: "string",
+  cover: "string",
+  description: "string",
+  shortDescription: "string",
+  coverPreview: "boolean",
+  createdAt: "DateTime",
+  updatedAt: "DateTime",
+})
 export default class StudentOrganization extends BaseModel {
   @column({ isPrimary: true })
   declare id: number;
@@ -57,6 +72,7 @@ export default class StudentOrganization extends BaseModel {
     pivotTable: "student_organizations_student_organization_tags",
     localKey: "id",
     pivotForeignKey: "student_organization_id",
+    relatedKey: "tag",
     pivotRelatedForeignKey: "tag",
     pivotTimestamps: true,
   })
@@ -70,4 +86,8 @@ export default class StudentOrganization extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  static handleSearchQuery = handleSearchQuery(StudentOrganization);
+
+  static handleSortQuery = handleSortQuery(StudentOrganization);
 }
