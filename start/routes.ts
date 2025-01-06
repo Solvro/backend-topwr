@@ -20,6 +20,7 @@ const ContributorsController = () =>
   import("#controllers/contributors_controller");
 const MilestonesController = () => import("#controllers/milestones_controller");
 const VersionsController = () => import("#controllers/versions_controller");
+const ChangesController = () => import("#controllers/changes_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -80,3 +81,10 @@ router
     router.get("/", [VersionsController, "index"]);
   })
   .prefix("api/v1/versions");
+
+router
+  .group(() => {
+    router.get("/:id", [ChangesController, "show"]);
+    router.get("/", [ChangesController, "index"]);
+  })
+  .prefix("api/v1/changes");
