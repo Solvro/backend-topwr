@@ -14,10 +14,10 @@ export default class StudentOrganizationLink extends BaseModel {
   declare link: string;
 
   @column()
-  declare linkType: LinkType;
+  declare type: LinkType;
 
   @column()
-  declare organizationId: number;
+  declare studentOrganizationId: number;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

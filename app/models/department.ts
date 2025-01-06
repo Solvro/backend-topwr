@@ -13,10 +13,10 @@ export default class Department extends BaseModel {
   @column()
   declare name: string;
 
-  @column()
+  @column({ columnName: "address_line1" })
   declare addressLine1: string;
 
-  @column()
+  @column({ columnName: "address_line2" })
   declare addressLine2: string | null;
 
   @column()
