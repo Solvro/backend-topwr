@@ -3,10 +3,22 @@ import { DateTime } from "luxon";
 import { BaseModel, column, hasMany, manyToMany } from "@adonisjs/lucid/orm";
 import type { HasMany, ManyToMany } from "@adonisjs/lucid/types/relations";
 
+import { typedModel } from "#decorators/typed_model";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
+
 import ContributorSocialLink from "./contributor_social_link.js";
 import Milestone from "./milestone.js";
 import Role from "./role.js";
 
+@typedModel({
+  id: "number",
+  name: "string",
+  photoKey: "string",
+  createdAt: "DateTime",
+  updatedAt: "DateTime",
+})
 export default class Contributor extends BaseModel {
   @column({ isPrimary: true })
   declare id: number;
@@ -39,4 +51,8 @@ export default class Contributor extends BaseModel {
     pivotTimestamps: true,
   })
   declare milestones: ManyToMany<typeof Milestone>;
+
+  static preloadRelations = preloadRelations(Contributor);
+  static handleSearchQuery = handleSearchQuery(Contributor);
+  static handleSortQuery = handleSortQuery(Contributor);
 }
