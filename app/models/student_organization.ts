@@ -19,6 +19,7 @@ import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
+import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
@@ -90,4 +91,6 @@ export default class StudentOrganization extends BaseModel {
   static handleSearchQuery = handleSearchQuery(StudentOrganization);
 
   static handleSortQuery = handleSortQuery(StudentOrganization);
+
+  static preloadRelations = preloadRelations(StudentOrganization);
 }

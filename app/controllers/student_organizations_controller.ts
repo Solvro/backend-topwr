@@ -11,11 +11,10 @@ export default class StudentOrganizationsController {
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
     return StudentOrganization.query()
-      .preload("links")
-      .preload("tags")
       .withScopes((scopes) => {
         scopes.handleSearchQuery(request.qs(), "source", "organizationType");
         scopes.handleSortQuery(request.input("sort"));
+        scopes.preloadRelations(request.only(["tags", "links"]));
       })
       .if(page !== undefined, (query) => {
         // @ts-expect-error - It's checked for undefined above
@@ -31,8 +30,9 @@ export default class StudentOrganizationsController {
       params: { id },
     } = await request.validateUsing(showValidator);
     return StudentOrganization.query()
-      .preload("links")
-      .preload("tags")
+      .withScopes((scopes) => {
+        scopes.preloadRelations(request.only(["tags", "links"]));
+      })
       .where("id", id)
       .firstOrFail();
   }
