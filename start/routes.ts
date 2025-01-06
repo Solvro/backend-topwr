@@ -16,6 +16,8 @@ const CampusesController = () => import("#controllers/campuses_controller");
 const StudentOrganizationsController = () =>
   import("#controllers/student_organizations_controller");
 const RolesController = () => import("#controllers/roles_controller");
+const ContributorsController = () =>
+  import("#controllers/contributors_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -55,3 +57,10 @@ router
     router.get("/", [RolesController, "index"]);
   })
   .prefix("api/v1/roles");
+
+router
+  .group(() => {
+    router.get("/:id", [ContributorsController, "show"]);
+    router.get("/", [ContributorsController, "index"]);
+  })
+  .prefix("api/v1/contributors");
