@@ -14,6 +14,7 @@ import Version from "./version.js";
 
 @typedModel({
   id: "number",
+  versionId: "number",
   name: "string",
   type: "string",
   description: "string",
@@ -23,6 +24,9 @@ import Version from "./version.js";
 export default class Change extends BaseModel {
   @column({ isPrimary: true })
   declare id: number;
+
+  @column()
+  declare versionId: number;
 
   @column()
   declare type: ChangeType;
