@@ -21,6 +21,12 @@ const ContributorsController = () =>
 const MilestonesController = () => import("#controllers/milestones_controller");
 const VersionsController = () => import("#controllers/versions_controller");
 const ChangesController = () => import("#controllers/changes_controller");
+const DepartmentsController = () =>
+  import("#controllers/departments_controller");
+const DepartmentsLinksController = () =>
+  import("#controllers/departments_links_controller");
+const FieldsOfStudiesController = () =>
+  import("#controllers/fields_of_studies_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -88,3 +94,24 @@ router
     router.get("/", [ChangesController, "index"]);
   })
   .prefix("api/v1/changes");
+
+router
+  .group(() => {
+    router.get("/:id", [DepartmentsController, "show"]);
+    router.get("/", [DepartmentsController, "index"]);
+  })
+  .prefix("api/v1/departments");
+
+router
+  .group(() => {
+    router.get("/:id", [DepartmentsLinksController, "show"]);
+    router.get("/", [DepartmentsLinksController, "index"]);
+  })
+  .prefix("api/v1/departments_link");
+
+router
+  .group(() => {
+    router.get("/:id", [FieldsOfStudiesController, "show"]);
+    router.get("/", [FieldsOfStudiesController, "index"]);
+  })
+  .prefix("api/v1/fields_of_studies");
