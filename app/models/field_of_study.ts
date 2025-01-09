@@ -3,6 +3,10 @@ import { DateTime } from "luxon";
 import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
+
 import Department from "./department.js";
 
 export default class FieldsOfStudy extends BaseModel {
@@ -38,4 +42,10 @@ export default class FieldsOfStudy extends BaseModel {
 
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
+
+  static preloadRelations = preloadRelations(FieldsOfStudy);
+
+  static handleSearchQuery = handleSearchQuery(FieldsOfStudy);
+
+  static handleSortQuery = handleSortQuery(FieldsOfStudy);
 }

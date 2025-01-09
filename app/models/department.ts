@@ -3,6 +3,10 @@ import { DateTime } from "luxon";
 import { BaseModel, column, hasMany } from "@adonisjs/lucid/orm";
 import type { HasMany } from "@adonisjs/lucid/types/relations";
 
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
+
 import DepartmentLink from "./department_link.js";
 import FieldOfStudy from "./field_of_study.js";
 
@@ -48,4 +52,10 @@ export default class Department extends BaseModel {
 
   @hasMany(() => DepartmentLink)
   declare departmentLink: HasMany<typeof DepartmentLink>;
+
+  static includeRelations = preloadRelations(Department);
+
+  static handleSearchQuery = handleSearchQuery(Department);
+
+  static handleSortQuery = handleSortQuery(Department);
 }
