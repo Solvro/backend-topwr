@@ -16,7 +16,7 @@ export default class Aed extends BaseModel {
   declare longitude: number;
 
   @column()
-  declare addressLine1: string;
+  declare addressLine1: string | null;
 
   @column()
   declare addressLine2: string | null;

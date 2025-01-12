@@ -9,12 +9,13 @@ export default class extends BaseSchema {
 
       table.text("title").notNullable();
       table.text("room").nullable();
-      table.text("address_line1").notNullable();
+      table.text("address_line1").nullable();
       table.text("address_line2").nullable();
       table.text("phone").nullable();
       table.text("email").nullable();
       table.decimal("latitude").notNullable();
       table.decimal("longitude").notNullable();
+      table.text("photo_url").nullable();
 
       table.bigInteger("building_id").unsigned().nullable();
       table
