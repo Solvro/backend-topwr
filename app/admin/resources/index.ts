@@ -33,6 +33,7 @@ import {
   guideAutherResource,
   guideQuestionResource,
 } from "./guide_article.js";
+import { userResource } from "./utils/user.js";
 
 export const adminjsResources = [
   academicCalendarResource,
@@ -61,4 +62,5 @@ export const adminjsResources = [
   studentOrganizationResource,
   studentOrganizationLinkResource,
   studentOrganizationTagResource,
+  userResource,
 ];
