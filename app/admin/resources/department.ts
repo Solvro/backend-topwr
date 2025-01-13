@@ -6,6 +6,7 @@ import DepartmentsLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
+import StudentOrganizationTag from "#models/student_organization_tag";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
@@ -62,6 +63,15 @@ export const studentOrganizationResource = {
 
 export const studentOrganizationLinkResource = {
   resource: new LucidResource(StudentOrganizationLink, "postgres"),
+  options: {
+    properties: {
+      ...readOnlyTimestamps,
+    },
+  },
+};
+
+export const studentOrganizationTagResource = {
+  resource: new LucidResource(StudentOrganizationTag, "postgres"),
   options: {
     properties: {
       ...readOnlyTimestamps,

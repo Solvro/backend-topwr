@@ -26,6 +26,7 @@ import {
   fieldsOfStudyResource,
   studentOrganizationLinkResource,
   studentOrganizationResource,
+  studentOrganizationTagResource,
 } from "./department.js";
 import {
   guideArticleResource,
@@ -59,4 +60,5 @@ export const adminjsResources = [
   specialHourResource,
   studentOrganizationResource,
   studentOrganizationLinkResource,
+  studentOrganizationTagResource,
 ];
