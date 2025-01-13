@@ -15,6 +15,7 @@ import { changeResource, changeScreenshotResource } from "./change.js";
 import {
   contributorResource,
   contributorSocialLinksResource,
+  milestoneResource,
 } from "./contributor.js";
 import {
   departmentResource,
@@ -47,4 +48,5 @@ export const adminjsResources = [
   guideQuestionResource,
   holidayResource,
   libraryResource,
+  milestoneResource,
 ];
