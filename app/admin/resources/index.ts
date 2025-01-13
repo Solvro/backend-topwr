@@ -6,7 +6,10 @@ import {
   campusResource,
 } from "./buildings.js";
 import { changeResource, changeScreenshotResource } from "./change.js";
-import { contributorResource } from "./contributor.js";
+import {
+  contributorResource,
+  contributorSocialLinksResource,
+} from "./contributor.js";
 
 export const adminjsResources = [
   academicCalendarResource,
@@ -17,4 +20,5 @@ export const adminjsResources = [
   changeResource,
   changeScreenshotResource,
   contributorResource,
+  contributorSocialLinksResource,
 ];
