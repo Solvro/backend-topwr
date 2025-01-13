@@ -5,7 +5,7 @@ import {
   buildingResource,
   campusResource,
 } from "./buildings.js";
-import { changeResource } from "./change.js";
+import { changeResource, changeScreenshotResource } from "./change.js";
 
 export const adminjsResources = [
   academicCalendarResource,
@@ -14,4 +14,5 @@ export const adminjsResources = [
   aedResource,
   bicycleShowerResource,
   changeResource,
+  changeScreenshotResource,
 ];
