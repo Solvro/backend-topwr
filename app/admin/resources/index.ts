@@ -1,4 +1,7 @@
-import { academicCalendarResource } from "./academic_calendars.js";
+import {
+  academicCalendarResource,
+  daySwapResource,
+} from "./academic_calendars.js";
 import {
   aedResource,
   bicycleShowerResource,
@@ -21,4 +24,5 @@ export const adminjsResources = [
   changeScreenshotResource,
   contributorResource,
   contributorSocialLinksResource,
+  daySwapResource,
 ];
