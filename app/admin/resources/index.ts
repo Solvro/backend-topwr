@@ -19,6 +19,7 @@ import {
   departmentsLinkResource,
   fieldsOfStudyResource,
 } from "./department.js";
+import { guideArticleResources } from "./guide_article.js";
 
 export const adminjsResources = [
   academicCalendarResource,
@@ -35,4 +36,5 @@ export const adminjsResources = [
   departmentsLinkResource,
   fieldsOfStudyResource,
   foodSpotResource,
+  guideArticleResources,
 ];
