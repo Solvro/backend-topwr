@@ -18,7 +18,7 @@ export default class Library extends BaseModel {
   declare room: string | null;
 
   @column()
-  declare addressLine1: string;
+  declare addressLine1: string | null;
 
   @column()
   declare addressLine2: string | null;
@@ -34,6 +34,9 @@ export default class Library extends BaseModel {
 
   @column()
   declare longitude: number;
+
+  @column()
+  declare photoUrl: string | null;
 
   @column()
   declare buildingId: number | null;

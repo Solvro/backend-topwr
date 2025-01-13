@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.increments("id");
       table.decimal("latitude").notNullable();
       table.decimal("longitude").notNullable();
-      table.text("address_line1").notNullable();
+      table.text("address_line1").nullable();
       table.text("address_line2").nullable();
       table.text("photo_url").nullable();
 
