@@ -11,6 +11,7 @@ import {
   foodSpotResource,
   libraryResource,
   regularHourResource,
+  specialHourResource,
 } from "./buildings.js";
 import { changeResource, changeScreenshotResource } from "./change.js";
 import {
@@ -53,4 +54,5 @@ export const adminjsResources = [
   milestoneResource,
   regularHourResource,
   roleResource,
+  specialHourResource,
 ];
