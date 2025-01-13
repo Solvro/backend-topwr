@@ -6,6 +6,7 @@ import BicycleShower from "#models/bicycle_shower";
 import Building from "#models/building";
 import Campus from "#models/campus";
 import FoodSpot from "#models/food_spot";
+import Library from "#models/library";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
@@ -50,6 +51,15 @@ export const bicycleShowerResource = {
 
 export const foodSpotResource = {
   resource: new LucidResource(FoodSpot, "postgres"),
+  options: {
+    properties: {
+      ...readOnlyTimestamps,
+    },
+  },
+};
+
+export const libraryResource = {
+  resource: new LucidResource(Library, "postgres"),
   options: {
     properties: {
       ...readOnlyTimestamps,
