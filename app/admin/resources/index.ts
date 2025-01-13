@@ -20,6 +20,7 @@ import {
   milestoneResource,
   roleResource,
   versionResource,
+  versionScreenshotResource,
 } from "./contributor.js";
 import {
   departmentResource,
@@ -65,4 +66,5 @@ export const adminjsResources = [
   studentOrganizationTagResource,
   userResource,
   versionResource,
+  versionScreenshotResource,
 ];
