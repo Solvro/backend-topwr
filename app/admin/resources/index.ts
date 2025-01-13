@@ -1,6 +1,7 @@
 import {
   academicCalendarResource,
   daySwapResource,
+  holidayResource,
 } from "./academic_calendars.js";
 import {
   aedResource,
@@ -43,4 +44,5 @@ export const adminjsResources = [
   guideArticleResource,
   guideAutherResource,
   guideQuestionResource,
+  holidayResource,
 ];
