@@ -13,6 +13,7 @@ import {
   contributorResource,
   contributorSocialLinksResource,
 } from "./contributor.js";
+import { departmentResource } from "./department.js";
 
 export const adminjsResources = [
   academicCalendarResource,
@@ -25,4 +26,5 @@ export const adminjsResources = [
   contributorResource,
   contributorSocialLinksResource,
   daySwapResource,
+  departmentResource,
 ];
