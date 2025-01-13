@@ -10,6 +10,7 @@ import {
   campusResource,
   foodSpotResource,
   libraryResource,
+  regularHourResource,
 } from "./buildings.js";
 import { changeResource, changeScreenshotResource } from "./change.js";
 import {
@@ -49,4 +50,5 @@ export const adminjsResources = [
   holidayResource,
   libraryResource,
   milestoneResource,
+  regularHourResource,
 ];

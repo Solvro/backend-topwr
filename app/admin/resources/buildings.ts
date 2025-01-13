@@ -7,6 +7,7 @@ import Building from "#models/building";
 import Campus from "#models/campus";
 import FoodSpot from "#models/food_spot";
 import Library from "#models/library";
+import RegularHour from "#models/regular_hour";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
@@ -60,6 +61,15 @@ export const foodSpotResource = {
 
 export const libraryResource = {
   resource: new LucidResource(Library, "postgres"),
+  options: {
+    properties: {
+      ...readOnlyTimestamps,
+    },
+  },
+};
+
+export const regularHourResource = {
+  resource: new LucidResource(RegularHour, "postgres"),
   options: {
     properties: {
       ...readOnlyTimestamps,
