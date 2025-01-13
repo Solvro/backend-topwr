@@ -19,6 +19,7 @@ import {
   contributorSocialLinksResource,
   milestoneResource,
   roleResource,
+  versionResource,
 } from "./contributor.js";
 import {
   departmentResource,
@@ -63,4 +64,5 @@ export const adminjsResources = [
   studentOrganizationLinkResource,
   studentOrganizationTagResource,
   userResource,
+  versionResource,
 ];

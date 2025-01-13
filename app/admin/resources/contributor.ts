@@ -1,4 +1,5 @@
 import { LucidResource } from "@adminjs/adonis";
+import { Version } from "adminjs";
 
 import Contributor from "#models/contributor";
 import ContributorSocialLink from "#models/contributor_social_link";
@@ -36,6 +37,15 @@ export const milestoneResource = {
 
 export const roleResource = {
   resource: new LucidResource(Role, "postgres"),
+  options: {
+    properties: {
+      ...readOnlyTimestamps,
+    },
+  },
+};
+
+export const versionResource = {
+  resource: new LucidResource(Version, "postgres"),
   options: {
     properties: {
       ...readOnlyTimestamps,
