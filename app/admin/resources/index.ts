@@ -24,6 +24,7 @@ import {
   departmentResource,
   departmentsLinkResource,
   fieldsOfStudyResource,
+  studentOrganizationLinkResource,
   studentOrganizationResource,
 } from "./department.js";
 import {
@@ -57,4 +58,5 @@ export const adminjsResources = [
   roleResource,
   specialHourResource,
   studentOrganizationResource,
+  studentOrganizationLinkResource,
 ];
