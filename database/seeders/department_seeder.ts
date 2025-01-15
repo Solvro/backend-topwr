@@ -1,10 +1,9 @@
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
+import { LinkType } from "#enums/link_type";
 import Department from "#models/department";
 import DepartmentsLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
-
-import { LinkType } from "../../app/enums/link_type.js";
 
 export default class extends BaseSeeder {
   static environment = ["development", "testing"];

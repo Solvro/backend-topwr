@@ -5,10 +5,12 @@ import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
 export default class FieldsOfStudiesController {
+  protected readonly relations = ["department"];
+
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = FieldsOfStudy.query().withScopes((scopes) => {
-      scopes.preloadRelations(request.only(["departments"]));
+      scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
     let fieldsOfStudies;
@@ -26,7 +28,7 @@ export default class FieldsOfStudiesController {
     } = await request.validateUsing(showValidator);
     const fieldsOfStudy = await FieldsOfStudy.query()
       .withScopes((scopes) => {
-        scopes.preloadRelations(request.only(["departments"]));
+        scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();

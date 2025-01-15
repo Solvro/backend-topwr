@@ -4,10 +4,21 @@ import Department from "#models/department";
 import { showValidator } from "#validators/show";
 
 export default class DepartmentsController {
+  protected readonly relations = ["fieldOfStudy", "departmentLink"];
+
   async index({ request }: HttpContext) {
     const departments = await Department.query().withScopes((scopes) => {
-      scopes.handleSearchQuery(request.only(["id", "createdAt", "updatedAt"]));
-      scopes.includeRelations(request.only(["departments"]));
+      scopes.handleSearchQuery(
+        request.only([
+          "id",
+          "name",
+          "code",
+          "betterCode",
+          "createdAt",
+          "updatedAt",
+        ]),
+      );
+      scopes.includeRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
     return { data: departments };
@@ -19,7 +30,7 @@ export default class DepartmentsController {
     } = await request.validateUsing(showValidator);
     const department = await Department.query()
       .withScopes((scopes) => {
-        scopes.includeRelations(request.only(["departments"]));
+        scopes.includeRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();

@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { BaseModel, column, hasMany } from "@adonisjs/lucid/orm";
 import type { HasMany } from "@adonisjs/lucid/types/relations";
 
+import { typedModel } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -10,6 +11,20 @@ import { handleSortQuery } from "#scopes/sort_helper";
 import DepartmentLink from "./department_link.js";
 import FieldOfStudy from "./field_of_study.js";
 
+@typedModel({
+  id: "number",
+  name: "string",
+  addressLine1: "string",
+  addressLine2: "string",
+  code: "string",
+  betterCode: "string",
+  logo: "string",
+  description: "string",
+  gradientStart: "string",
+  gradientStop: "string",
+  createdAt: "DateTime",
+  updatedAt: "DateTime",
+})
 export default class Department extends BaseModel {
   @column({ isPrimary: true })
   declare id: number;

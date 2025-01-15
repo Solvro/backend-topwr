@@ -5,11 +5,13 @@ import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
 export default class DepartmentsLinksController {
+  protected readonly relations = ["department"];
+
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = DepartmentsLink.query().withScopes((scopes) => {
       scopes.handleSearchQuery(request.qs(), "linkType");
-      scopes.preloadRelations(request.only(["departments"]));
+      scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
     let departmentLinks;
@@ -27,7 +29,7 @@ export default class DepartmentsLinksController {
     } = await request.validateUsing(showValidator);
     const departmentLinks = await DepartmentsLink.query()
       .withScopes((scopes) => {
-        scopes.preloadRelations(request.only(["campus"]));
+        scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();
