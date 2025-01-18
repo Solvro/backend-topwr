@@ -68,7 +68,7 @@ export default class Department extends BaseModel {
   @hasMany(() => DepartmentLink)
   declare departmentLink: HasMany<typeof DepartmentLink>;
 
-  static includeRelations = preloadRelations(Department);
+  static preloadRelations = preloadRelations(Department);
 
   static handleSearchQuery = handleSearchQuery(Department);
 

@@ -10,6 +10,9 @@ export default class FieldsOfStudiesController {
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = FieldsOfStudy.query().withScopes((scopes) => {
+      scopes.handleSearchQuery(
+        request.only(["id", "name", "createdAt", "updatedAt"]),
+      );
       scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });

@@ -36,7 +36,7 @@ export default class Campus extends BaseModel {
   @hasMany(() => Building)
   declare buildings: HasMany<typeof Building>;
 
-  static includeRelations = preloadRelations(Campus);
+  static preloadRelations = preloadRelations(Campus);
 
   static handleSearchQuery = handleSearchQuery(Campus);
 

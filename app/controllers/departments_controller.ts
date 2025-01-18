@@ -1,27 +1,34 @@
 import type { HttpContext } from "@adonisjs/core/http";
 
 import Department from "#models/department";
+import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
 export default class DepartmentsController {
   protected readonly relations = ["fieldOfStudy", "departmentLink"];
 
   async index({ request }: HttpContext) {
-    const departments = await Department.query().withScopes((scopes) => {
+    const { page, limit } = await request.validateUsing(paginationValidator);
+    const baseQuery = Department.query().withScopes((scopes) => {
       scopes.handleSearchQuery(
-        request.only([
-          "id",
-          "name",
-          "code",
-          "betterCode",
-          "createdAt",
-          "updatedAt",
+        request.except([
+          "logo",
+          "description",
+          "gradientStart",
+          "gradientStop",
         ]),
       );
-      scopes.includeRelations(request.only(this.relations));
+      scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
-    return { data: departments };
+
+    let departments;
+    if (page !== undefined) {
+      departments = await baseQuery.paginate(page, limit ?? 10);
+    } else {
+      departments = { data: await baseQuery };
+    }
+    return departments;
   }
 
   async show({ request }: HttpContext) {
@@ -30,7 +37,7 @@ export default class DepartmentsController {
     } = await request.validateUsing(showValidator);
     const department = await Department.query()
       .withScopes((scopes) => {
-        scopes.includeRelations(request.only(this.relations));
+        scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();
