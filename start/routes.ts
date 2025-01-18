@@ -23,8 +23,6 @@ const VersionsController = () => import("#controllers/versions_controller");
 const ChangesController = () => import("#controllers/changes_controller");
 const DepartmentsController = () =>
   import("#controllers/departments_controller");
-const DepartmentsLinksController = () =>
-  import("#controllers/departments_links_controller");
 const FieldsOfStudiesController = () =>
   import("#controllers/fields_of_studies_controller");
 
@@ -101,13 +99,6 @@ router
     router.get("/", [DepartmentsController, "index"]);
   })
   .prefix("api/v1/departments");
-
-router
-  .group(() => {
-    router.get("/:id", [DepartmentsLinksController, "show"]);
-    router.get("/", [DepartmentsLinksController, "index"]);
-  })
-  .prefix("api/v1/departments_link");
 
 router
   .group(() => {
