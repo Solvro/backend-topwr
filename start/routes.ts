@@ -21,6 +21,12 @@ const ContributorsController = () =>
 const MilestonesController = () => import("#controllers/milestones_controller");
 const VersionsController = () => import("#controllers/versions_controller");
 const ChangesController = () => import("#controllers/changes_controller");
+const GuideArticlesController = () =>
+  import("#controllers/guide_articles_controller");
+const GuideAuthorsController = () =>
+  import("#controllers/guide_authors_controller");
+const GuideQuestionsController = () =>
+  import("#controllers/guide_questions_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -88,3 +94,24 @@ router
     router.get("/", [ChangesController, "index"]);
   })
   .prefix("api/v1/changes");
+
+router
+  .group(() => {
+    router.get("/:id", [GuideArticlesController, "show"]);
+    router.get("/", [GuideArticlesController, "index"]);
+  })
+  .prefix("api/v1/guide_articles");
+
+router
+  .group(() => {
+    router.get("/:id", [GuideAuthorsController, "show"]);
+    router.get("/", [GuideAuthorsController, "index"]);
+  })
+  .prefix("api/v1/guide_authors");
+
+router
+  .group(() => {
+    router.get("/:id", [GuideQuestionsController, "show"]);
+    router.get("/", [GuideQuestionsController, "index"]);
+  })
+  .prefix("api/v1/guide_questions");
