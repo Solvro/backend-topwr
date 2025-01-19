@@ -125,7 +125,7 @@ router
     router.get("/:id", [AcademicCalendarsController, "show"]);
     router.get("/", [AcademicCalendarsController, "index"]);
   })
-  .prefix("api/v1/academic-calendars");
+  .prefix("api/v1/academic_calendars");
 
 router
   .group(() => {
@@ -139,4 +139,4 @@ router
     router.get("/:id", [DaySwapsController, "show"]);
     router.get("/", [DaySwapsController, "index"]);
   })
-  .prefix("api/v1/day-swaps");
+  .prefix("api/v1/day_swaps");
