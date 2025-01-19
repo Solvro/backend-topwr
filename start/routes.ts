@@ -32,6 +32,10 @@ const GuideAuthorsController = () =>
 const GuideQuestionsController = () =>
   import("#controllers/guide_questions_controller");
 const AboutUsController = () => import("#controllers/about_us_controller");
+const AcademicCalendarsController = () =>
+  import("#controllers/academic_calendars_controller");
+const HolidaysController = () => import("#controllers/holidays_controller");
+const DaySwapsController = () => import("#controllers/day_swaps_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -144,3 +148,24 @@ router
       .prefix("/about_us");
   })
   .prefix("/api/v1");
+
+router
+  .group(() => {
+    router.get("/:id", [AcademicCalendarsController, "show"]);
+    router.get("/", [AcademicCalendarsController, "index"]);
+  })
+  .prefix("api/v1/academic-calendars");
+
+router
+  .group(() => {
+    router.get("/:id", [HolidaysController, "show"]);
+    router.get("/", [HolidaysController, "index"]);
+  })
+  .prefix("api/v1/holidays");
+
+router
+  .group(() => {
+    router.get("/:id", [DaySwapsController, "show"]);
+    router.get("/", [DaySwapsController, "index"]);
+  })
+  .prefix("api/v1/day-swaps");
