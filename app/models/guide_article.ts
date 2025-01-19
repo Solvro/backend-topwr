@@ -51,7 +51,9 @@ export default class GuideArticle extends BaseModel {
   })
   declare guideAuthors: relations.ManyToMany<typeof GuideAuthor>;
 
-  @hasMany(() => GuideQuestion)
+  @hasMany(() => GuideQuestion, {
+    foreignKey: "articleId",
+  })
   declare guideQuestions: relations.HasMany<typeof GuideQuestion>;
 
   static preloadRelations = preloadRelations(GuideArticle);

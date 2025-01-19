@@ -36,7 +36,9 @@ export default class GuideQuestion extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  @belongsTo(() => GuideArticle)
+  @belongsTo(() => GuideArticle, {
+    foreignKey: "articleId",
+  })
   declare guideArticle: relations.BelongsTo<typeof GuideArticle>;
 
   static preloadRelations = preloadRelations(GuideQuestion);
