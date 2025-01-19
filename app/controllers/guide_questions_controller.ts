@@ -5,6 +5,7 @@ import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
 export default class GuideQuestionsController {
+  protected readonly relations = ["guideArticle"];
   /**
    * Display a list of resource
    */
@@ -12,7 +13,7 @@ export default class GuideQuestionsController {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = GuideQuestion.query().withScopes((scopes) => {
       scopes.handleSearchQuery(request.qs());
-      scopes.preloadRelations(request.only(["guideArticle"]));
+      scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
     let questions;
@@ -33,7 +34,7 @@ export default class GuideQuestionsController {
     } = await request.validateUsing(showValidator);
     const question = await GuideQuestion.query()
       .withScopes((scopes) => {
-        scopes.preloadRelations(request.only(["guideArticle"]));
+        scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();
