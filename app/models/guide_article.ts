@@ -5,6 +5,9 @@ import * as relations from "@adonisjs/lucid/types/relations";
 
 import GuideAuthor from "#models/guide_author";
 import GuideQuestion from "#models/guide_question";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
 
 export default class GuideArticle extends BaseModel {
   @column({ isPrimary: true })
@@ -40,4 +43,8 @@ export default class GuideArticle extends BaseModel {
 
   @hasMany(() => GuideQuestion)
   declare guideQuestions: relations.HasMany<typeof GuideQuestion>;
+
+  static preloadRelations = preloadRelations(GuideArticle);
+  static handleSearchQuery = handleSearchQuery(GuideArticle);
+  static handleSortQuery = handleSortQuery(GuideArticle);
 }
