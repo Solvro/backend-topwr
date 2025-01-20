@@ -21,10 +21,10 @@ export default class BicycleShower extends BaseModel {
   @column()
   declare longitude: number;
 
-  @column()
+  @column({ columnName: "address_line1" })
   declare addressLine1: string | null;
 
-  @column()
+  @column({ columnName: "address_line2" })
   declare addressLine2: string | null;
 
   @column()
