@@ -36,6 +36,7 @@ const AcademicCalendarsController = () =>
   import("#controllers/academic_calendars_controller");
 const HolidaysController = () => import("#controllers/holidays_controller");
 const DaySwapsController = () => import("#controllers/day_swaps_controller");
+const LibrariesController = () => import("#controllers/libraries_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -63,6 +64,13 @@ router
         router.get("/", [BuildingsController, "index"]);
       })
       .prefix("/buildings");
+
+router
+  .group(() => {
+    router.get("/:id", [LibrariesController, "show"]);
+    router.get("/", [LibrariesController, "index"]);
+  })
+  .prefix("api/v1/libraries");
 
     router
       .group(() => {

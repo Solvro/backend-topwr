@@ -5,7 +5,15 @@ import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
 export default class BuildingsController {
-  protected readonly relations = ["campus", "aeds", "bicycleShowers", "foodSpots", "libraries", "libraries.regularHours", "libraries.specialHours"];
+  protected readonly relations = [
+    "campus",
+    "aeds",
+    "bicycleShowers",
+    "foodSpots",
+    "libraries",
+    "libraries.regularHours",
+    "libraries.specialHours",
+  ];
 
   /**
    * Display a list of resource
