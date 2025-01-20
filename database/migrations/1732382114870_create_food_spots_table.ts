@@ -13,7 +13,7 @@ export default class extends BaseSchema {
       table.decimal("longitude").notNullable();
       table.text("photo_url").nullable();
 
-      table.bigInteger("building_id").unsigned().nullable();
+      table.integer("building_id").unsigned().nullable();
       table
         .foreign("building_id")
         .references("buildings.id")

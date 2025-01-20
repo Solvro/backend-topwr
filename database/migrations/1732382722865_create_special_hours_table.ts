@@ -11,7 +11,7 @@ export default class extends BaseSchema {
       table.time("open_time").notNullable();
       table.time("close_time").notNullable();
 
-      table.bigInteger("library_id").unsigned().notNullable();
+      table.integer("library_id").unsigned().notNullable();
       table
         .foreign("library_id")
         .references("libraries.id")
