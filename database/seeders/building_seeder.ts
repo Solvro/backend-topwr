@@ -233,10 +233,10 @@ export default class BuildingSeeder extends BaseSeeder {
 
     for (const [i, building] of updatedBuildings.entries()) {
       await building.related("aeds").create(aeds[i]);
-      if (i == 0 || i == 1) {
+      if (i === 0 || i === 1) {
         await building.related("bicycleShowers").create(bicycleShowers[i]);
       }
-      if (i == 0) {
+      if (i === 0) {
         await building.related("foodSpots").create(foodSpot);
       }
       await libraries[i].merge({ buildingId: building.id }).save();
