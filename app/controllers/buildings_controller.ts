@@ -5,6 +5,8 @@ import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
 export default class BuildingsController {
+  protected readonly relations = ["campus", "aeds", "bicycleShowers", "foodSpots", "libraries", "libraries.regularHours", "libraries.specialHours"];
+
   /**
    * Display a list of resource
    */
@@ -12,7 +14,7 @@ export default class BuildingsController {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = Building.query().withScopes((scopes) => {
       scopes.handleSearchQuery(request.qs(), "iconType");
-      scopes.preloadRelations(request.only(["campus"]));
+      scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
     let buildings;
@@ -33,7 +35,7 @@ export default class BuildingsController {
     } = await request.validateUsing(showValidator);
     const building = await Building.query()
       .withScopes((scopes) => {
-        scopes.preloadRelations(request.only(["campus"]));
+        scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();
