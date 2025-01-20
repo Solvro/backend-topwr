@@ -6,6 +6,9 @@ import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 import Building from "./building.js";
 import RegularHour from "./regular_hour.js";
 import SpecialHour from "./special_hour.js";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
 
 export default class Library extends BaseModel {
   @column({ isPrimary: true })
@@ -17,10 +20,10 @@ export default class Library extends BaseModel {
   @column()
   declare room: string | null;
 
-  @column()
+  @column({ columnName: "address_line1" })
   declare addressLine1: string | null;
 
-  @column()
+  @column({ columnName: "address_line2" })
   declare addressLine2: string | null;
 
   @column()
@@ -55,4 +58,8 @@ export default class Library extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  static preloadRelations = preloadRelations(Library);
+  static handleSearchQuery = handleSearchQuery(Library);
+  static handleSortQuery = handleSortQuery(Library);
 }
