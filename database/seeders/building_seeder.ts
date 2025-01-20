@@ -1,13 +1,13 @@
-import { BaseSeeder } from "@adonisjs/lucid/seeders";
-
-import Building from "#models/building";
-import Campus from "#models/campus";
-
-import { BuildingIcon } from "../../app/enums/building_icon.js";
-import Library from "#models/library";
-import { Weekday } from "#enums/weekday";
 import { DateTime } from "luxon";
 
+import { BaseSeeder } from "@adonisjs/lucid/seeders";
+
+import { Weekday } from "#enums/weekday";
+import Building from "#models/building";
+import Campus from "#models/campus";
+import Library from "#models/library";
+
+import { BuildingIcon } from "../../app/enums/building_icon.js";
 
 export default class BuildingSeeder extends BaseSeeder {
   static environment = ["development", "testing"];
@@ -65,8 +65,10 @@ export default class BuildingSeeder extends BaseSeeder {
     ];
 
     const updatedBuildings: Building[] = [];
-    for(const [i, campus] of capmuses.entries()) {
-      updatedBuildings[i] = await campus.related("buildings").create(buildings[i]);
+    for (const [i, campus] of capmuses.entries()) {
+      updatedBuildings[i] = await campus
+        .related("buildings")
+        .create(buildings[i]);
     }
 
     const libraries = await Library.createMany([
@@ -154,22 +156,27 @@ export default class BuildingSeeder extends BaseSeeder {
         openTime: "10:00",
         closeTime: "15:30",
       },
-    ]; 
+    ];
 
-    for(const [i, library] of libraries.entries()) {
-      await library.related("regularHours").createMany([
-        regularHours[0], regularHours[1], regularHours[2], regularHours[3], regularHours[4]
-      ]);
+    for (const [i, library] of libraries.entries()) {
+      await library
+        .related("regularHours")
+        .createMany([
+          regularHours[0],
+          regularHours[1],
+          regularHours[2],
+          regularHours[3],
+          regularHours[4],
+        ]);
 
-      await library.related("specialHours").createMany([
-        specialHours[0], specialHours[1], specialHours[2]
-      ]);
+      await library
+        .related("specialHours")
+        .createMany([specialHours[0], specialHours[1], specialHours[2]]);
       if (i === 0) {
         await library.related("specialHours").create(specialHours[3]);
       }
     }
 
- 
     const aeds = [
       {
         latitude: 40.7812,
@@ -224,7 +231,7 @@ export default class BuildingSeeder extends BaseSeeder {
       photoUrl: "https://food_spot_photo1.jpg",
     };
 
-    for(const [i, building] of updatedBuildings.entries()) {
+    for (const [i, building] of updatedBuildings.entries()) {
       await building.related("aeds").create(aeds[i]);
       if (i == 0 || i == 1) {
         await building.related("bicycleShowers").create(bicycleShowers[i]);

@@ -3,12 +3,13 @@ import { DateTime } from "luxon";
 import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
-import Building from "./building.js";
-import RegularHour from "./regular_hour.js";
-import SpecialHour from "./special_hour.js";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
+
+import Building from "./building.js";
+import RegularHour from "./regular_hour.js";
+import SpecialHour from "./special_hour.js";
 
 export default class Library extends BaseModel {
   @column({ isPrimary: true })

@@ -4,7 +4,13 @@ import Campus from "#models/campus";
 import { showValidator } from "#validators/show";
 
 export default class CampusesController {
-  protected readonly relations = ["buildings", "buildings.aeds", "buildings.bicycleShowers", "buildings.foodSpots", "buildings.libraries"];
+  protected readonly relations = [
+    "buildings",
+    "buildings.aeds",
+    "buildings.bicycleShowers",
+    "buildings.foodSpots",
+    "buildings.libraries",
+  ];
 
   /**
    * Display a list of resource
