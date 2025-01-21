@@ -6,7 +6,9 @@ export default class AboutUsController {
    * Display a list of resource
    */
   async index() {
-    const aboutUs = await AboutUsGeneral.query().first();
+    const aboutUs = await AboutUsGeneral.query()
+      .orderBy("created_at", "asc")
+      .first();
     const solvroSocialLinks = await AboutUsGeneralLink.all();
 
     return {
