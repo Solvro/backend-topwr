@@ -1,6 +1,6 @@
 import { LucidResource } from "@adminjs/adonis";
 
-import { ChangeType } from "#enums/change_type";
+import { changeTypeEnumsValues } from "#enums/change_type";
 import Change from "#models/change";
 import ChangeScreenshot from "#models/change_screenshot";
 
@@ -10,12 +10,7 @@ export const changeResource = {
   resource: new LucidResource(Change, "postgres"),
   options: {
     properties: {
-      type: {
-        availableValues: [
-          { value: ChangeType.Fix, label: "Fix" },
-          { value: ChangeType.Feature, label: "Feature" },
-        ],
-      },
+      type: changeTypeEnumsValues,
       ...readOnlyTimestamps,
     },
   },

@@ -1,8 +1,8 @@
 import { LucidResource } from "@adminjs/adonis";
 
 import { linkTypeEnumsValues } from "#enums/link_type";
-import { OrganizationSource } from "#enums/organization_source";
-import { OrganizationType } from "#enums/organization_type";
+import { organizationSourceEnumsValues } from "#enums/organization_source";
+import { organizationTypeEnumsValues } from "#enums/organization_type";
 import Department from "#models/department";
 import DepartmentsLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
@@ -44,31 +44,8 @@ export const studentOrganizationResource = {
   resource: new LucidResource(StudentOrganization, "postgres"),
   options: {
     properties: {
-      organizationType: {
-        availableValues: [
-          {
-            value: OrganizationType.ScientificCircle,
-            label: "Scientific Circle",
-          },
-          {
-            value: OrganizationType.StudentOrganization,
-            label: "Student Organization",
-          },
-          { value: OrganizationType.StudentMedium, label: "Student Medium" },
-          { value: OrganizationType.CultureAgenda, label: "Culture Agenda" },
-          { value: OrganizationType.StudentCouncil, label: "Student council" },
-        ],
-      },
-      source: {
-        availableValues: [
-          {
-            value: OrganizationSource.StudentDepartment,
-            label: "Student Department",
-          },
-          { value: OrganizationSource.Manual, label: "Manual" },
-          { value: OrganizationSource.PwrActive, label: "Pwr Active" },
-        ],
-      },
+      organizationType: organizationTypeEnumsValues,
+      source: organizationSourceEnumsValues,
       ...readOnlyTimestamps,
     },
   },

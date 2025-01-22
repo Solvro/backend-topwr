@@ -1,6 +1,6 @@
 import { LucidResource } from "@adminjs/adonis";
 
-import { BuildingIcon } from "#enums/building_icon";
+import { buildingIconEnumsValues } from "#enums/building_icon";
 import Aed from "#models/aed";
 import BicycleShower from "#models/bicycle_shower";
 import Building from "#models/building";
@@ -16,9 +16,7 @@ export const buildingResource = {
   resource: new LucidResource(Building, "postgres"),
   options: {
     properties: {
-      iconType: {
-        availableValues: [{ value: BuildingIcon.Icon, label: "Icon" }],
-      },
+      iconType: buildingIconEnumsValues,
       ...readOnlyTimestamps,
     },
   },
