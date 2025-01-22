@@ -1,5 +1,7 @@
 import { LucidResource } from "@adminjs/adonis";
 
+import { LinkType } from "#enums/link_type";
+import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
 import DepartmentsLink from "#models/department_link";
@@ -23,6 +25,23 @@ export const departmentsLinkResource = {
   resource: new LucidResource(DepartmentsLink, "postgres"),
   options: {
     properties: {
+      linkType: {
+        availableValues: [
+          { value: LinkType.Default, label: "Default" },
+          { value: LinkType.Facebook, label: "Facebook" },
+          { value: LinkType.Instagram, label: "Instagram" },
+          { value: LinkType.LinkedIn, label: "LinkedIn" },
+          { value: LinkType.Mail, label: "Mail" },
+          { value: LinkType.YouTube, label: "YouTube" },
+          { value: LinkType.GitHub, label: "GitHub" },
+          { value: LinkType.TopwrBuildings, label: "TopwrBuildings" },
+          { value: LinkType.Phone, label: "Phone" },
+          { value: LinkType.X, label: "X" },
+          { value: LinkType.TikTok, label: "TikTok" },
+          { value: LinkType.Discord, label: "Discord" },
+          { value: LinkType.Twitch, label: "Twitch" },
+        ],
+      },
       ...readOnlyTimestamps,
     },
   },
@@ -56,6 +75,16 @@ export const studentOrganizationResource = {
           { value: OrganizationType.StudentCouncil, label: "Student council" },
         ],
       },
+      source: {
+        availableValues: [
+          {
+            value: OrganizationSource.StudentDepartment,
+            label: "Student Department",
+          },
+          { value: OrganizationSource.Manual, label: "Manual" },
+          { value: OrganizationSource.PwrActive, label: "Pwr Active" },
+        ],
+      },
       ...readOnlyTimestamps,
     },
   },
@@ -65,6 +94,23 @@ export const studentOrganizationLinkResource = {
   resource: new LucidResource(StudentOrganizationLink, "postgres"),
   options: {
     properties: {
+      type: {
+        availableValues: [
+          { value: LinkType.Default, label: "Default" },
+          { value: LinkType.Facebook, label: "Facebook" },
+          { value: LinkType.Instagram, label: "Instagram" },
+          { value: LinkType.LinkedIn, label: "LinkedIn" },
+          { value: LinkType.Mail, label: "Mail" },
+          { value: LinkType.YouTube, label: "YouTube" },
+          { value: LinkType.GitHub, label: "GitHub" },
+          { value: LinkType.TopwrBuildings, label: "TopwrBuildings" },
+          { value: LinkType.Phone, label: "Phone" },
+          { value: LinkType.X, label: "X" },
+          { value: LinkType.TikTok, label: "TikTok" },
+          { value: LinkType.Discord, label: "Discord" },
+          { value: LinkType.Twitch, label: "Twitch" },
+        ],
+      },
       ...readOnlyTimestamps,
     },
   },
