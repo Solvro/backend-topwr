@@ -1,5 +1,6 @@
 import { LucidResource } from "@adminjs/adonis";
 
+import { linkTypeEnumsValues } from "#enums/link_type";
 import Contributor from "#models/contributor";
 import ContributorSocialLink from "#models/contributor_social_link";
 import Milestone from "#models/milestone";
@@ -7,7 +8,6 @@ import Role from "#models/role";
 import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
 
-import { linkTypeEnumsValues } from "./utils/link_type.js";
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 export const contributorResource = {

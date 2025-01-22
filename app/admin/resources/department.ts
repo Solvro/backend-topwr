@@ -1,5 +1,6 @@
 import { LucidResource } from "@adminjs/adonis";
 
+import { linkTypeEnumsValues } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
@@ -9,7 +10,6 @@ import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
 
-import { linkTypeEnumsValues } from "./utils/link_type.js";
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 export const departmentResource = {
