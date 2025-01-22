@@ -1,6 +1,5 @@
 import { LucidResource } from "@adminjs/adonis";
 
-import { LinkType } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
@@ -10,6 +9,7 @@ import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
 
+import { linkTypeEnumsValues } from "./utils/link_type.js";
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 export const departmentResource = {
@@ -25,23 +25,7 @@ export const departmentsLinkResource = {
   resource: new LucidResource(DepartmentsLink, "postgres"),
   options: {
     properties: {
-      linkType: {
-        availableValues: [
-          { value: LinkType.Default, label: "Default" },
-          { value: LinkType.Facebook, label: "Facebook" },
-          { value: LinkType.Instagram, label: "Instagram" },
-          { value: LinkType.LinkedIn, label: "LinkedIn" },
-          { value: LinkType.Mail, label: "Mail" },
-          { value: LinkType.YouTube, label: "YouTube" },
-          { value: LinkType.GitHub, label: "GitHub" },
-          { value: LinkType.TopwrBuildings, label: "TopwrBuildings" },
-          { value: LinkType.Phone, label: "Phone" },
-          { value: LinkType.X, label: "X" },
-          { value: LinkType.TikTok, label: "TikTok" },
-          { value: LinkType.Discord, label: "Discord" },
-          { value: LinkType.Twitch, label: "Twitch" },
-        ],
-      },
+      linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
     },
   },
@@ -94,23 +78,7 @@ export const studentOrganizationLinkResource = {
   resource: new LucidResource(StudentOrganizationLink, "postgres"),
   options: {
     properties: {
-      type: {
-        availableValues: [
-          { value: LinkType.Default, label: "Default" },
-          { value: LinkType.Facebook, label: "Facebook" },
-          { value: LinkType.Instagram, label: "Instagram" },
-          { value: LinkType.LinkedIn, label: "LinkedIn" },
-          { value: LinkType.Mail, label: "Mail" },
-          { value: LinkType.YouTube, label: "YouTube" },
-          { value: LinkType.GitHub, label: "GitHub" },
-          { value: LinkType.TopwrBuildings, label: "TopwrBuildings" },
-          { value: LinkType.Phone, label: "Phone" },
-          { value: LinkType.X, label: "X" },
-          { value: LinkType.TikTok, label: "TikTok" },
-          { value: LinkType.Discord, label: "Discord" },
-          { value: LinkType.Twitch, label: "Twitch" },
-        ],
-      },
+      type: linkTypeEnumsValues,
       ...readOnlyTimestamps,
     },
   },
