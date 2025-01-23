@@ -21,12 +21,17 @@ import { ColumnDef, ColumnType } from "../decorators/typed_model.js";
  *
  */
 
-const types = new Set(["number", "string", "boolean", "DateTime"]);
+const types = new Set(["number", "string", "boolean", "DateTime", "enum"]);
 
 export interface ColumnDefExplicit extends ModelColumnOptions {
-  meta: {
-    declaredType: ColumnType;
-  };
+  meta:
+    | {
+        declaredType: Exclude<ColumnType, "enum">;
+      }
+    | {
+        declaredType: "enum";
+        allowedValues: string[];
+      };
 }
 
 export interface FromTo {
@@ -61,10 +66,11 @@ export type QueryValues =
  * Column type needs to match the ColumnType type defined in **@typedModel** decorator
  *
  * **Supported Column Types:**
- * - **string**: Direct match or pattern-based filtering.
- * - **number**: Numeric comparisons (`=`, `>=`, `<=`).
- * - **boolean**: Matches `true`, `false`, `1`, or `0`.
+ * - **string**:   Direct match or pattern-based filtering.
+ * - **number**:   Numeric comparisons (`=`, `>=`, `<=`).
+ * - **boolean**:  Matches `true`, `false`, `1`, or `0`.
  * - **DateTime**: Filters JS date/time values for exact or range-based filtering.
+ * - **enum**:     Exact match only
  *
  * **Asumptions**
  * - invalid type input will result in BadRequest response
@@ -120,7 +126,7 @@ function handleArray(
   values: string[],
 ) {
   const columnType = column.meta.declaredType;
-  const invalid = arrayTypeCheckHelper(values, columnType);
+  const invalid = arrayTypeCheckHelper(values, column);
   if (invalid.length > 0) {
     throw new BadRequestException(
       `Invalid filter values:[${invalid.toString()}] ` +
@@ -152,7 +158,7 @@ function handleFromTo(
     // verify using the same logic as for array of values
     // both values are optional
     const values = [value.from, value.to];
-    const invalid = arrayTypeCheckHelper(values, columnType);
+    const invalid = arrayTypeCheckHelper(values, column);
     if (invalid.length > 0) {
       const invalidFrom = invalid.find((val) => val === value.from);
       const invalidTo = invalid.find((val) => val === value.to);
@@ -196,14 +202,17 @@ function handleDirectValue(
   column: ColumnDefExplicit,
   value: string,
 ) {
-  // const columnType = extractType(column);
   const columnType = column.meta.declaredType;
-  const invalid = arrayTypeCheckHelper([value], columnType);
+  const invalid = arrayTypeCheckHelper([value], column);
   if (invalid.length > 0) {
+    const allowedValues =
+      column.meta.declaredType === "enum"
+        ? `. allowed values for this column: ${column.meta.allowedValues.join(", ")}`
+        : "";
     throw new BadRequestException(
       `invalid filter value '${value}' ` +
         `for column: '${column.columnName}' ` +
-        `of type: '${columnType}'`,
+        `of type: '${columnType}'${allowedValues}`,
     );
   } else {
     if (columnType === "string") {
@@ -217,11 +226,18 @@ function handleDirectValue(
 
 function arrayTypeCheckHelper(
   values: (string | undefined)[],
-  columnType: string,
+  column: ColumnDefExplicit,
 ) {
   let invalid: string[] = [];
-  switch (columnType) {
+  switch (column.meta.declaredType) {
     case "string": {
+      break;
+    }
+    case "enum": {
+      const allowedValues = column.meta.allowedValues;
+      invalid = values.filter(
+        (value) => value !== undefined && !allowedValues.includes(value),
+      ) as string[];
       break;
     }
     case "number": {
@@ -269,7 +285,9 @@ function extractEntry<T extends LucidModel>(
   const isTypeValid = (column: ColumnDef): column is ColumnDefExplicit => {
     return (
       column.meta?.declaredType !== undefined &&
-      types.has(column.meta.declaredType)
+      types.has(column.meta.declaredType) &&
+      (column.meta.declaredType !== "enum" ||
+        column.meta.allowedValues !== undefined)
     );
   };
   const column = model.$getColumn(param);
@@ -286,7 +304,8 @@ function extractEntry<T extends LucidModel>(
     logger.warn(
       `\nColumn type for '${column.columnName}' not defined or not supported. \n` +
         `Check 'meta: declaredType' property in columnDefinitions. \n` +
-        `Supported types are ["string", "number", "boolean", "DateTime"]. \n` +
+        `Supported types are ["string", "number", "boolean", "DateTime", "enum"]. \n` +
+        `Columns defined as "enum" must additonally include the 'meta: allowedValues' property.` +
         `Exclude explicitly unsupported types in the scope invoking level.`,
     );
   }
