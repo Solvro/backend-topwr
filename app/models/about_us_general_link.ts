@@ -7,7 +7,7 @@ import { LinkType } from "#enums/link_type";
 
 @typedModel({
   id: "number",
-  linkType: "string",
+  linkType: LinkType,
   link: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",
