@@ -16,7 +16,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments("id");
 
-      table.bigInteger("academic_calendar_id").unsigned().notNullable();
+      table.integer("academic_calendar_id").unsigned().notNullable();
       table
         .foreign("academic_calendar_id")
         .references("academic_calendars.id")
