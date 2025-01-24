@@ -11,12 +11,11 @@ export default class DepartmentsController {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = Department.query().withScopes((scopes) => {
       scopes.handleSearchQuery(
-        request.except([
-          "logo",
-          "description",
-          "gradientStart",
-          "gradientStop",
-        ]),
+        request.qs(),
+        "logo",
+        "description",
+        "gradientStart",
+        "gradientStop",
       );
       scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
