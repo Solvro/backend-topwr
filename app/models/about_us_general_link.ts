@@ -13,7 +13,7 @@ import { LinkType } from "#enums/link_type";
   updatedAt: "DateTime",
 })
 export default class AboutUsGeneralLink extends BaseModel {
-  @column({ isPrimary: true, serializeAs: null })
+  @column({ isPrimary: true })
   declare id: number;
 
   @column()
