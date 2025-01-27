@@ -19,10 +19,6 @@ export default class extends BaseSchema {
   }
 
   async down() {
-    this.schema.raw(
-      `ALTER TABLE ${this.tableName} DROP CONSTRAINT IF EXISTS single_row;`,
-    );
-
     this.schema.dropTable(this.tableName);
   }
 }
