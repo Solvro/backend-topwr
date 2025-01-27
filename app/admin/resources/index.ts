@@ -1,3 +1,4 @@
+import { aboutUsLinkResource, aboutUsResource } from "./about_us.js";
 import {
   academicCalendarResource,
   daySwapResource,
@@ -38,6 +39,8 @@ import {
 import { userResource } from "./utils/user.js";
 
 export const adminjsResources = [
+  aboutUsResource,
+  aboutUsLinkResource,
   academicCalendarResource,
   buildingResource,
   campusResource,
