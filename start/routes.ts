@@ -21,6 +21,10 @@ const ContributorsController = () =>
 const MilestonesController = () => import("#controllers/milestones_controller");
 const VersionsController = () => import("#controllers/versions_controller");
 const ChangesController = () => import("#controllers/changes_controller");
+const DepartmentsController = () =>
+  import("#controllers/departments_controller");
+const FieldsOfStudiesController = () =>
+  import("#controllers/fields_of_studies_controller");
 const GuideArticlesController = () =>
   import("#controllers/guide_articles_controller");
 const GuideAuthorsController = () =>
@@ -97,10 +101,22 @@ router
 
 router
   .group(() => {
-    router.get("/:id", [GuideArticlesController, "show"]);
-    router.get("/", [GuideArticlesController, "index"]);
+    router.get("/:id", [DepartmentsController, "show"]);
+    router.get("/", [DepartmentsController, "index"]);
   })
-  .prefix("api/v1/guide_articles");
+  .prefix("api/v1/departments");
+
+router
+  .group(() => {
+    router.get("/:id", [FieldsOfStudiesController, "show"]);
+    router.get("/", [FieldsOfStudiesController, "index"]);
+  })
+  .prefix("api/v1/fields_of_studies");
+
+router.group(() => {
+  router.get("/:id", [GuideArticlesController, "show"]);
+  router.get("/", [GuideArticlesController, "index"]);
+});
 
 router
   .group(() => {
