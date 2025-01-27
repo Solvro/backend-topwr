@@ -65,10 +65,10 @@ export default class extends BaseSeeder {
     ]);
     await org1.related("tags").createMany([
       {
-        tag: "Tag 1",
+        tag: "Tag1",
       },
       {
-        tag: "Tag 2",
+        tag: "Tag2",
       },
     ]);
   }
