@@ -47,6 +47,13 @@ export default class extends BaseSeeder {
           "storage",
           key,
         );
+
+        // Ensure the /storage directory exists
+        const storageDir = path.dirname(destination);
+        if (!fs.existsSync(storageDir)) {
+          fs.mkdirSync(storageDir, { recursive: true });
+        }
+
         fs.copyFileSync(filePath, destination);
       },
     };
