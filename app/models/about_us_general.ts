@@ -14,7 +14,7 @@ import { typedModel } from "#decorators/typed_model";
 export default class AboutUsGeneral extends BaseModel {
   public static table = "about_us_general";
 
-  @column({ isPrimary: true, serializeAs: null })
+  @column({ isPrimary: true })
   declare id: number;
 
   @column()
