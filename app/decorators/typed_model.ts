@@ -4,13 +4,16 @@ import {
   ModelColumnOptions,
 } from "@adonisjs/lucid/types/model";
 
-export type ColumnType = "string" | "number" | "boolean" | "DateTime";
+type SharedColumnTypes = "string" | "number" | "boolean" | "DateTime";
+export type ColumnType = SharedColumnTypes | "enum";
+type InputColumnTypes = SharedColumnTypes | Record<string, string>; // Record<string, string> represents a runtime enum
 
-export type TypedModelOptions = Record<string, ColumnType>;
+export type TypedModelOptions = Record<string, InputColumnTypes>;
 
 export interface ColumnDef extends ColumnOptions {
   meta?: {
     declaredType?: ColumnType;
+    allowedValues?: string[];
   };
 }
 
@@ -74,7 +77,13 @@ export function typedModel<T extends LucidModel>(options: TypedModelOptions) {
         continue;
       }
       columnDef.meta = columnDef.meta ?? {};
-      columnDef.meta.declaredType = columnType;
+      if (typeof columnType === "string") {
+        columnDef.meta.declaredType = columnType;
+      } else {
+        // enums
+        columnDef.meta.declaredType = "enum";
+        columnDef.meta.allowedValues = Object.values(columnType);
+      }
     }
     return constructor;
   };

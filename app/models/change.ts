@@ -16,7 +16,7 @@ import Version from "./version.js";
   id: "number",
   versionId: "number",
   name: "string",
-  type: "string",
+  type: ChangeType,
   description: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",

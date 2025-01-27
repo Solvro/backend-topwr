@@ -25,6 +25,12 @@ const DepartmentsController = () =>
   import("#controllers/departments_controller");
 const FieldsOfStudiesController = () =>
   import("#controllers/fields_of_studies_controller");
+const GuideArticlesController = () =>
+  import("#controllers/guide_articles_controller");
+const GuideAuthorsController = () =>
+  import("#controllers/guide_authors_controller");
+const GuideQuestionsController = () =>
+  import("#controllers/guide_questions_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -106,3 +112,21 @@ router
     router.get("/", [FieldsOfStudiesController, "index"]);
   })
   .prefix("api/v1/fields_of_studies");
+    router.get("/:id", [GuideArticlesController, "show"]);
+    router.get("/", [GuideArticlesController, "index"]);
+  })
+  .prefix("api/v1/guide_articles");
+
+router
+  .group(() => {
+    router.get("/:id", [GuideAuthorsController, "show"]);
+    router.get("/", [GuideAuthorsController, "index"]);
+  })
+  .prefix("api/v1/guide_authors");
+
+router
+  .group(() => {
+    router.get("/:id", [GuideQuestionsController, "show"]);
+    router.get("/", [GuideQuestionsController, "index"]);
+  })
+  .prefix("api/v1/guide_questions");
