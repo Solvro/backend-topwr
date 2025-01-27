@@ -16,6 +16,9 @@ export const departmentResource = {
   resource: new LucidResource(Department, "postgres"),
   options: {
     properties: {
+      description: {
+        type: "richtext",
+      },
       ...readOnlyTimestamps,
     },
   },
@@ -44,6 +47,9 @@ export const studentOrganizationResource = {
   resource: new LucidResource(StudentOrganization, "postgres"),
   options: {
     properties: {
+      description: {
+        type: "richtext",
+      },
       organizationType: organizationTypeEnumsValues,
       source: organizationSourceEnumsValues,
       ...readOnlyTimestamps,

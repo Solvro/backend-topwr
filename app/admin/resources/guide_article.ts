@@ -10,12 +10,15 @@ export const guideArticleResource = {
   resource: new LucidResource(GuideArticle, "postgres"),
   options: {
     properties: {
+      description: {
+        type: "richtext",
+      },
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const guideAutherResource = {
+export const guideAuthorResource = {
   resource: new LucidResource(GuideAuthor, "postgres"),
   options: {
     properties: {
@@ -28,6 +31,9 @@ export const guideQuestionResource = {
   resource: new LucidResource(GuideQuestion, "postgres"),
   options: {
     properties: {
+      answer: {
+        type: "richtext",
+      },
       ...readOnlyTimestamps,
     },
   },
