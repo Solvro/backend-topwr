@@ -15,6 +15,20 @@ export const aboutUsResource = {
       },
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        isAccessible: false,
+        isVisible: false,
+      },
+      delete: {
+        isAccessible: false,
+        isVisible: false,
+      },
+      bulkDelete: {
+        isAccessible: false,
+        isVisible: false,
+      },
+    },
   },
 };
 
