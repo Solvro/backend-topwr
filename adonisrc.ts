@@ -77,4 +77,5 @@ export default defineConfig({
     ],
     forceExit: false,
   },
+  metaFiles: [{ pattern: "assets/**", reloadServer: false }],
 });
