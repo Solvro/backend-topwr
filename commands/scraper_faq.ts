@@ -3,8 +3,8 @@ import type { CommandOptions } from "@adonisjs/core/types/ace";
 
 import { faqScript } from "../scripts/faq_script.js";
 
-export default class FaqScript extends BaseCommand {
-  static commandName = "faq:script";
+export default class ScraperFaq extends BaseCommand {
+  static commandName = "scraper:faq";
   static description = "";
 
   static options: CommandOptions = {
