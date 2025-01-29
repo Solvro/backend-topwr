@@ -6,9 +6,14 @@ import AboutUsGeneralLink from "#models/about_us_general_link";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const aboutUsResource = {
+const navigation = {
+  name: "About Us",
+};
+
+const aboutUsResource = {
   resource: new LucidResource(AboutUsGeneral, "postgres"),
   options: {
+    navigation,
     properties: {
       id: {
         isVisible: false,
@@ -35,12 +40,15 @@ export const aboutUsResource = {
   },
 };
 
-export const aboutUsLinkResource = {
+const aboutUsLinkResource = {
   resource: new LucidResource(AboutUsGeneralLink, "postgres"),
   options: {
+    navigation,
     properties: {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
     },
   },
 };
+
+export const aboutUsResources = [aboutUsResource, aboutUsLinkResource];

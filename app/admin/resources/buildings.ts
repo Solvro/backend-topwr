@@ -12,9 +12,14 @@ import SpecialHour from "#models/special_hour";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const buildingResource = {
+const navigation = {
+  name: "Buildings",
+};
+
+const buildingResource = {
   resource: new LucidResource(Building, "postgres"),
   options: {
+    navigation,
     properties: {
       iconType: buildingIconEnumsValues,
       ...readOnlyTimestamps,
@@ -22,65 +27,83 @@ export const buildingResource = {
   },
 };
 
-export const campusResource = {
+const campusResource = {
   resource: new LucidResource(Campus, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const aedResource = {
+const aedResource = {
   resource: new LucidResource(Aed, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const bicycleShowerResource = {
+const bicycleShowerResource = {
   resource: new LucidResource(BicycleShower, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const foodSpotResource = {
+const foodSpotResource = {
   resource: new LucidResource(FoodSpot, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const libraryResource = {
+const libraryResource = {
   resource: new LucidResource(Library, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const regularHourResource = {
+const regularHourResource = {
   resource: new LucidResource(RegularHour, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const specialHourResource = {
+const specialHourResource = {
   resource: new LucidResource(SpecialHour, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
+
+export const buildingsResources = [
+  buildingResource,
+  campusResource,
+  aedResource,
+  bicycleShowerResource,
+  foodSpotResource,
+  libraryResource,
+  regularHourResource,
+  specialHourResource,
+];

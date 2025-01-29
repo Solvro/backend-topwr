@@ -6,9 +6,14 @@ import GuideQuestion from "#models/guide_question";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const guideArticleResource = {
+const navigation = {
+  name: "Guides",
+};
+
+const guideArticleResource = {
   resource: new LucidResource(GuideArticle, "postgres"),
   options: {
+    navigation,
     properties: {
       description: {
         type: "richtext",
@@ -18,18 +23,20 @@ export const guideArticleResource = {
   },
 };
 
-export const guideAuthorResource = {
+const guideAuthorResource = {
   resource: new LucidResource(GuideAuthor, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const guideQuestionResource = {
+const guideQuestionResource = {
   resource: new LucidResource(GuideQuestion, "postgres"),
   options: {
+    navigation,
     properties: {
       answer: {
         type: "richtext",
@@ -38,3 +45,9 @@ export const guideQuestionResource = {
     },
   },
 };
+
+export const guidesResources = [
+  guideArticleResource,
+  guideAuthorResource,
+  guideQuestionResource,
+];

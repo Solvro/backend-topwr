@@ -6,29 +6,42 @@ import Holiday from "#models/holiday";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const academicCalendarResource = {
+const navigation = {
+  name: "Academic Calendars",
+};
+
+const academicCalendarResource = {
   resource: new LucidResource(AcademicCalendar, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const daySwapResource = {
+const daySwapResource = {
   resource: new LucidResource(DaySwap, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const holidayResource = {
+const holidayResource = {
   resource: new LucidResource(Holiday, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
+
+export const academicCalendarsResources = [
+  academicCalendarResource,
+  daySwapResource,
+  holidayResource,
+];

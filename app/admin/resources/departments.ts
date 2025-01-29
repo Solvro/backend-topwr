@@ -12,9 +12,14 @@ import StudentOrganizationTag from "#models/student_organization_tag";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const departmentResource = {
+const navigation = {
+  name: "Departments",
+};
+
+const departmentResource = {
   resource: new LucidResource(Department, "postgres"),
   options: {
+    navigation,
     properties: {
       description: {
         type: "richtext",
@@ -24,9 +29,10 @@ export const departmentResource = {
   },
 };
 
-export const departmentsLinkResource = {
+const departmentsLinkResource = {
   resource: new LucidResource(DepartmentsLink, "postgres"),
   options: {
+    navigation,
     properties: {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
@@ -34,18 +40,20 @@ export const departmentsLinkResource = {
   },
 };
 
-export const fieldsOfStudyResource = {
+const fieldsOfStudyResource = {
   resource: new LucidResource(FieldsOfStudy, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
 
-export const studentOrganizationResource = {
+const studentOrganizationResource = {
   resource: new LucidResource(StudentOrganization, "postgres"),
   options: {
+    navigation,
     properties: {
       description: {
         type: "richtext",
@@ -57,9 +65,10 @@ export const studentOrganizationResource = {
   },
 };
 
-export const studentOrganizationLinkResource = {
+const studentOrganizationLinkResource = {
   resource: new LucidResource(StudentOrganizationLink, "postgres"),
   options: {
+    navigation,
     properties: {
       type: linkTypeEnumsValues,
       ...readOnlyTimestamps,
@@ -67,11 +76,21 @@ export const studentOrganizationLinkResource = {
   },
 };
 
-export const studentOrganizationTagResource = {
+const studentOrganizationTagResource = {
   resource: new LucidResource(StudentOrganizationTag, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
   },
 };
+
+export const departmentsResources = [
+  departmentResource,
+  departmentsLinkResource,
+  fieldsOfStudyResource,
+  studentOrganizationResource,
+  studentOrganizationLinkResource,
+  studentOrganizationTagResource,
+];
