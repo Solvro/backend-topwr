@@ -111,7 +111,7 @@ router
     router.get("/:id", [FieldsOfStudiesController, "show"]);
     router.get("/", [FieldsOfStudiesController, "index"]);
   })
-  .prefix("api/v1/fields_of_studies");
+  .prefix("api/v1/fields_of_study");
 
 router
   .group(() => {
