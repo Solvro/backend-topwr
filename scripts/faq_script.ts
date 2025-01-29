@@ -1,5 +1,7 @@
 import { DateTime } from "luxon";
 
+import logger from "@adonisjs/core/services/logger";
+
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
 
@@ -30,47 +32,43 @@ interface GuideQuestionsOld {
 interface PivotTable {
   data: {
     id: number;
-    FAQ_Types_id: number;
+    FAQ_Types_id: number | null;
     FAQ_id: number;
-    sort: number;
+    sort: number | null;
   }[];
 }
 
 export async function faqScript() {
-  let articlesResponse;
-  let questionsResponse;
-  let pivotTableResponse;
+  const [articlesResponse, questionsResponse, pivotTableResponse] =
+    await Promise.all([
+      fetch("https://admin.topwr.solvro.pl/items/FAQ_Types"),
+      fetch("https://admin.topwr.solvro.pl/items/FAQ"),
+      fetch("https://admin.topwr.solvro.pl/items/FAQ_Types_FAQ"),
+    ]);
 
-  try {
-    articlesResponse = await fetch(
-      "https://admin.topwr.solvro.pl/items/FAQ_Types",
+  if (!articlesResponse.ok) {
+    throw new Error(
+      `Failed to fetch articles - got response status code ${articlesResponse.status}`,
     );
-    questionsResponse = await fetch("https://admin.topwr.solvro.pl/items/FAQ");
-
-    pivotTableResponse = await fetch(
-      "https://admin.topwr.solvro.pl/items/FAQ_Types_FAQ",
+  }
+  if (!questionsResponse.ok) {
+    throw new Error(
+      `Failed to fetch questions - got response status code ${questionsResponse.status}`,
     );
-
-    if (
-      !articlesResponse.ok ||
-      !questionsResponse.ok ||
-      !pivotTableResponse.ok
-    ) {
-      console.error("Error fetching data");
-    }
-  } catch {
-    console.error("Error fetching data");
-    return;
+  }
+  if (!pivotTableResponse.ok) {
+    throw new Error(
+      `Failed to fetch pivot table - got response status code ${pivotTableResponse.status}`,
+    );
   }
 
-  console.log("Fetching data...");
-
+  logger.info("Fetching data...");
   const articlesResult = (await articlesResponse.json()) as GuideArticlesOld;
   const questionsResult = (await questionsResponse.json()) as GuideQuestionsOld;
   const pivotTableResult = (await pivotTableResponse.json()) as PivotTable;
 
   for (const article of articlesResult.data) {
-    let createdAt = DateTime.fromMillis(0);
+    let createdAt: DateTime = DateTime.now();
     let updatedAt = DateTime.fromMillis(0);
 
     for (const pivot of pivotTableResult.data.filter(
@@ -79,11 +77,14 @@ export async function faqScript() {
       const question = questionsResult.data.find((q) => q.id === pivot.FAQ_id);
 
       if (question === undefined) {
-        console.error("Question not found");
-        return;
+        logger.warn(
+          `Pivot references missing question (ID=${pivot.FAQ_id}) for article ID=${article.id} ("${article.name}"). ` +
+            `This may be a data inconsistency in the source. Skipping this question...`,
+        );
+        continue;
       }
 
-      if (DateTime.fromISO(question.date_created) > createdAt) {
+      if (DateTime.fromISO(question.date_created) < createdAt) {
         createdAt = DateTime.fromISO(question.date_created);
       }
 
@@ -109,16 +110,27 @@ export async function faqScript() {
     const question = questionsResult.data.find((q) => q.id === pivot.FAQ_id);
 
     if (question === undefined) {
-      console.error("Question not found");
-      return;
+      logger.warn(
+        `Pivot references missing question (ID=${pivot.FAQ_id}) for article ID=${pivot.FAQ_Types_id}. ` +
+          `This may be a data inconsistency in the source. Skipping this question...`,
+      );
+      continue;
     }
 
     await GuideQuestion.create({
       title: question.question,
       answer: question.answer,
-      articleId: pivot.FAQ_Types_id,
+      articleId: pivot.FAQ_Types_id ?? 0,
     });
   }
 
-  console.info("FAQ data successfully added to the database!");
+  for (const question of questionsResult.data) {
+    if (!pivotTableResult.data.some((p) => p.FAQ_id === question.id)) {
+      logger.warn(
+        `Question (ID=${question.id}) is not referenced by any article. This may be a data inconsistency in the source. Skipping this question...`,
+      );
+    }
+  }
+
+  logger.info("FAQ data successfully added to the database!");
 }
