@@ -113,10 +113,12 @@ router
   })
   .prefix("api/v1/fields_of_studies");
 
-router.group(() => {
-  router.get("/:id", [GuideArticlesController, "show"]);
-  router.get("/", [GuideArticlesController, "index"]);
-});
+router
+  .group(() => {
+    router.get("/:id", [GuideArticlesController, "show"]);
+    router.get("/", [GuideArticlesController, "index"]);
+  })
+  .prefix("api/v1/guide_articles");
 
 router
   .group(() => {
