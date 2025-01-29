@@ -13,9 +13,14 @@ import VersionScreenshot from "#models/version_screenshot";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
+const navigation = {
+  name: "Versions",
+};
+
 const changeResource = {
   resource: new LucidResource(Change, "postgres"),
   options: {
+    navigation,
     properties: {
       type: changeTypeEnumsValues,
       ...readOnlyTimestamps,
@@ -26,6 +31,7 @@ const changeResource = {
 const changeScreenshotResource = {
   resource: new LucidResource(ChangeScreenshot, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -35,6 +41,7 @@ const changeScreenshotResource = {
 const contributorResource = {
   resource: new LucidResource(Contributor, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -44,6 +51,7 @@ const contributorResource = {
 const contributorSocialLinksResource = {
   resource: new LucidResource(ContributorSocialLink, "postgres"),
   options: {
+    navigation,
     properties: {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
@@ -54,6 +62,7 @@ const contributorSocialLinksResource = {
 const milestoneResource = {
   resource: new LucidResource(Milestone, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -63,6 +72,7 @@ const milestoneResource = {
 const roleResource = {
   resource: new LucidResource(Role, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -72,6 +82,7 @@ const roleResource = {
 const versionResource = {
   resource: new LucidResource(Version, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -81,6 +92,7 @@ const versionResource = {
 const versionScreenshotResource = {
   resource: new LucidResource(VersionScreenshot, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },

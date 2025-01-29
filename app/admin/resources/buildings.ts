@@ -12,9 +12,14 @@ import SpecialHour from "#models/special_hour";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
+const navigation = {
+  name: "Buildings",
+};
+
 const buildingResource = {
   resource: new LucidResource(Building, "postgres"),
   options: {
+    navigation,
     properties: {
       iconType: buildingIconEnumsValues,
       ...readOnlyTimestamps,
@@ -25,6 +30,7 @@ const buildingResource = {
 const campusResource = {
   resource: new LucidResource(Campus, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -34,6 +40,7 @@ const campusResource = {
 const aedResource = {
   resource: new LucidResource(Aed, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -43,6 +50,7 @@ const aedResource = {
 const bicycleShowerResource = {
   resource: new LucidResource(BicycleShower, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -52,6 +60,7 @@ const bicycleShowerResource = {
 const foodSpotResource = {
   resource: new LucidResource(FoodSpot, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -61,6 +70,7 @@ const foodSpotResource = {
 const libraryResource = {
   resource: new LucidResource(Library, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -70,6 +80,7 @@ const libraryResource = {
 const regularHourResource = {
   resource: new LucidResource(RegularHour, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -79,6 +90,7 @@ const regularHourResource = {
 const specialHourResource = {
   resource: new LucidResource(SpecialHour, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },

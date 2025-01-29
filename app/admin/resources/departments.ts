@@ -12,9 +12,14 @@ import StudentOrganizationTag from "#models/student_organization_tag";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
+const navigation = {
+  name: "Departments",
+};
+
 const departmentResource = {
   resource: new LucidResource(Department, "postgres"),
   options: {
+    navigation,
     properties: {
       description: {
         type: "richtext",
@@ -27,6 +32,7 @@ const departmentResource = {
 const departmentsLinkResource = {
   resource: new LucidResource(DepartmentsLink, "postgres"),
   options: {
+    navigation,
     properties: {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
@@ -37,6 +43,7 @@ const departmentsLinkResource = {
 const fieldsOfStudyResource = {
   resource: new LucidResource(FieldsOfStudy, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
@@ -46,6 +53,7 @@ const fieldsOfStudyResource = {
 const studentOrganizationResource = {
   resource: new LucidResource(StudentOrganization, "postgres"),
   options: {
+    navigation,
     properties: {
       description: {
         type: "richtext",
@@ -60,6 +68,7 @@ const studentOrganizationResource = {
 const studentOrganizationLinkResource = {
   resource: new LucidResource(StudentOrganizationLink, "postgres"),
   options: {
+    navigation,
     properties: {
       type: linkTypeEnumsValues,
       ...readOnlyTimestamps,
@@ -70,6 +79,7 @@ const studentOrganizationLinkResource = {
 const studentOrganizationTagResource = {
   resource: new LucidResource(StudentOrganizationTag, "postgres"),
   options: {
+    navigation,
     properties: {
       ...readOnlyTimestamps,
     },
