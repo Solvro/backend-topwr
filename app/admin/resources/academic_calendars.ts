@@ -6,7 +6,7 @@ import Holiday from "#models/holiday";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const academicCalendarResource = {
+const academicCalendarResource = {
   resource: new LucidResource(AcademicCalendar, "postgres"),
   options: {
     properties: {
@@ -15,7 +15,7 @@ export const academicCalendarResource = {
   },
 };
 
-export const daySwapResource = {
+const daySwapResource = {
   resource: new LucidResource(DaySwap, "postgres"),
   options: {
     properties: {
@@ -24,7 +24,7 @@ export const daySwapResource = {
   },
 };
 
-export const holidayResource = {
+const holidayResource = {
   resource: new LucidResource(Holiday, "postgres"),
   options: {
     properties: {
@@ -32,3 +32,9 @@ export const holidayResource = {
     },
   },
 };
+
+export const academicCalendarsResources = [
+  academicCalendarResource,
+  daySwapResource,
+  holidayResource,
+];

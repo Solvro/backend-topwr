@@ -2,9 +2,9 @@ import { LucidResource } from "@adminjs/adonis";
 
 import User from "#models/user";
 
-import { readOnlyTimestamps } from "./timestamps.js";
+import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const userResource = {
+const userResource = {
   resource: new LucidResource(User, "postgres"),
   options: {
     properties: {
@@ -12,3 +12,5 @@ export const userResource = {
     },
   },
 };
+
+export const adminPanelResources = [userResource];

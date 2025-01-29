@@ -1,6 +1,9 @@
 import { LucidResource } from "@adminjs/adonis";
 
+import { changeTypeEnumsValues } from "#enums/change_type";
 import { linkTypeEnumsValues } from "#enums/link_type";
+import Change from "#models/change";
+import ChangeScreenshot from "#models/change_screenshot";
 import Contributor from "#models/contributor";
 import ContributorSocialLink from "#models/contributor_social_link";
 import Milestone from "#models/milestone";
@@ -10,7 +13,26 @@ import VersionScreenshot from "#models/version_screenshot";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const contributorResource = {
+const changeResource = {
+  resource: new LucidResource(Change, "postgres"),
+  options: {
+    properties: {
+      type: changeTypeEnumsValues,
+      ...readOnlyTimestamps,
+    },
+  },
+};
+
+const changeScreenshotResource = {
+  resource: new LucidResource(ChangeScreenshot, "postgres"),
+  options: {
+    properties: {
+      ...readOnlyTimestamps,
+    },
+  },
+};
+
+const contributorResource = {
   resource: new LucidResource(Contributor, "postgres"),
   options: {
     properties: {
@@ -19,7 +41,7 @@ export const contributorResource = {
   },
 };
 
-export const contributorSocialLinksResource = {
+const contributorSocialLinksResource = {
   resource: new LucidResource(ContributorSocialLink, "postgres"),
   options: {
     properties: {
@@ -29,7 +51,7 @@ export const contributorSocialLinksResource = {
   },
 };
 
-export const milestoneResource = {
+const milestoneResource = {
   resource: new LucidResource(Milestone, "postgres"),
   options: {
     properties: {
@@ -38,7 +60,7 @@ export const milestoneResource = {
   },
 };
 
-export const roleResource = {
+const roleResource = {
   resource: new LucidResource(Role, "postgres"),
   options: {
     properties: {
@@ -47,7 +69,7 @@ export const roleResource = {
   },
 };
 
-export const versionResource = {
+const versionResource = {
   resource: new LucidResource(Version, "postgres"),
   options: {
     properties: {
@@ -56,7 +78,7 @@ export const versionResource = {
   },
 };
 
-export const versionScreenshotResource = {
+const versionScreenshotResource = {
   resource: new LucidResource(VersionScreenshot, "postgres"),
   options: {
     properties: {
@@ -64,3 +86,14 @@ export const versionScreenshotResource = {
     },
   },
 };
+
+export const versionsResources = [
+  changeResource,
+  changeScreenshotResource,
+  contributorResource,
+  contributorSocialLinksResource,
+  milestoneResource,
+  roleResource,
+  versionResource,
+  versionScreenshotResource,
+];

@@ -12,7 +12,7 @@ import StudentOrganizationTag from "#models/student_organization_tag";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const departmentResource = {
+const departmentResource = {
   resource: new LucidResource(Department, "postgres"),
   options: {
     properties: {
@@ -24,7 +24,7 @@ export const departmentResource = {
   },
 };
 
-export const departmentsLinkResource = {
+const departmentsLinkResource = {
   resource: new LucidResource(DepartmentsLink, "postgres"),
   options: {
     properties: {
@@ -34,7 +34,7 @@ export const departmentsLinkResource = {
   },
 };
 
-export const fieldsOfStudyResource = {
+const fieldsOfStudyResource = {
   resource: new LucidResource(FieldsOfStudy, "postgres"),
   options: {
     properties: {
@@ -43,7 +43,7 @@ export const fieldsOfStudyResource = {
   },
 };
 
-export const studentOrganizationResource = {
+const studentOrganizationResource = {
   resource: new LucidResource(StudentOrganization, "postgres"),
   options: {
     properties: {
@@ -57,7 +57,7 @@ export const studentOrganizationResource = {
   },
 };
 
-export const studentOrganizationLinkResource = {
+const studentOrganizationLinkResource = {
   resource: new LucidResource(StudentOrganizationLink, "postgres"),
   options: {
     properties: {
@@ -67,7 +67,7 @@ export const studentOrganizationLinkResource = {
   },
 };
 
-export const studentOrganizationTagResource = {
+const studentOrganizationTagResource = {
   resource: new LucidResource(StudentOrganizationTag, "postgres"),
   options: {
     properties: {
@@ -75,3 +75,12 @@ export const studentOrganizationTagResource = {
     },
   },
 };
+
+export const departmentsResources = [
+  departmentResource,
+  departmentsLinkResource,
+  fieldsOfStudyResource,
+  studentOrganizationResource,
+  studentOrganizationLinkResource,
+  studentOrganizationTagResource,
+];

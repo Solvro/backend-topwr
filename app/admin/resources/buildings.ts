@@ -12,7 +12,7 @@ import SpecialHour from "#models/special_hour";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
 
-export const buildingResource = {
+const buildingResource = {
   resource: new LucidResource(Building, "postgres"),
   options: {
     properties: {
@@ -22,7 +22,7 @@ export const buildingResource = {
   },
 };
 
-export const campusResource = {
+const campusResource = {
   resource: new LucidResource(Campus, "postgres"),
   options: {
     properties: {
@@ -31,7 +31,7 @@ export const campusResource = {
   },
 };
 
-export const aedResource = {
+const aedResource = {
   resource: new LucidResource(Aed, "postgres"),
   options: {
     properties: {
@@ -40,7 +40,7 @@ export const aedResource = {
   },
 };
 
-export const bicycleShowerResource = {
+const bicycleShowerResource = {
   resource: new LucidResource(BicycleShower, "postgres"),
   options: {
     properties: {
@@ -49,7 +49,7 @@ export const bicycleShowerResource = {
   },
 };
 
-export const foodSpotResource = {
+const foodSpotResource = {
   resource: new LucidResource(FoodSpot, "postgres"),
   options: {
     properties: {
@@ -58,7 +58,7 @@ export const foodSpotResource = {
   },
 };
 
-export const libraryResource = {
+const libraryResource = {
   resource: new LucidResource(Library, "postgres"),
   options: {
     properties: {
@@ -67,7 +67,7 @@ export const libraryResource = {
   },
 };
 
-export const regularHourResource = {
+const regularHourResource = {
   resource: new LucidResource(RegularHour, "postgres"),
   options: {
     properties: {
@@ -76,7 +76,7 @@ export const regularHourResource = {
   },
 };
 
-export const specialHourResource = {
+const specialHourResource = {
   resource: new LucidResource(SpecialHour, "postgres"),
   options: {
     properties: {
@@ -84,3 +84,14 @@ export const specialHourResource = {
     },
   },
 };
+
+export const buildingsResources = [
+  buildingResource,
+  campusResource,
+  aedResource,
+  bicycleShowerResource,
+  foodSpotResource,
+  libraryResource,
+  regularHourResource,
+  specialHourResource,
+];
