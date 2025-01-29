@@ -13,6 +13,9 @@ export const aboutUsResource = {
       id: {
         isVisible: false,
       },
+      description: {
+        type: "richtext",
+      },
       ...readOnlyTimestamps,
     },
     actions: {

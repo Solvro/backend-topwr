@@ -33,7 +33,7 @@ import {
 } from "./department.js";
 import {
   guideArticleResource,
-  guideAutherResource,
+  guideAuthorResource,
   guideQuestionResource,
 } from "./guide_article.js";
 import { userResource } from "./utils/user.js";
@@ -56,7 +56,7 @@ export const adminjsResources = [
   fieldsOfStudyResource,
   foodSpotResource,
   guideArticleResource,
-  guideAutherResource,
+  guideAuthorResource,
   guideQuestionResource,
   holidayResource,
   libraryResource,
