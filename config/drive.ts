@@ -1,7 +1,15 @@
+import * as fs from "node:fs";
+
 import app from "@adonisjs/core/services/app";
 import { defineConfig, services } from "@adonisjs/drive";
 
 import env from "#start/env";
+
+const storagePath = app.makePath("storage");
+
+if (!fs.existsSync(storagePath)) {
+  fs.mkdirSync(storagePath, { recursive: true });
+}
 
 const driveConfig = defineConfig({
   default: env.get("DRIVE_DISK"),
@@ -12,7 +20,7 @@ const driveConfig = defineConfig({
    */
   services: {
     fs: services.fs({
-      location: app.makePath("storage"),
+      location: storagePath,
       serveFiles: true,
       routeBasePath: "/uploads",
       visibility: "public",

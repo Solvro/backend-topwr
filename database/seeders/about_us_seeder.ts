@@ -11,6 +11,7 @@ import FilesService from "#services/files_service";
 
 export default class extends BaseSeeder {
   static environment = ["development", "testing", "production"];
+
   async run() {
     await this.seedAboutUs();
     await this.seedSolvroSocialLinks();
@@ -47,12 +48,6 @@ export default class extends BaseSeeder {
           "storage",
           key,
         );
-
-        // Ensure the /storage directory exists
-        const storageDir = path.dirname(destination);
-        if (!fs.existsSync(storageDir)) {
-          fs.mkdirSync(storageDir, { recursive: true });
-        }
 
         fs.copyFileSync(filePath, destination);
       },
