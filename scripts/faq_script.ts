@@ -36,22 +36,6 @@ interface PivotTable {
   }[];
 }
 
-interface GuideArticlesNew {
-  id: number;
-  title: string;
-  shortDesc: string;
-  description: string;
-  imagePath: string;
-  createdAt: DateTime;
-  updatedAt: DateTime;
-}
-
-interface GuideQuestionsNew {
-  title: string;
-  answer: string;
-  articleId: number;
-}
-
 export async function faqScript() {
   let articlesResponse;
   let questionsResponse;
@@ -85,38 +69,30 @@ export async function faqScript() {
   const questionsResult = (await questionsResponse.json()) as GuideQuestionsOld;
   const pivotTableResult = (await pivotTableResponse.json()) as PivotTable;
 
-  const guideArticles: GuideArticlesNew[] = [];
-  const guideQuestions: GuideQuestionsNew[] = [];
-
   for (const article of articlesResult.data) {
     let createdAt = DateTime.fromMillis(0);
     let updatedAt = DateTime.fromMillis(0);
 
-    pivotTableResult.data.forEach((pivot) => {
-      if (pivot.FAQ_Types_id === article.id) {
-        const question = questionsResult.data.find(
-          (q) => q.id === pivot.FAQ_id,
-        );
+    for (const pivot of pivotTableResult.data.filter(
+      (p) => p.FAQ_Types_id === article.id,
+    )) {
+      const question = questionsResult.data.find((q) => q.id === pivot.FAQ_id);
 
-        if (question !== undefined) {
-          guideQuestions.push({
-            title: question.question,
-            answer: question.answer,
-            articleId: article.id,
-          });
-
-          if (DateTime.fromISO(question.date_created) > createdAt) {
-            createdAt = DateTime.fromISO(question.date_created);
-          }
-
-          if (DateTime.fromISO(question.date_updated) > updatedAt) {
-            updatedAt = DateTime.fromISO(question.date_updated);
-          }
-        }
+      if (question === undefined) {
+        console.error("Question not found");
+        return;
       }
-    });
 
-    guideArticles.push({
+      if (DateTime.fromISO(question.date_created) > createdAt) {
+        createdAt = DateTime.fromISO(question.date_created);
+      }
+
+      if (DateTime.fromISO(question.date_updated) > updatedAt) {
+        updatedAt = DateTime.fromISO(question.date_updated);
+      }
+    }
+
+    await GuideArticle.create({
       id: article.id,
       title: article.name,
       shortDesc: article.short_description,
@@ -127,8 +103,22 @@ export async function faqScript() {
     });
   }
 
-  await GuideArticle.createMany(guideArticles);
-  await GuideQuestion.createMany(guideQuestions);
+  for (const pivot of pivotTableResult.data.filter(
+    (p) => p.FAQ_Types_id !== null,
+  )) {
+    const question = questionsResult.data.find((q) => q.id === pivot.FAQ_id);
+
+    if (question === undefined) {
+      console.error("Question not found");
+      return;
+    }
+
+    await GuideQuestion.create({
+      title: question.question,
+      answer: question.answer,
+      articleId: pivot.FAQ_Types_id,
+    });
+  }
 
   console.info("FAQ data successfully added to the database!");
 }
