@@ -12,7 +12,7 @@ export default class CampusesController {
       scopes.handleSearchQuery(
         request.only(["id", "name", "createdAt", "updatedAt"]),
       );
-      scopes.includeRelations(request.only(["buildings"]));
+      scopes.preloadRelations(request.only(["buildings"]));
       scopes.handleSortQuery(request.input("sort"));
     });
     return { data: campuses };
@@ -27,7 +27,7 @@ export default class CampusesController {
     } = await request.validateUsing(showValidator);
     const campus = await Campus.query()
       .withScopes((scopes) => {
-        scopes.includeRelations(request.only(["buildings"]));
+        scopes.preloadRelations(request.only(["buildings"]));
       })
       .where("id", id)
       .firstOrFail();
