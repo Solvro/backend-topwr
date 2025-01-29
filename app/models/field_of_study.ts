@@ -41,7 +41,7 @@ export default class FieldsOfStudy extends BaseModel {
   @column()
   declare isEnglish: boolean;
 
-  @column({ columnName: "is_2nd_degree" })
+  @column({ columnName: "is_2nd_degree", serializeAs: "is2ndDegree" })
   declare is2ndDegree: boolean;
 
   @column()
