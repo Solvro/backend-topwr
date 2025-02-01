@@ -55,11 +55,6 @@ export default class extends BaseSeeder {
 
     const result = await filesService.uploadFile(file as MultipartFile);
 
-    if (result instanceof Error) {
-      console.error(result);
-      return;
-    }
-
     const coverPhotoKey = result;
 
     await AboutUsGeneral.create({
