@@ -4,6 +4,7 @@ import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import drive from "@adonisjs/drive/services/main";
 
 import {
+  FileServiceFileDeleteError,
   FileServiceFileReadError,
   FileServiceFileUploadError,
 } from "#exceptions/file_service_errors";
@@ -32,6 +33,11 @@ export default class FilesService {
   }
   async deleteFile(key: string): Promise<void> {
     // Delete file from storage
-    await drive.use().delete(key);
+    try {
+      await drive.use().delete(key);
+    } catch (error) {
+      const err = error as Error;
+      throw new FileServiceFileDeleteError(err.message, err.stack);
+    }
   }
 }

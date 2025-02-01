@@ -19,3 +19,10 @@ export class FileServiceFileReadError extends FileServiceError {
     this.name = "FileServiceFileReadError";
   }
 }
+
+export class FileServiceFileDeleteError extends FileServiceError {
+  constructor(message: string, stack: string | undefined) {
+    super(message, stack);
+    this.name = "FileServiceFileDeleteError";
+  }
+}
