@@ -1,4 +1,4 @@
-export class FileServiceFileUploadError extends Error {
+class FileServiceError extends Error {
   constructor(message: string, stack: string | undefined) {
     super(message);
     this.name = "FileServiceFileUploadError";
@@ -6,10 +6,16 @@ export class FileServiceFileUploadError extends Error {
   }
 }
 
-export class FileServiceFileReadError extends Error {
+export class FileServiceFileUploadError extends FileServiceError {
   constructor(message: string, stack: string | undefined) {
-    super(message);
+    super(message, stack);
+    this.name = "FileServiceFileUploadError";
+  }
+}
+
+export class FileServiceFileReadError extends FileServiceError {
+  constructor(message: string, stack: string | undefined) {
+    super(message, stack);
     this.name = "FileServiceFileReadError";
-    this.stack = stack;
   }
 }
