@@ -1,9 +1,13 @@
 import { DateTime } from "luxon";
+import fs from "node:fs";
+import path from "node:path";
 
 import logger from "@adonisjs/core/services/logger";
+import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
+import FilesService from "#services/files_service";
 
 interface GuideArticlesOld {
   data: {
@@ -36,6 +40,64 @@ interface PivotTable {
     FAQ_id: number;
     sort: number | null;
   }[];
+}
+
+async function uploadImage(imageUrl: string) {
+  const filesService = new FilesService();
+  const tempFilePath = path.resolve(
+    import.meta.dirname,
+    "..",
+    "..",
+    "assets",
+    "temp_image.png",
+  );
+
+  try {
+    const fetchedImage = await fetch(imageUrl);
+    if (!fetchedImage.ok) {
+      logger.error(
+        `Failed to download image. HTTP status: ${fetchedImage.status}`,
+      );
+      return "";
+    }
+
+    const arrayBuffer = await fetchedImage.arrayBuffer();
+    fs.writeFileSync(tempFilePath, Buffer.from(arrayBuffer));
+
+    const fileStats = fs.statSync(tempFilePath);
+
+    const file = {
+      size: fileStats.size,
+      extname: path.extname(tempFilePath),
+      tmpPath: tempFilePath,
+      moveToDisk: async (key: string) => {
+        const destination = path.resolve(
+          import.meta.dirname,
+          "..",
+          "..",
+          "storage",
+          key,
+        );
+        fs.copyFileSync(tempFilePath, destination);
+      },
+    };
+
+    const result = await filesService.uploadFile(file as MultipartFile);
+
+    if (result instanceof Error) {
+      logger.error("File upload failed:", result);
+      return "";
+    }
+
+    return result;
+  } catch (error) {
+    logger.error("Error processing image:", error);
+    return "";
+  } finally {
+    if (fs.existsSync(tempFilePath)) {
+      fs.unlinkSync(tempFilePath);
+    }
+  }
 }
 
 export async function faqScript() {
@@ -93,12 +155,16 @@ export async function faqScript() {
       }
     }
 
+    const imagePath = await uploadImage(
+      `https://admin.topwr.solvro.pl/items/assets${article.cover}`,
+    );
+
     await GuideArticle.create({
       id: article.id,
       title: article.name,
       shortDesc: article.short_description,
       description: article.description ?? "",
-      imagePath: article.cover,
+      imagePath,
       createdAt,
       updatedAt,
     });
