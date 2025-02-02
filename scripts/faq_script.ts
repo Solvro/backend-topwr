@@ -44,60 +44,41 @@ interface PivotTable {
 
 async function uploadImage(imageUrl: string) {
   const filesService = new FilesService();
-  const tempFilePath = path.resolve(
-    import.meta.dirname,
-    "..",
-    "..",
-    "assets",
-    "temp_image.png",
-  );
 
-  try {
-    const fetchedImage = await fetch(imageUrl);
-    if (!fetchedImage.ok) {
-      logger.error(
-        `Failed to download image. HTTP status: ${fetchedImage.status}`,
-      );
-      return "";
-    }
-
-    const arrayBuffer = await fetchedImage.arrayBuffer();
-    fs.writeFileSync(tempFilePath, Buffer.from(arrayBuffer));
-
-    const fileStats = fs.statSync(tempFilePath);
-
-    const file = {
-      size: fileStats.size,
-      extname: path.extname(tempFilePath),
-      tmpPath: tempFilePath,
-      moveToDisk: async (key: string) => {
-        const destination = path.resolve(
-          import.meta.dirname,
-          "..",
-          "..",
-          "storage",
-          key,
-        );
-        fs.copyFileSync(tempFilePath, destination);
-      },
-    };
-
-    const result = await filesService.uploadFile(file as MultipartFile);
-
-    if (result instanceof Error) {
-      logger.error("File upload failed:", result);
-      return "";
-    }
-
-    return result;
-  } catch (error) {
-    logger.error("Error processing image:", error);
-    return "";
-  } finally {
-    if (fs.existsSync(tempFilePath)) {
-      fs.unlinkSync(tempFilePath);
-    }
+  const fetchedImage = await fetch(imageUrl);
+  if (!fetchedImage.ok) {
+    throw new Error(
+      `Failed to download image. HTTP status: ${fetchedImage.status}`,
+    );
   }
+
+  const extension = fetchedImage.headers.get("content-type")?.split("/")[1];
+  const arrayBuffer = await fetchedImage.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  const size = buffer.length;
+
+  const file = {
+    size,
+    extname: extension,
+    moveToDisk: async (key: string) => {
+      const destination = path.resolve(
+        import.meta.dirname,
+        "..",
+        "..",
+        "storage",
+        key,
+      );
+      fs.writeFileSync(destination, buffer);
+    },
+  };
+
+  const result = await filesService.uploadFile(file as MultipartFile);
+
+  if (result instanceof Error) {
+    throw new Error("File upload failed:", result);
+  }
+
+  return result;
 }
 
 export async function faqScript() {
