@@ -1,27 +1,25 @@
 class FileServiceError extends Error {
-  constructor(message: string, stack: string | undefined) {
+  constructor(message: string, cause: Error) {
     super(message);
-    this.stack = stack;
+    this.name = this.constructor.name;
+    this.cause = cause;
   }
 }
 
 export class FileServiceFileUploadError extends FileServiceError {
-  constructor(message: string, stack: string | undefined) {
-    super(message, stack);
-    this.name = "FileServiceFileUploadError";
+  constructor(cause: Error) {
+    super("Couldn't upload the file", cause);
   }
 }
 
 export class FileServiceFileReadError extends FileServiceError {
-  constructor(message: string, stack: string | undefined) {
-    super(message, stack);
-    this.name = "FileServiceFileReadError";
+  constructor(cause: Error) {
+    super("Could't read the file", cause);
   }
 }
 
 export class FileServiceFileDeleteError extends FileServiceError {
-  constructor(message: string, stack: string | undefined) {
-    super(message, stack);
-    this.name = "FileServiceFileDeleteError";
+  constructor(cause: Error) {
+    super("Couldn't delete the file", cause);
   }
 }
