@@ -17,8 +17,7 @@ export default class FilesService {
       await file.moveToDisk(key);
       return key;
     } catch (error) {
-      const err = error as Error;
-      throw new FileServiceFileUploadError(err.message, err.stack);
+      throw new FileServiceFileUploadError(error as Error);
     }
   }
 
@@ -27,8 +26,7 @@ export default class FilesService {
     try {
       return await drive.use().getUrl(key);
     } catch (error) {
-      const err = error as Error;
-      throw new FileServiceFileReadError(err.message, err.stack);
+      throw new FileServiceFileReadError(error as Error);
     }
   }
   async deleteFile(key: string): Promise<void> {
@@ -36,8 +34,7 @@ export default class FilesService {
     try {
       await drive.use().delete(key);
     } catch (error) {
-      const err = error as Error;
-      throw new FileServiceFileDeleteError(err.message, err.stack);
+      throw new FileServiceFileDeleteError(error as Error);
     }
   }
 }
