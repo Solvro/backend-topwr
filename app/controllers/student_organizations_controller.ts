@@ -12,16 +12,18 @@ export default class StudentOrganizationsController {
    */
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
-    return StudentOrganization.query()
-      .withScopes((scopes) => {
-        scopes.handleSearchQuery(request.qs());
-        scopes.preloadRelations(request.only(this.relations));
-        scopes.handleSortQuery(request.input("sort"));
-      })
-      .if(page !== undefined, (query) => {
-        // @ts-expect-error - It's checked for undefined above
-        return query.paginate(page, limit ?? 10);
-      });
+    const baseQuery = StudentOrganization.query().withScopes((scopes) => {
+      scopes.handleSearchQuery(request.qs());
+      scopes.handleSortQuery(request.input("sort"));
+      scopes.preloadRelations(request.only(["tags", "links"]));
+    });
+    let studentOrganizations;
+    if (page !== undefined) {
+      studentOrganizations = await baseQuery.paginate(page, limit ?? 10);
+    } else {
+      studentOrganizations = { data: await baseQuery };
+    }
+    return studentOrganizations;
   }
 
   /**
@@ -31,11 +33,13 @@ export default class StudentOrganizationsController {
     const {
       params: { id },
     } = await request.validateUsing(showValidator);
-    return StudentOrganization.query()
+    const studentOrganization = StudentOrganization.query()
       .withScopes((scopes) => {
         scopes.preloadRelations(request.only(["tags", "links"]));
       })
       .where("id", id)
       .firstOrFail();
+
+    return { data: studentOrganization };
   }
 }
