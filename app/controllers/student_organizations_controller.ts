@@ -12,7 +12,7 @@ export default class StudentOrganizationsController {
     const { page, limit } = await request.validateUsing(paginationValidator);
     return StudentOrganization.query()
       .withScopes((scopes) => {
-        scopes.handleSearchQuery(request.qs(), "source", "organizationType");
+        scopes.handleSearchQuery(request.qs());
         scopes.handleSortQuery(request.input("sort"));
         scopes.preloadRelations(request.only(["tags", "links"]));
       })
