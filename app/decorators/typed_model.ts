@@ -19,9 +19,16 @@ export interface ColumnDef extends ColumnOptions {
 
 /**
  * Class decorator for injecting custom column types into a Lucid model.
+ * ---------------------------------------------------------------------
  *
  * The `typedModel` decorator allows you to specify and inject custom types for model columns by
+ *
  * adding type information to the `meta` property of each column definition.
+ *
+ * **Support for Enums**
+ * - Enums are supported, provide an enum object as a value instead of string literal of a type
+ * - such provided enum injects specified type and allowed values
+ *
  *
  * **Prerequisites:**
  * - The model must extend `BaseModel` from AdonisJS Lucid ORM.
@@ -32,26 +39,34 @@ export interface ColumnDef extends ColumnOptions {
  * import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
  * import { typedModel } from 'path-to-decorator'
  *
- * @typedModel({
+ * enum ICON {
+ *   Icon = "ICON"
+ * }
+ *
+ * \@typedModel({
  *   id: 'number',
  *   name: 'string',
+ *   icon: ICON,
  *   createdAt: 'date',
  * })
  * export default class User extends BaseModel {
- *   @column({ isPrimary: true })
+ *   \@column({ isPrimary: true })
  *   public id: number
  *
- *   @column()
+ *   \@column()
  *   public name: string
  *
- *   @column.dateTime({ autoCreate: true })
+ *   \@column()
+ *   public icon: ICON
+ *
+ *   \@column.dateTime({ autoCreate: true })
  *   public createdAt: DateTime
  * }
  * ```
  *
  * @param {TypedModelOptions} options - An object where:
  *   - **Keys**: Match the column names defined in the model.
- *   - **Values**: Are types from the predefined `ColumnType` set (e.g., `'string'`, `'number'`, `'boolean'`, `'DateTime'`).
+ *   - **Values**: Are types from the predefined `ColumnType` set (e.g., `'string'`, `'number'`, `'boolean'`, `'DateTime'`, **enum object**).
  *
  */
 export function typedModel<T extends LucidModel>(options: TypedModelOptions) {
