@@ -12,9 +12,7 @@ export default class FilesController {
     }
 
     const key = await filesService.uploadFile(file);
-    if (key instanceof Error) {
-      return response.badRequest(key.message);
-    }
+
     return response.status(201).send({ key });
   }
 
@@ -25,9 +23,7 @@ export default class FilesController {
       return response.badRequest("Invalid key. Expected a string.");
     }
     const url = await filesService.getFileUrl(key);
-    if (url instanceof Error) {
-      return response.badRequest(url.message);
-    }
+
     return response.status(200).send({ url });
   }
 }
