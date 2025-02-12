@@ -11,7 +11,7 @@ export default class FilesController {
       return response.badRequest("No file provided");
     }
 
-    const key = await filesService.uploadFile(file);
+    const key = await filesService.uploadMultipartFile(file);
 
     return response.status(201).send({ key });
   }

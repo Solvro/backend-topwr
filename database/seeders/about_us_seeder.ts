@@ -53,7 +53,9 @@ export default class extends BaseSeeder {
       },
     };
 
-    const result = await filesService.uploadFile(file as MultipartFile);
+    const result = await filesService.uploadMultipartFile(
+      file as MultipartFile,
+    );
 
     const coverPhotoKey = result;
 
