@@ -117,6 +117,7 @@ export default class DbScrape extends BaseCommand {
     }
 
     await tasks.run();
+    this.exitCode = tasks.getState() === "succeeded" ? 0 : 1;
   }
 
   async loadModules(): Promise<Record<string, ScraperModuleEntry>> {
