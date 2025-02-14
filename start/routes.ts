@@ -65,12 +65,12 @@ router
       })
       .prefix("/buildings");
 
-router
-  .group(() => {
-    router.get("/:id", [LibrariesController, "show"]);
-    router.get("/", [LibrariesController, "index"]);
-  })
-  .prefix("api/v1/libraries");
+    router
+      .group(() => {
+        router.get("/:id", [LibrariesController, "show"]);
+        router.get("/", [LibrariesController, "index"]);
+      })
+      .prefix("/libraries");
 
     router
       .group(() => {
@@ -154,26 +154,27 @@ router
         router.get("/", [AboutUsController, "index"]);
       })
       .prefix("/about_us");
+
+    router
+      .group(() => {
+        router.get("/:id", [AcademicCalendarsController, "show"]);
+        router.get("/", [AcademicCalendarsController, "index"]);
+      })
+      .prefix("/academic_calendars");
+
+    router
+      .group(() => {
+        router.get("/:id", [HolidaysController, "show"]);
+        router.get("/", [HolidaysController, "index"]);
+      })
+      .prefix("/holidays");
+
+    router
+      .group(() => {
+        router.get("/:id", [DaySwapsController, "show"]);
+        router.get("/", [DaySwapsController, "index"]);
+      })
+      .prefix("/day_swaps");
+
   })
   .prefix("/api/v1");
-
-router
-  .group(() => {
-    router.get("/:id", [AcademicCalendarsController, "show"]);
-    router.get("/", [AcademicCalendarsController, "index"]);
-  })
-  .prefix("api/v1/academic_calendars");
-
-router
-  .group(() => {
-    router.get("/:id", [HolidaysController, "show"]);
-    router.get("/", [HolidaysController, "index"]);
-  })
-  .prefix("api/v1/holidays");
-
-router
-  .group(() => {
-    router.get("/:id", [DaySwapsController, "show"]);
-    router.get("/", [DaySwapsController, "index"]);
-  })
-  .prefix("api/v1/day_swaps");
