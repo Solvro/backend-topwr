@@ -135,7 +135,7 @@ export default class BuildingSeeder extends BaseSeeder {
       },
     ];
 
-    const specialHours = [
+    const specialHoursForEachLibrary = [
       {
         specialDate: DateTime.local(2023, 11, 15),
         openTime: "10:00",
@@ -151,31 +151,27 @@ export default class BuildingSeeder extends BaseSeeder {
         openTime: "09:30",
         closeTime: "13:00",
       },
-      {
-        specialDate: DateTime.local(2024, 4, 30),
-        openTime: "10:00",
-        closeTime: "15:30",
-      },
     ];
 
-    for (const [i, library] of libraries.entries()) {
+    const specialHoursObject = {
+      specialDate: DateTime.local(2024, 4, 30),
+      openTime: "10:00",
+      closeTime: "15:30",
+    };
+
+
+    for (const library of libraries) {
       await library
         .related("regularHours")
-        .createMany([
-          regularHours[0],
-          regularHours[1],
-          regularHours[2],
-          regularHours[3],
-          regularHours[4],
-        ]);
+        .createMany(regularHours);
 
       await library
         .related("specialHours")
-        .createMany([specialHours[0], specialHours[1], specialHours[2]]);
-      if (i === 0) {
-        await library.related("specialHours").create(specialHours[3]);
-      }
+        .createMany(specialHoursForEachLibrary);
     }
+
+    await libraries[0].related("specialHours").create(specialHoursObject);
+
 
     const aeds = [
       {
@@ -231,14 +227,12 @@ export default class BuildingSeeder extends BaseSeeder {
       photoUrl: "https://food_spot_photo1.jpg",
     };
 
+    await updatedBuildings[0].related("bicycleShowers").create(bicycleShowers[0]);
+    await updatedBuildings[1].related("bicycleShowers").create(bicycleShowers[1]);
+    await updatedBuildings[0].related("foodSpots").create(foodSpot);
+
     for (const [i, building] of updatedBuildings.entries()) {
       await building.related("aeds").create(aeds[i]);
-      if (i === 0 || i === 1) {
-        await building.related("bicycleShowers").create(bicycleShowers[i]);
-      }
-      if (i === 0) {
-        await building.related("foodSpots").create(foodSpot);
-      }
       await libraries[i].merge({ buildingId: building.id }).save();
     }
   }
