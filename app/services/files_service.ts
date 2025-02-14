@@ -19,7 +19,14 @@ export default class FilesService {
     return `${randomUUID()}.${extname ?? "bin"}`;
   }
 
-  // Uploads a multipart file to storage (uploaded via API)
+  /**
+   * Uploads a multipart file to storage.
+   *
+   * Use this if you're handling an API request and received a `MultipartFile` from adonis
+   * @param file - The file to upload
+   * @returns Key of the newly uploaded file
+   * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
+   */
   async uploadMultipartFile(file: MultipartFile): Promise<string> {
     const key = this.generateKey(file.extname);
     try {
@@ -30,7 +37,16 @@ export default class FilesService {
     }
   }
 
-  // Uploads any readable stream, such as Response.body
+  /**
+   * Uploads any readable stream to storage.
+   *
+   * Use this if you can get a readable stream from another API, such as `fetch()`.
+   * Calling this function with a stream probably will be more efficient than reading the stream and using `uploadFromMemory()`.
+   * @param stream - Stream with file contents to upload
+   * @param extname - File's extension. Defaults to `.bin`.
+   * @returns Key of the newly uploaded file
+   * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
+   */
   async uploadStream(
     stream: Readable,
     extname: string | undefined = undefined,
@@ -44,7 +60,15 @@ export default class FilesService {
     }
   }
 
-  // Uploads a file with arbitrary contents
+  /**
+   * Uploads a file with arbitrary contents
+   *
+   * Use this function only if you cannot easily use other `upload*` functions.
+   * @param data - File contents
+   * @param extname - File's extension. Defaults to `.bin`.
+   * @returns Key of the newly uploaded file
+   * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
+   */
   async uploadFromMemory(
     data: string | Uint8Array,
     extname: string | undefined = undefined,
@@ -58,9 +82,14 @@ export default class FilesService {
     }
   }
 
-  // Uploads a file from the local filesystem
-  // Pass removeSourceFile = true to remove the original file
-  // If the path is not absolute, it will be resolved as a path relative to PWD (which should be the project root)
+  /**
+   * Uploads a file from the local filesystem
+   *
+   * @param path - Path to file. Relative paths are resolved relative to `$PWD` (usually the project root)
+   * @param removeSourceFile - Whether the file should be removed after upload.
+   * @returns Key of the newly uploaded file
+   * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
+   */
   async uploadLocalFile(
     path: string,
     removeSourceFile = false,
@@ -79,6 +108,13 @@ export default class FilesService {
     }
   }
 
+  /**
+   * Constructs a full file URL from its key
+   *
+   * @param key - File's key
+   * @returns The full URL to the file
+   * @throws {FileServiceFileReadError} There was an issue constructing the URL. Check the cause prop for details.
+   */
   async getFileUrl(key: string): Promise<string> {
     // Get file URL from storage
     try {
@@ -88,6 +124,12 @@ export default class FilesService {
     }
   }
 
+  /**
+   * Deletes a file from storage
+   *
+   * @param key - File's key
+   * @throws {FileServiceFileDeleteError} There was an issue deleting the file. Check the cause prop for details.
+   */
   async deleteFile(key: string): Promise<void> {
     // Delete file from storage
     try {
