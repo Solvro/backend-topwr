@@ -1,7 +1,3 @@
-import * as fs from "node:fs";
-import path from "node:path";
-
-import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
 import { LinkType } from "#enums/link_type";
@@ -26,34 +22,9 @@ export default class extends BaseSeeder {
       <p>Jeżeli to, co robimy, do Ciebie przemawia, zapraszamy w nasze szeregi! Informacje o trwających rekrutacjach znajdziesz na naszych mediach społecznościowych poniżej.</p>`;
 
     const filesService = new FilesService();
-
-    const filePath = path.resolve(
-      import.meta.dirname,
-      "..",
-      "..",
-      "assets",
-      "topwr_cover.png",
+    const result = await filesService.uploadLocalFile(
+      "./assets/topwr_cover.png",
     );
-    const fileStats = fs.statSync(filePath);
-
-    const file = {
-      size: fileStats.size,
-      extname: "png",
-      tmpPath: filePath,
-      moveToDisk: async (key: string) => {
-        const destination = path.resolve(
-          import.meta.dirname,
-          "..",
-          "..",
-          "storage",
-          key,
-        );
-
-        fs.copyFileSync(filePath, destination);
-      },
-    };
-
-    const result = await filesService.uploadFile(file as MultipartFile);
 
     const coverPhotoKey = result;
 
