@@ -159,11 +159,8 @@ export default class BuildingSeeder extends BaseSeeder {
       closeTime: "15:30",
     };
 
-
     for (const library of libraries) {
-      await library
-        .related("regularHours")
-        .createMany(regularHours);
+      await library.related("regularHours").createMany(regularHours);
 
       await library
         .related("specialHours")
@@ -171,7 +168,6 @@ export default class BuildingSeeder extends BaseSeeder {
     }
 
     await libraries[0].related("specialHours").create(specialHoursObject);
-
 
     const aeds = [
       {
@@ -227,8 +223,12 @@ export default class BuildingSeeder extends BaseSeeder {
       photoUrl: "https://food_spot_photo1.jpg",
     };
 
-    await updatedBuildings[0].related("bicycleShowers").create(bicycleShowers[0]);
-    await updatedBuildings[1].related("bicycleShowers").create(bicycleShowers[1]);
+    await updatedBuildings[0]
+      .related("bicycleShowers")
+      .create(bicycleShowers[0]);
+    await updatedBuildings[1]
+      .related("bicycleShowers")
+      .create(bicycleShowers[1]);
     await updatedBuildings[0].related("foodSpots").create(foodSpot);
 
     for (const [i, building] of updatedBuildings.entries()) {

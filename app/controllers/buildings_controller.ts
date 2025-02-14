@@ -21,7 +21,7 @@ export default class BuildingsController {
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = Building.query().withScopes((scopes) => {
-      scopes.handleSearchQuery(request.qs(), "iconType");
+      scopes.handleSearchQuery(request.qs());
       scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });

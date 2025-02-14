@@ -10,6 +10,8 @@ export default class CampusesController {
     "buildings.bicycleShowers",
     "buildings.foodSpots",
     "buildings.libraries",
+    "buildings.libraries.regularHours",
+    "buildings.libraries.specialHours",
   ];
 
   /**

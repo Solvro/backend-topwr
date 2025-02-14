@@ -175,6 +175,5 @@ router
         router.get("/", [DaySwapsController, "index"]);
       })
       .prefix("/day_swaps");
-
   })
   .prefix("/api/v1");

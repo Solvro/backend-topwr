@@ -13,7 +13,7 @@ export default class DaySwapsController {
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = DaySwap.query().withScopes((scopes) => {
-      scopes.handleSearchQuery(request.qs(), "changedWeekday");
+      scopes.handleSearchQuery(request.qs());
       scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
