@@ -15,7 +15,7 @@ import AcademicCalendar from "./academic_calendar.js";
   id: "number",
   academicCalendarId: "number",
   date: "DateTime",
-  changedWeekday: "string",
+  changedWeekday: Weekday,
   changedDayIsEven: "boolean",
   createdAt: "DateTime",
   updatedAt: "DateTime",
