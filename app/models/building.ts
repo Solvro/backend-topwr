@@ -19,6 +19,7 @@ import Library from "./library.js";
   id: "number",
   identifier: "string",
   specialName: "string",
+  iconType: BuildingIcon,
   campusId: "number",
   addressLine1: "string",
   addressLine2: "string",

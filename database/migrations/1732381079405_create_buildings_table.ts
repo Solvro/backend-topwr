@@ -17,7 +17,7 @@ export default class extends BaseSchema {
         })
         .notNullable();
 
-      table.bigInteger("campus_id").unsigned().notNullable();
+      table.integer("campus_id").unsigned().notNullable();
       table
         .foreign("campus_id")
         .references("id")

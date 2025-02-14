@@ -5,6 +5,8 @@ import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
 export default class StudentOrganizationsController {
+  protected readonly relations = ["tags", "links"];
+
   /**
    * Display a list of resource
    */
@@ -12,9 +14,9 @@ export default class StudentOrganizationsController {
     const { page, limit } = await request.validateUsing(paginationValidator);
     return StudentOrganization.query()
       .withScopes((scopes) => {
-        scopes.handleSearchQuery(request.qs(), "source", "organizationType");
+        scopes.handleSearchQuery(request.qs());
+        scopes.preloadRelations(request.only(this.relations));
         scopes.handleSortQuery(request.input("sort"));
-        scopes.preloadRelations(request.only(["tags", "links"]));
       })
       .if(page !== undefined, (query) => {
         // @ts-expect-error - It's checked for undefined above
