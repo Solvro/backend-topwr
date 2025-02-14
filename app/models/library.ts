@@ -10,7 +10,23 @@ import { handleSortQuery } from "#scopes/sort_helper";
 import Building from "./building.js";
 import RegularHour from "./regular_hour.js";
 import SpecialHour from "./special_hour.js";
+import { typedModel } from "#decorators/typed_model";
 
+@typedModel({
+  id: "number",
+  title: "string",
+  room: "string",
+  addressLine1: "string",
+  addressLine2: "string",
+  phone: "string",
+  email: "string",
+  latitude: "number",
+  longitude: "number",
+  photoUrl: "string",
+  buildingId: "number",
+  createdAt: "DateTime",
+  updatedAt: "DateTime",
+})
 export default class Library extends BaseModel {
   @column({ isPrimary: true })
   declare id: number;
