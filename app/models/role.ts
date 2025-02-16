@@ -39,4 +39,6 @@ export default class Role extends BaseModel {
   static preloadRelations = preloadRelations(Role);
   static handleSearchQuery = handleSearchQuery(Role);
   static handleSortQuery = handleSortQuery(Role);
+
+  serializeExtras = true;
 }

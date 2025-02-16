@@ -16,7 +16,7 @@ import { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
  *
  * @template T - Type of the Lucid model.
  * @param {T} model - The Lucid model to preload relations on.
- * @returns {QueryScope} A scope function that takes a query and a relations object.
+ * @returns **QueryScope** A scope function that takes a query and a relations object.
  *
  * @example
  * const buildings = await Building.query()
