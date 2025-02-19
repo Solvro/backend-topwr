@@ -134,7 +134,11 @@ export default class DbScrape extends BaseCommand {
       files
         .filter((file) => {
           // filter out files that can't be loaded
-          if (file.endsWith(".d.ts") || file === ".gitkeep") {
+          if (
+            file.endsWith(".d.ts") ||
+            file.endsWith(".js.map") ||
+            file === ".gitkeep"
+          ) {
             return false; // doesn't need a warning
           }
           const canLoad = LOADABLE_EXTENSIONS.some((ext) => file.endsWith(ext));
