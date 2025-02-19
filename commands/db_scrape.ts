@@ -145,10 +145,6 @@ export default class DbScrape extends BaseCommand {
           }
           return canLoad;
         })
-        .map(
-          (file) =>
-            file.endsWith(".ts") ? file.replace(/\.ts$/, ".js") : file, // replace .ts with .js
-        )
         .map(async (file) => {
           // import each file
           try {
