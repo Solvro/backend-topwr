@@ -153,7 +153,9 @@ export default class DbScrape extends BaseCommand {
           // import each file
           try {
             return {
-              imported: (await import(path.resolve(dir, file))) as object,
+              imported: (await import(
+                `file://${path.resolve(dir, file)}`
+              )) as object,
               file,
             };
           } catch (error) {
