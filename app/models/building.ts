@@ -64,6 +64,12 @@ export default class Building extends BaseModel {
   @column()
   declare cover: string;
 
+  @column()
+  declare externalDigitalGuideMode: string;
+
+  @column()
+  declare externalDigitalGuideIdOrURL: string;
+
   @belongsTo(() => Campus)
   declare campus: BelongsTo<typeof Campus>;
 
