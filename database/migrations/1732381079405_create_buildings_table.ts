@@ -17,7 +17,7 @@ export default class extends BaseSchema {
         })
         .notNullable();
 
-      table.bigInteger("campus_id").unsigned().notNullable();
+      table.integer("campus_id").unsigned().notNullable();
       table
         .foreign("campus_id")
         .references("id")
@@ -30,6 +30,28 @@ export default class extends BaseSchema {
       table.decimal("longitude").notNullable();
       table.boolean("have_food").defaultTo(false);
       table.text("cover").notNullable();
+      table.text("external_digital_guide_mode").nullable();
+      table.text("external_digital_guide_id_or_url").nullable();
+      table.check(
+        `
+        (
+          external_digital_guide_mode = 'web_url'
+          AND external_digital_guide_id_or_url ~ '^([a-zA-Z]+)://.*$' 
+        ) 
+        OR
+        (
+          external_digital_guide_mode <> 'web_url'
+          AND external_digital_guide_id_or_url ~ '^[0-9]+$' 
+        )
+        OR
+        (
+          external_digital_guide_mode IS NULL
+          AND external_digital_guide_id_or_url IS NULL
+        )
+      `,
+        [],
+        "digital_guide_format_check",
+      );
 
       table.timestamp("created_at");
       table.timestamp("updated_at");
