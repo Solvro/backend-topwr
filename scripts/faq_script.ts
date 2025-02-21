@@ -1,9 +1,7 @@
 import { DateTime } from "luxon";
-import fs from "node:fs";
-import path from "node:path";
+import { Readable } from "node:stream";
 
 import logger from "@adonisjs/core/services/logger";
-import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
@@ -53,35 +51,17 @@ async function uploadImage(imageUrl: string) {
   }
 
   const extension = fetchedImage.headers.get("content-type")?.split("/")[1];
-  const arrayBuffer = await fetchedImage.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const size = buffer.length;
+  const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
 
-  const file = {
-    size,
-    extname: extension,
-    moveToDisk: async (key: string) => {
-      const destination = path.resolve(
-        import.meta.dirname,
-        "..",
-        "..",
-        "storage",
-        key,
-      );
-      fs.writeFileSync(destination, buffer);
-    },
-  };
-
-  const result = await filesService.uploadFile(file as MultipartFile);
-
-  if (result instanceof Error) {
-    throw new Error("File upload failed:", result);
+  try {
+    return await filesService.uploadStream(stream, extension);
+  } catch (error) {
+    throw new Error(`Failed to upload image. ${error}`);
   }
-
-  return result;
 }
 
 export async function faqScript() {
+  logger.info("Fetching data...");
   const [articlesResponse, questionsResponse, pivotTableResponse] =
     await Promise.all([
       fetch("https://admin.topwr.solvro.pl/items/FAQ_Types"),
@@ -104,11 +84,13 @@ export async function faqScript() {
       `Failed to fetch pivot table - got response status code ${pivotTableResponse.status}`,
     );
   }
-
-  logger.info("Fetching data...");
-  const articlesResult = (await articlesResponse.json()) as GuideArticlesOld;
-  const questionsResult = (await questionsResponse.json()) as GuideQuestionsOld;
-  const pivotTableResult = (await pivotTableResponse.json()) as PivotTable;
+  const [articlesResult, questionsResult, pivotTableResult] = await Promise.all(
+    [
+      articlesResponse.json() as Promise<GuideArticlesOld>,
+      questionsResponse.json() as Promise<GuideQuestionsOld>,
+      pivotTableResponse.json() as Promise<PivotTable>,
+    ],
+  );
 
   for (const article of articlesResult.data) {
     let createdAt: DateTime = DateTime.now();
@@ -127,17 +109,20 @@ export async function faqScript() {
         continue;
       }
 
-      if (DateTime.fromISO(question.date_created) < createdAt) {
-        createdAt = DateTime.fromISO(question.date_created);
+      const questionCreatedAt = DateTime.fromISO(question.date_created);
+      const questionUpdatedAt = DateTime.fromISO(question.date_updated);
+
+      if (questionCreatedAt < createdAt) {
+        createdAt = questionCreatedAt;
       }
 
-      if (DateTime.fromISO(question.date_updated) > updatedAt) {
-        updatedAt = DateTime.fromISO(question.date_updated);
+      if (questionUpdatedAt > updatedAt) {
+        updatedAt = questionUpdatedAt;
       }
     }
 
     const imagePath = await uploadImage(
-      `https://admin.topwr.solvro.pl/items/assets${article.cover}`,
+      `https://admin.topwr.solvro.pl/assets/${article.cover}`,
     );
 
     await GuideArticle.create({
