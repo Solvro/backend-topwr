@@ -19,6 +19,7 @@ import Library from "./library.js";
   id: "number",
   identifier: "string",
   specialName: "string",
+  iconType: BuildingIcon,
   campusId: "number",
   addressLine1: "string",
   addressLine2: "string",
@@ -62,6 +63,12 @@ export default class Building extends BaseModel {
 
   @column()
   declare cover: string;
+
+  @column()
+  declare externalDigitalGuideMode: string;
+
+  @column()
+  declare externalDigitalGuideIdOrURL: string;
 
   @belongsTo(() => Campus)
   declare campus: BelongsTo<typeof Campus>;
