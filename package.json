@@ -19,6 +19,7 @@
     "#abilities/*": "./app/abilities/*.js",
     "#enums/*": "./app/enums/*.js",
     "#scopes/*": "./app/scopes/*.js",
+    "#utils/*": "./app/utils/*.js",
     "#decorators/*": "./app/decorators/*.js",
     "#database/*": "./database/*.js",
     "#start/*": "./start/*.js",

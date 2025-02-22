@@ -6,6 +6,7 @@
     "paths": {
       "#enums/*": ["./app/enums/*.js"],
       "#scopes/*": ["./app/scopes/*.js"],
+      "#utils/*": ["./app/utils/*.js"],
       "#decorators/*": ["./app/decorators/*.js"],
       "#commands/*": ["./commands/*.js"]
     }
