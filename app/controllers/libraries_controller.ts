@@ -1,37 +1,29 @@
-import { HttpContext } from "@adonisjs/core/http";
+import type { HttpContext } from "@adonisjs/core/http";
 
-import Building from "#models/building";
+import Library from "#models/library";
 import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
-export default class BuildingsController {
-  protected readonly relations = [
-    "campus",
-    "aeds",
-    "bicycleShowers",
-    "foodSpots",
-    "libraries",
-    "libraries.regularHours",
-    "libraries.specialHours",
-  ];
+export default class LibrariesController {
+  protected readonly relations = ["regularHours", "specialHours", "building"];
 
   /**
    * Display a list of resource
    */
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
-    const baseQuery = Building.query().withScopes((scopes) => {
+    const baseQuery = Library.query().withScopes((scopes) => {
       scopes.handleSearchQuery(request.qs());
       scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
-    let buildings;
+    let libraries;
     if (page !== undefined) {
-      buildings = await baseQuery.paginate(page, limit ?? 10);
+      libraries = await baseQuery.paginate(page, limit ?? 10);
     } else {
-      buildings = { data: await baseQuery };
+      libraries = { data: await baseQuery };
     }
-    return buildings;
+    return libraries;
   }
 
   /**
@@ -41,13 +33,13 @@ export default class BuildingsController {
     const {
       params: { id },
     } = await request.validateUsing(showValidator);
-    const building = await Building.query()
+    const library = await Library.query()
       .withScopes((scopes) => {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();
 
-    return { data: building };
+    return { data: library };
   }
 }

@@ -3,6 +3,8 @@ import { DateTime } from "luxon";
 import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
+import { Weekday } from "#enums/weekday";
+
 import Library from "./library.js";
 
 export default class RegularHour extends BaseModel {
@@ -10,7 +12,7 @@ export default class RegularHour extends BaseModel {
   declare id: number;
 
   @column()
-  declare weekDay: number;
+  declare weekDay: Weekday;
 
   @column()
   declare openTime: string;

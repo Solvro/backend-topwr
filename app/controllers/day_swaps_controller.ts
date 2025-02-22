@@ -1,37 +1,29 @@
-import { HttpContext } from "@adonisjs/core/http";
+import type { HttpContext } from "@adonisjs/core/http";
 
-import Building from "#models/building";
+import DaySwap from "#models/day_swap";
 import { paginationValidator } from "#validators/pagination";
 import { showValidator } from "#validators/show";
 
-export default class BuildingsController {
-  protected readonly relations = [
-    "campus",
-    "aeds",
-    "bicycleShowers",
-    "foodSpots",
-    "libraries",
-    "libraries.regularHours",
-    "libraries.specialHours",
-  ];
+export default class DaySwapsController {
+  protected readonly relations = ["academicCalendar"];
 
   /**
    * Display a list of resource
    */
   async index({ request }: HttpContext) {
     const { page, limit } = await request.validateUsing(paginationValidator);
-    const baseQuery = Building.query().withScopes((scopes) => {
+    const baseQuery = DaySwap.query().withScopes((scopes) => {
       scopes.handleSearchQuery(request.qs());
       scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
     });
-    let buildings;
+    let daySwaps;
     if (page !== undefined) {
-      buildings = await baseQuery.paginate(page, limit ?? 10);
+      daySwaps = await baseQuery.paginate(page, limit ?? 10);
     } else {
-      buildings = { data: await baseQuery };
+      daySwaps = { data: await baseQuery };
     }
-    return buildings;
+    return daySwaps;
   }
 
   /**
@@ -41,13 +33,13 @@ export default class BuildingsController {
     const {
       params: { id },
     } = await request.validateUsing(showValidator);
-    const building = await Building.query()
+    const academicCalendar = await DaySwap.query()
       .withScopes((scopes) => {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
       .firstOrFail();
 
-    return { data: building };
+    return { data: academicCalendar };
   }
 }
