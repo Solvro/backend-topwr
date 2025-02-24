@@ -8,10 +8,16 @@ import Building from "#models/building";
 import Campus from "#models/campus";
 import FilesService from "#services/files_service";
 
-const buildingsPath = "https://admin.topwr.solvro.pl/items/Buildings";
+const buildingsPath = "https://admin.topwr.solvro.pl/items/Buildings/";
 const assetsPath = "https://admin.topwr.solvro.pl/assets/";
+const filesMetaPath = (id: string) =>
+  `https://admin.topwr.solvro.pl/files/${id}?fields=filename_disk`;
 
-interface BuildingsData {
+interface SourceResponse<T> {
+  data: T[];
+}
+
+interface BuildingDraft {
   id: number;
   name: string;
   latitude: number;
@@ -26,133 +32,189 @@ interface BuildingsData {
   updatedAt: string;
 }
 
-interface CampusesData {
-  data: {
-    name: string;
-    cover: string;
-    buildings: string[];
-  }[];
+interface CampusDraft {
+  name: string;
+  cover: string;
+  buildings: string[];
 }
 
 export default class BuildingScrapper extends BaseScraperModule {
-  name = "building and campuses scrapper";
-  description =
+  static name = "building and campuses scrapper";
+  static description =
     "scrapes pwr buildings data from directus and campuses from local file: './assets/campuses.json'";
 
   private filesService = new FilesService();
 
   async run(task: TaskHandle) {
-    try {
-      this.logger.info("starting reading campuses file...");
-      const campusesData = JSON.parse(
-        await fs.readFile("./assets/campuses.json", { encoding: "utf-8" }),
-      ) as CampusesData | undefined;
-      if (campusesData === undefined) {
-        throw new Error("failed reading ./assets/campuses.json");
+    task.update("starting reading campuses file...");
+    const campusesData = await fs
+      .readFile("./assets/campuses.json", { encoding: "utf-8" })
+      .then(JSON.parse)
+      .then((data) => {
+        if (!isValidCampusesData(data)) {
+          throw new Error(`
+            Invalid JSON structure in ./assets/campuses.json, 
+            expected type of Response<CampusDraft>
+            `);
+        }
+        return data;
+      });
+    const campusesMap = new Map<string, Campus>();
+    for (const data of campusesData.data) {
+      const campus = await Campus.create(data);
+      for (const buildingIdentifier of data.buildings) {
+        campusesMap.set(buildingIdentifier, campus);
       }
-      const campusesMap = new Map<string, Campus>();
-      for (const data of campusesData.data) {
-        const campus = await Campus.create(data);
-        data.buildings.forEach((building) => campusesMap.set(building, campus));
-      }
-      this.logger.info("campuses created!");
-
-      this.logger.info("starting fetching buildings...");
-      const response = await fetch(buildingsPath);
-      if (!response.ok) {
-        throw new Error(
-          `Error: ${response.status} ` + `cause: ${response.statusText}`,
-        );
-      }
-      const buildingsBody = (await response.json()) as
-        | { data: BuildingsData[] }
-        | undefined;
-      if (buildingsBody === undefined) {
-        throw new Error("failed fetching buildings: empty body");
-      }
-      const buildingsData = buildingsBody.data;
-
-      const formattedBuildingData = await Promise.all(
-        buildingsData.map(async (data) => {
-          const addressArray = data.addres.split(",");
-          return {
-            id: data.id,
-            identifier: data.name,
-            specialName: data.naturalName,
-            iconType: BuildingIcon.Icon,
-            campusId: -1,
-            addressLine1: addressArray.shift(),
-            addressLine2: addressArray.shift(),
-            latitude: data.latitude,
-            longitude: data.longitude,
-            haveFood: data.food ?? false,
-            cover: await this.uploadAndGetKey(data),
-            externalDigitalGuideMode: data.externalDigitalGuideMode,
-            externalDigitalGuideIdOrURL: data.externalDigitalGuideIdOrURL,
-            createdAt: resolveDate(data.createdAt),
-            updatedAt: resolveDate(data.updatedAt),
-          };
-        }),
-      );
-      for (const buildingEntry of formattedBuildingData) {
+    }
+    task.update("campuses created!");
+    task.update("starting fetching buildings...");
+    const buildingsResponse = await this.wrappedFetch(
+      buildingsPath,
+      "list of buildings from directus",
+    );
+    const buildingsData = await buildingsResponse.json();
+    if (!isValidBuildingsData(buildingsData)) {
+      throw new Error(`
+        Invalid data type fetched from ${buildingsPath}, 
+        expected type of Response<BuildingDraft>
+        `);
+    }
+    const formattedBuildingData = await Promise.all(
+      buildingsData.data.map(async (data) => {
+        const addressArray = data.addres.split(",");
+        return {
+          id: data.id,
+          identifier: data.name,
+          specialName: data.naturalName,
+          iconType: BuildingIcon.Icon,
+          addressLine1: addressArray.shift(),
+          addressLine2: addressArray.shift(),
+          latitude: data.latitude,
+          longitude: data.longitude,
+          haveFood: data.food ?? false,
+          cover: await this.uploadCoverAndGetKey(data),
+          externalDigitalGuideMode: data.externalDigitalGuideMode,
+          externalDigitalGuideIdOrURL: data.externalDigitalGuideIdOrURL,
+          createdAt: resolveDate(data.createdAt),
+          updatedAt: resolveDate(data.updatedAt),
+        };
+      }),
+    );
+    const updatedCampuses: Campus[] = [];
+    await Building.createMany(
+      formattedBuildingData.map((buildingEntry) => {
         const campus = campusesMap.get(buildingEntry.identifier);
         if (campus === undefined) {
-          this.logger.error(
-            `No campus assigned to building ${buildingEntry.identifier}`,
-          );
-        } else {
-          // update campuses
-          campus.cover = buildingEntry.cover;
-          buildingEntry.campusId = campus.id;
-          await campus.save();
+          throw new Error(`
+          No campus assigned to building ${buildingEntry.identifier} 
+          foreign key constraint will not be met for buildings table
+          `);
         }
+        // swap campus cover placeholder (building identifier) for real cover key
+        if (
+          buildingEntry.cover !== undefined &&
+          campus.cover === buildingEntry.identifier
+        ) {
+          campus.cover = buildingEntry.cover;
+          updatedCampuses.push(campus);
+        }
+        return {
+          campusId: campus.id,
+          ...buildingEntry,
+        };
+      }),
+    );
+    task.update("Buildings created !");
+    //save changes for campuses
+    await Promise.all([...updatedCampuses].map((campus) => campus.save()));
+    task.update("campuses cover assigned !");
+  }
+
+  private async uploadCoverAndGetKey(
+    data: BuildingDraft,
+  ): Promise<string | undefined> {
+    const imageKey = data.cover;
+    if (imageKey === null) {
+      this.logger.warning(`no image for building: [${data.id}]`);
+      return;
+    }
+    try {
+      const extension = await this.findFileExtension(imageKey);
+      const response = await this.wrappedFetch(
+        `${assetsPath}${imageKey}`,
+        `image file ${imageKey}`,
+      );
+      const imageStream = response.body;
+      if (imageStream === null) {
+        throw new Error(
+          `No file contents for ${imageKey} for building: [${data.id}] under
+          ${assetsPath}${imageKey}`,
+        );
       }
-      await Building.createMany(formattedBuildingData);
-      this.logger.info("Buildings created !");
-      task.update(`finished running ${this.name} scrapper`);
+      return await this.filesService.uploadStream(
+        Readable.fromWeb(imageStream),
+        extension,
+      );
     } catch (err) {
-      this.logger.error("error within buildings and campuses scrapper");
-      throw new Error(`${err}`);
+      throw new Error(`failed to upload the file: ${imageKey}`, {
+        cause: err,
+      });
     }
   }
 
-  private async uploadAndGetKey(data: BuildingsData): Promise<string> {
+  private async wrappedFetch(url: string, item: string): Promise<Response> {
+    let response;
     try {
-      const imageKey = data.cover;
-      if (imageKey === null) {
-        this.logger.warning(`no image for building: [${data.id}]`);
-        return "";
-      }
-      const response = await fetch(`${assetsPath}${imageKey}`);
-      if (!response.ok) {
-        throw new Error(response.statusText);
-      }
-      const body = response.body;
-      if (body === null) {
-        throw new Error(
-          `No file contents for ${imageKey} for building: [${data.id}]`,
-        );
-      }
-      let mediaType = "";
-      for (const [header, value] of response.headers.entries()) {
-        if (header === "content-type") {
-          if (value.startsWith("image")) {
-            mediaType = value.split("/").pop() ?? "";
-          }
-        }
-      }
-      return await this.filesService.uploadStream(
-        Readable.fromWeb(body),
-        mediaType,
+      response = await fetch(url);
+    } catch (e) {
+      throw new Error(`Failed to fetch ${item}`, { cause: e });
+    }
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${item} - got response status code ${response.status} ${response.statusText}`,
       );
-    } catch (err) {
-      this.logger.error(`failed to upload the files: ${err}`);
-      return "";
+    }
+    return response;
+  }
+
+  private async findFileExtension(file: string): Promise<string | undefined> {
+    try {
+      const response = await this.wrappedFetch(
+        filesMetaPath(file),
+        `file meta of ${file}`,
+      );
+      const extension = (await response.json()) as {
+        data: { filename_disk: string };
+      };
+      return extension.data.filename_disk.split(".").pop()?.toLowerCase();
+    } catch (e) {
+      throw new Error(`Failed to fetch extension for ${file}`, { cause: e });
     }
   }
 }
 
 function resolveDate(dateString: string): DateTime<true> {
   const date = DateTime.fromISO(dateString);
-  return date.isValid ? date : DateTime.local();
+  return date.isValid ? date : DateTime.now();
 }
+
+function isValidDataResponse<T>(
+  response: unknown,
+): response is SourceResponse<T> {
+  return (
+    typeof response === "object" &&
+    response !== null &&
+    "data" in response &&
+    Array.isArray(response.data)
+  );
+}
+
+const isValidCampusesData = (
+  data: unknown,
+): data is SourceResponse<CampusDraft> =>
+  isValidDataResponse<CampusDraft>(data);
+
+const isValidBuildingsData = (
+  data: unknown,
+): data is SourceResponse<BuildingDraft> =>
+  isValidDataResponse<BuildingDraft>(data);
