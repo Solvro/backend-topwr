@@ -43,6 +43,56 @@ export abstract class BaseScraperModule {
   }
 
   abstract run(task: TaskHandle): Promise<string> | Promise<void>;
+
+  /**
+   * Fetch the provided URL and throw an error if the status code is not in the 2xx range.
+   *
+   * @param url - URL to fetch
+   * @param item - type of data being fetched - this is used to generate accurate error context messages
+   * @throws when the response status code is outside of the 2xx range
+   * @returns the HTTP response object
+   */
+  protected async fetchAndCheckStatus(
+    url: string,
+    item: string,
+  ): Promise<Response> {
+    let response;
+    try {
+      response = await fetch(url);
+    } catch (e) {
+      throw new Error(`Failed to fetch ${item}`, { cause: e });
+    }
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch ${item} - got response status code ${response.status} ${response.statusText}`,
+      );
+    }
+    return response;
+  }
+
+  /**
+   * Fetch the provided URL and deserialize the response as JSON.
+   *
+   * @param url - URL to fetch
+   * @param item - type of data being fetched - this is used to generate accurate error context messages
+   * @throws when the response status code is outside of the 2xx range, or if the response deserializes to something other than an object
+   * @returns the desialized JSON response
+   */
+  protected async fetchJSON(url: string, item: string): Promise<object> {
+    const response = await this.fetchAndCheckStatus(url, item);
+    let result;
+    try {
+      result = await response.json();
+    } catch (e) {
+      throw new Error(`Failed to deserialize ${item}`, { cause: e });
+    }
+    if (typeof result !== "object" || result === null) {
+      throw new Error(
+        `Expected the type of deserialized fetch response for ${item} to be an object, but got ${result === null ? "null" : typeof result} instead`,
+      );
+    }
+    return result;
+  }
 }
 
 type ScraperModuleClass = (new (logger: Logger) => BaseScraperModule) &
