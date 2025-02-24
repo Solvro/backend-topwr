@@ -14,8 +14,8 @@ export default class StudentOrganizationsController {
     const { page, limit } = await request.validateUsing(paginationValidator);
     const baseQuery = StudentOrganization.query().withScopes((scopes) => {
       scopes.handleSearchQuery(request.qs());
+      scopes.preloadRelations(request.only(this.relations));
       scopes.handleSortQuery(request.input("sort"));
-      scopes.preloadRelations(request.only(["tags", "links"]));
     });
     let studentOrganizations;
     if (page !== undefined) {
@@ -33,7 +33,7 @@ export default class StudentOrganizationsController {
     const {
       params: { id },
     } = await request.validateUsing(showValidator);
-    const studentOrganization = StudentOrganization.query()
+    const studentOrganization = await StudentOrganization.query()
       .withScopes((scopes) => {
         scopes.preloadRelations(request.only(["tags", "links"]));
       })
