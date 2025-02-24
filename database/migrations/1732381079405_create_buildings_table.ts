@@ -29,7 +29,7 @@ export default class extends BaseSchema {
       table.decimal("latitude").notNullable();
       table.decimal("longitude").notNullable();
       table.boolean("have_food").defaultTo(false);
-      table.text("cover").notNullable();
+      table.text("cover").nullable();
       table.text("external_digital_guide_mode").nullable();
       table.text("external_digital_guide_id_or_url").nullable();
       table.check(
