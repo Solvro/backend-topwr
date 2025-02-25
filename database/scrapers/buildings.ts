@@ -132,32 +132,34 @@ export default class BuildingScrapper extends BaseScraperModule {
   private async uploadCoverAndGetKey(
     data: BuildingDraft,
   ): Promise<string | undefined> {
-    const imageKey = data.cover;
-    if (imageKey === null) {
-      this.logger.warning(`no image for building: [${data.id}]`);
-      return;
-    }
-    const extension = await this.findFileExtension(imageKey);
-    const imageStream = await this.fetchAndCheckStatus(
-      `${assetsPath}${imageKey}`,
-      `image file ${imageKey}`,
-    ).then((response) => response.body);
-    if (imageStream === null) {
-      throw new Error(
-        `No file contents for ${imageKey} for building: [${data.id}] under
+    return this.semaphore.runTask(async () => {
+      const imageKey = data.cover;
+      if (imageKey === null) {
+        this.logger.warning(`no image for building: [${data.id}]`);
+        return;
+      }
+      const extension = await this.findFileExtension(imageKey);
+      const imageStream = await this.fetchAndCheckStatus(
+        `${assetsPath}${imageKey}`,
+        `image file ${imageKey}`,
+      ).then((response) => response.body);
+      if (imageStream === null) {
+        throw new Error(
+          `No file contents for ${imageKey} for building: [${data.id}] under
         ${assetsPath}${imageKey}`,
-      );
-    }
-    try {
-      return await this.filesService.uploadStream(
-        Readable.fromWeb(imageStream),
-        extension,
-      );
-    } catch (err) {
-      throw new Error(`failed to upload the file: ${imageKey}`, {
-        cause: err,
-      });
-    }
+        );
+      }
+      try {
+        return await this.filesService.uploadStream(
+          Readable.fromWeb(imageStream),
+          extension,
+        );
+      } catch (err) {
+        throw new Error(`failed to upload the file: ${imageKey}`, {
+          cause: err,
+        });
+      }
+    });
   }
 
   private async findFileExtension(file: string): Promise<string | undefined> {
