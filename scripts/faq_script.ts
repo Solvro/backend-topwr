@@ -40,17 +40,35 @@ interface PivotTable {
   }[];
 }
 
+interface ImageMetadata {
+  data: {
+    type: string;
+  };
+}
+
 async function uploadImage(imageUrl: string) {
   const filesService = new FilesService();
 
-  const fetchedImage = await fetch(imageUrl);
+  const [fetchedImage, fetchedImageMetadata] = await Promise.all([
+    fetch(`https://admin.topwr.solvro.pl/assets/${imageUrl}`),
+    fetch(`https://admin.topwr.solvro.pl/files/${imageUrl}`),
+  ]);
+
   if (!fetchedImage.ok) {
     throw new Error(
-      `Failed to download image. HTTP status: ${fetchedImage.status}`,
+      `Failed to fetch the image. HTTP status: ${fetchedImage.status}`,
     );
   }
 
-  const extension = fetchedImage.headers.get("content-type")?.split("/")[1];
+  if (!fetchedImageMetadata.ok) {
+    throw new Error(
+      `Failed to fetch the image metadata. HTTP status: ${fetchedImageMetadata.status}`,
+    );
+  }
+
+  const imageMetadata = (await fetchedImageMetadata.json()) as ImageMetadata;
+  const extension = imageMetadata.data.type.split("/")[1];
+
   const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
 
   try {
@@ -121,9 +139,7 @@ export async function faqScript() {
       }
     }
 
-    const imagePath = await uploadImage(
-      `https://admin.topwr.solvro.pl/assets/${article.cover}`,
-    );
+    const imagePath = await uploadImage(article.cover);
 
     await GuideArticle.create({
       id: article.id,
