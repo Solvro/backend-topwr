@@ -68,11 +68,10 @@ export default class BuildingScrapper extends BaseScraperModule {
     }
     task.update("campuses created!");
     task.update("starting fetching buildings...");
-    const buildingsResponse = await this.wrappedFetch(
+    const buildingsData = await this.fetchJSON(
       buildingsPath,
       "list of buildings from directus",
     );
-    const buildingsData = await buildingsResponse.json();
     if (!isValidBuildingsData(buildingsData)) {
       throw new Error(`
         Invalid data type fetched from ${buildingsPath}, 
@@ -138,19 +137,18 @@ export default class BuildingScrapper extends BaseScraperModule {
       this.logger.warning(`no image for building: [${data.id}]`);
       return;
     }
-    try {
-      const extension = await this.findFileExtension(imageKey);
-      const response = await this.wrappedFetch(
-        `${assetsPath}${imageKey}`,
-        `image file ${imageKey}`,
+    const extension = await this.findFileExtension(imageKey);
+    const imageStream = await this.fetchAndCheckStatus(
+      `${assetsPath}${imageKey}`,
+      `image file ${imageKey}`,
+    ).then((response) => response.body);
+    if (imageStream === null) {
+      throw new Error(
+        `No file contents for ${imageKey} for building: [${data.id}] under
+        ${assetsPath}${imageKey}`,
       );
-      const imageStream = response.body;
-      if (imageStream === null) {
-        throw new Error(
-          `No file contents for ${imageKey} for building: [${data.id}] under
-          ${assetsPath}${imageKey}`,
-        );
-      }
+    }
+    try {
       return await this.filesService.uploadStream(
         Readable.fromWeb(imageStream),
         extension,
@@ -162,30 +160,12 @@ export default class BuildingScrapper extends BaseScraperModule {
     }
   }
 
-  private async wrappedFetch(url: string, item: string): Promise<Response> {
-    let response;
-    try {
-      response = await fetch(url);
-    } catch (e) {
-      throw new Error(`Failed to fetch ${item}`, { cause: e });
-    }
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch ${item} - got response status code ${response.status} ${response.statusText}`,
-      );
-    }
-    return response;
-  }
-
   private async findFileExtension(file: string): Promise<string | undefined> {
+    const extension = (await this.fetchJSON(
+      filesMetaPath(file),
+      `file meta of ${file}`,
+    )) as { data: { filename_disk: string } };
     try {
-      const response = await this.wrappedFetch(
-        filesMetaPath(file),
-        `file meta of ${file}`,
-      );
-      const extension = (await response.json()) as {
-        data: { filename_disk: string };
-      };
       return extension.data.filename_disk.split(".").pop()?.toLowerCase();
     } catch (e) {
       throw new Error(`Failed to fetch extension for ${file}`, { cause: e });
