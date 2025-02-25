@@ -125,30 +125,32 @@ export default class BuildingScrapper extends BaseScraperModule {
     );
     task.update("Buildings created !");
     //save changes for campuses
-    await Promise.all([...updatedCampuses].map((campus) => campus.save()));
+    await Promise.all(updatedCampuses.map((campus) => campus.save()));
     task.update("campuses cover assigned !");
   }
 
   private async uploadCoverAndGetKey(
     data: BuildingDraft,
   ): Promise<string | undefined> {
-    return this.semaphore.runTask(async () => {
-      const imageKey = data.cover;
-      if (imageKey === null) {
-        this.logger.warning(`no image for building: [${data.id}]`);
-        return;
-      }
-      const extension = await this.findFileExtension(imageKey);
-      const imageStream = await this.fetchAndCheckStatus(
+    const imageKey = data.cover;
+    if (imageKey === null) {
+      this.logger.warning(`no image for building: [${data.id}]`);
+      return;
+    }
+    const extension = await this.findFileExtension(imageKey);
+    const imageStream = await this.semaphore.runTask(() =>
+      this.fetchAndCheckStatus(
         `${assetsPath}${imageKey}`,
         `image file ${imageKey}`,
-      ).then((response) => response.body);
-      if (imageStream === null) {
-        throw new Error(
-          `No file contents for ${imageKey} for building: [${data.id}] under
-        ${assetsPath}${imageKey}`,
-        );
-      }
+      ).then((response) => response.body),
+    );
+    if (imageStream === null) {
+      throw new Error(
+        `No file contents for ${imageKey} for building: [${data.id}] under
+      ${assetsPath}${imageKey}`,
+      );
+    }
+    await this.semaphore.runTask(async () => {
       try {
         return await this.filesService.uploadStream(
           Readable.fromWeb(imageStream),
