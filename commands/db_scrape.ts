@@ -6,6 +6,8 @@ import path from "node:path";
 import { BaseCommand, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 
+import { Semaphore } from "#utils/semaphore";
+
 /*
  * The scraper framework
  *
@@ -37,9 +39,11 @@ export abstract class BaseScraperModule {
   static description: string;
   static taskTitle?: string;
   logger: Logger;
+  semaphore: Semaphore;
 
-  constructor(logger: Logger) {
+  constructor(logger: Logger, semaphore: Semaphore) {
     this.logger = logger;
+    this.semaphore = semaphore;
   }
 
   abstract run(task: TaskHandle): Promise<string> | Promise<void>;
@@ -95,7 +99,10 @@ export abstract class BaseScraperModule {
   }
 }
 
-type ScraperModuleClass = (new (logger: Logger) => BaseScraperModule) &
+type ScraperModuleClass = (new (
+  logger: Logger,
+  semaphore: Semaphore,
+) => BaseScraperModule) &
   typeof BaseScraperModule;
 
 interface ScraperModuleEntry {
@@ -126,8 +133,17 @@ export default class DbScrape extends BaseCommand {
 
   @flags.boolean({
     alias: ["all", "a"],
+    description: "Select all available modules without asking",
   })
   declare runAll: boolean;
+
+  @flags.number({
+    alias: ["j"],
+    description:
+      "Max number of parallel jobs/fetches/etc. (default semaphore capacity, usage is implementation-dependant)",
+    default: 16,
+  })
+  declare maxJobs: number;
 
   async run() {
     this.logger.info("Loading modules...");
@@ -179,6 +195,7 @@ export default class DbScrape extends BaseCommand {
   async loadModules(): Promise<Record<string, ScraperModuleEntry>> {
     const dir = path.resolve("./database/scrapers");
     const files = await fs.readdir("./database/scrapers");
+    const semaphore = new Semaphore(this.maxJobs);
 
     const imports = await Promise.all(
       files
@@ -239,7 +256,7 @@ export default class DbScrape extends BaseCommand {
       }
       let instance: BaseScraperModule;
       try {
-        instance = new Module(this.logger);
+        instance = new Module(this.logger, semaphore);
       } catch (e) {
         throw new Error(
           `Failed to instantiate the '${Module.name}' scraper module`,

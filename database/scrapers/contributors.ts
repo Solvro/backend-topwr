@@ -11,7 +11,6 @@ import Role from "#models/role";
 import Version from "#models/version";
 import FilesService from "#services/files_service";
 import { zip } from "#utils/arrays";
-import { Semaphore } from "#utils/semaphore";
 
 interface DirectusResponse<T> {
   data: T[];
@@ -95,7 +94,6 @@ export default class ContributorsScraper extends BaseScraperModule {
     "Changelog_Screenshots",
   ];
 
-  private semaphore = new Semaphore(16);
   private filesService = new FilesService();
 
   private readonly linkDomains: [string, LinkType][] = [
