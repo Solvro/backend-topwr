@@ -39,9 +39,10 @@ interface CampusDraft {
 }
 
 export default class BuildingsScraper extends BaseScraperModule {
-  static name = "building and campuses scrapper";
+  static name = "Buildings and campuses";
   static description =
-    "scrapes pwr buildings data from directus and campuses from local file: './assets/campuses.json'";
+    "Scrapes pwr buildings data from directus and campuses from local file: './assets/campuses.json'";
+  static taskTitle = "Scrape buildings and campuses";
 
   private filesService = new FilesService();
 
@@ -53,7 +54,7 @@ export default class BuildingsScraper extends BaseScraperModule {
       .then((data) => {
         if (!isValidCampusesData(data)) {
           throw new Error(`
-            Invalid JSON structure in ./assets/campuses.json, 
+            Invalid JSON structure in ./assets/campuses.json,
             expected type of Response<CampusDraft>
             `);
         }
@@ -74,7 +75,7 @@ export default class BuildingsScraper extends BaseScraperModule {
     );
     if (!isValidBuildingsData(buildingsData)) {
       throw new Error(`
-        Invalid data type fetched from ${buildingsPath}, 
+        Invalid data type fetched from ${buildingsPath},
         expected type of Response<BuildingDraft>
         `);
     }
@@ -107,7 +108,7 @@ export default class BuildingsScraper extends BaseScraperModule {
         const campus = campusesMap.get(buildingEntry.identifier);
         if (campus === undefined) {
           throw new Error(`
-          No campus assigned to building ${buildingEntry.identifier} 
+          No campus assigned to building ${buildingEntry.identifier}
           foreign key constraint will not be met for buildings table
           `);
         }
