@@ -113,7 +113,7 @@ export default class BuildingsScraper extends BaseScraperModule {
         }
         // swap campus cover placeholder (building identifier) for real cover key
         if (
-          buildingEntry.cover !== undefined &&
+          buildingEntry.cover !== null &&
           campus.cover === buildingEntry.identifier
         ) {
           campus.cover = buildingEntry.cover;
@@ -133,11 +133,11 @@ export default class BuildingsScraper extends BaseScraperModule {
 
   private async uploadCoverAndGetKey(
     data: BuildingDraft,
-  ): Promise<string | undefined> {
+  ): Promise<string | null> {
     const imageKey = data.cover;
     if (imageKey === null) {
       this.logger.warning(`no image for building: [${data.id}]`);
-      return;
+      return null;
     }
     const extension = await this.findFileExtension(imageKey);
     const imageStream = await this.fetchAndCheckStatus(
