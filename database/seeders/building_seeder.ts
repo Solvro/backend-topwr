@@ -39,6 +39,9 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.006,
         haveFood: true,
         cover: "https://example.com/covers/building1.jpg",
+        externalDigitalGuideMode: "web_url",
+        externalDigitalGuideIdOrURL:
+          "https://dostepnosc.pwr.edu.pl/dostepnosc-architektoniczna/deklaracje-dostepnosci-budynkow/budynki-a/a2",
       },
       {
         identifier: "B002",
@@ -50,6 +53,8 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.0061,
         haveFood: false,
         cover: "https://example.com/covers/building2.jpg",
+        externalDigitalGuideMode: "id",
+        externalDigitalGuideIdOrURL: "5",
       },
       {
         identifier: "B003",

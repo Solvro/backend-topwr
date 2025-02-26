@@ -27,6 +27,8 @@ import Library from "./library.js";
   longitude: "number",
   haveFood: "boolean",
   cover: "string",
+  externalDigitalGuideMode: "string",
+  externalDigitalGuideIdOrURL: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })
@@ -62,7 +64,13 @@ export default class Building extends BaseModel {
   declare haveFood: boolean;
 
   @column()
-  declare cover: string;
+  declare cover: string | null;
+
+  @column()
+  declare externalDigitalGuideMode: string | null;
+
+  @column()
+  declare externalDigitalGuideIdOrURL: string | null;
 
   @belongsTo(() => Campus)
   declare campus: BelongsTo<typeof Campus>;

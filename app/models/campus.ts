@@ -25,7 +25,7 @@ export default class Campus extends BaseModel {
   declare name: string;
 
   @column()
-  declare cover: string;
+  declare cover: string | null;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

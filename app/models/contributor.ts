@@ -55,4 +55,6 @@ export default class Contributor extends BaseModel {
   static preloadRelations = preloadRelations(Contributor);
   static handleSearchQuery = handleSearchQuery(Contributor);
   static handleSortQuery = handleSortQuery(Contributor);
+
+  serializeExtras = true;
 }
