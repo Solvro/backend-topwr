@@ -64,13 +64,13 @@ export default class Building extends BaseModel {
   declare haveFood: boolean;
 
   @column()
-  declare cover: string;
+  declare cover: string | null;
 
   @column()
-  declare externalDigitalGuideMode: string;
+  declare externalDigitalGuideMode: string | null;
 
   @column()
-  declare externalDigitalGuideIdOrURL: string;
+  declare externalDigitalGuideIdOrURL: string | null;
 
   @belongsTo(() => Campus)
   declare campus: BelongsTo<typeof Campus>;
