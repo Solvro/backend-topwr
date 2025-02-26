@@ -27,6 +27,8 @@ import Library from "./library.js";
   longitude: "number",
   haveFood: "boolean",
   cover: "string",
+  externalDigitalGuideMode: "string",
+  externalDigitalGuideIdOrURL: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })
