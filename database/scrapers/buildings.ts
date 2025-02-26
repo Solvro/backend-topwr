@@ -38,7 +38,7 @@ interface CampusDraft {
   buildings: string[];
 }
 
-export default class BuildingScrapper extends BaseScraperModule {
+export default class BuildingsScraper extends BaseScraperModule {
   static name = "building and campuses scrapper";
   static description =
     "scrapes pwr buildings data from directus and campuses from local file: './assets/campuses.json'";
@@ -91,7 +91,9 @@ export default class BuildingScrapper extends BaseScraperModule {
           latitude: data.latitude,
           longitude: data.longitude,
           haveFood: data.food ?? false,
-          cover: await this.uploadCoverAndGetKey(data),
+          cover: await this.semaphore.runTask(() =>
+            this.uploadCoverAndGetKey(data),
+          ),
           externalDigitalGuideMode: data.externalDigitalGuideMode,
           externalDigitalGuideIdOrURL: data.externalDigitalGuideIdOrURL,
           createdAt: resolveDate(data.createdAt),
@@ -138,30 +140,26 @@ export default class BuildingScrapper extends BaseScraperModule {
       return;
     }
     const extension = await this.findFileExtension(imageKey);
-    const imageStream = await this.semaphore.runTask(() =>
-      this.fetchAndCheckStatus(
-        `${assetsPath}${imageKey}`,
-        `image file ${imageKey}`,
-      ).then((response) => response.body),
-    );
+    const imageStream = await this.fetchAndCheckStatus(
+      `${assetsPath}${imageKey}`,
+      `image file ${imageKey}`,
+    ).then((response) => response.body);
     if (imageStream === null) {
       throw new Error(
         `No file contents for ${imageKey} for building: [${data.id}] under
       ${assetsPath}${imageKey}`,
       );
     }
-    await this.semaphore.runTask(async () => {
-      try {
-        return await this.filesService.uploadStream(
-          Readable.fromWeb(imageStream),
-          extension,
-        );
-      } catch (err) {
-        throw new Error(`failed to upload the file: ${imageKey}`, {
-          cause: err,
-        });
-      }
-    });
+    try {
+      return await this.filesService.uploadStream(
+        Readable.fromWeb(imageStream),
+        extension,
+      );
+    } catch (err) {
+      throw new Error(`failed to upload the file: ${imageKey}`, {
+        cause: err,
+      });
+    }
   }
 
   private async findFileExtension(file: string): Promise<string | undefined> {
