@@ -1,7 +1,7 @@
 import { BaseCommand } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 
-import { faqScript } from "../scripts/faq_script.js";
+import FaqScript from "#database/scrapers/faq_script";
 
 export default class ScraperFaq extends BaseCommand {
   static commandName = "scraper:faq";
@@ -12,6 +12,6 @@ export default class ScraperFaq extends BaseCommand {
   };
 
   async run() {
-    await faqScript();
+    await FaqScript.run();
   }
 }

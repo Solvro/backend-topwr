@@ -78,7 +78,13 @@ async function uploadImage(imageUrl: string) {
   }
 }
 
-export async function faqScript() {
+export default class FaqScript {
+  static async run() {
+    await faqScript();
+  }
+}
+
+async function faqScript() {
   logger.info("Fetching data...");
   const [articlesResponse, questionsResponse, pivotTableResponse] =
     await Promise.all([
