@@ -168,7 +168,7 @@ export async function faqScript() {
     await GuideQuestion.create({
       title: question.question,
       answer: question.answer,
-      articleId: pivot.FAQ_Types_id ?? 0,
+      articleId: pivot.FAQ_Types_id ?? undefined,
     });
   }
 
