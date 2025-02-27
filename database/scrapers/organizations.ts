@@ -124,13 +124,13 @@ export default class OrganizationsScraper extends BaseScraperModule {
       const a = org.tags
         .map((tagId) => tagsModels.get(tagId)?.tag)
         .filter((tagModel) => tagModel !== undefined);
-      if (org.isStrategic) {
-        a.push("strategic");
-      }
       if (a.length < org.tags.length) {
         this.logger.warning(
           `There are some undefined tags in organization ${org.name}. Omitting these tags.`,
         );
+      }
+      if (org.isStrategic) {
+        a.push("strategic");
       }
       await Promise.all([
         orgModel.related("tags").attach(a),
