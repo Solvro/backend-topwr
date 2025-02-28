@@ -4,7 +4,6 @@ import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import { ChangeType } from "#enums/change_type";
-import { LinkType } from "#enums/link_type";
 import Contributor from "#models/contributor";
 import Milestone from "#models/milestone";
 import Role from "#models/role";
@@ -95,50 +94,6 @@ export default class ContributorsScraper extends BaseScraperModule {
   ];
 
   private filesService = new FilesService();
-
-  private readonly linkDomains: [string, LinkType][] = [
-    ["facebook.com", LinkType.Facebook],
-    ["instagram.com", LinkType.Instagram],
-    ["linkedin.com", LinkType.LinkedIn],
-    ["youtube.com", LinkType.YouTube],
-    ["github.com", LinkType.GitHub],
-    ["x.com", LinkType.X],
-    ["twitter.com", LinkType.X],
-    ["discord.com", LinkType.Discord],
-    ["discord.gg", LinkType.Discord],
-    ["tiktok.com", LinkType.TikTok],
-    ["twitch.tv", LinkType.Twitch],
-  ];
-
-  private detectLinkType(link: string): LinkType {
-    let url;
-    try {
-      url = new URL(link);
-    } catch {
-      this.logger.warning(
-        `Failed to parse social link '${link}' - assigning the Default linktype`,
-      );
-      return LinkType.Default;
-    }
-    if (url.protocol === "mailto:") {
-      return LinkType.Mail;
-    }
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      this.logger.warning(
-        `Encountered an unknown protocol '${url.protocol}' in social link '${link}' - assigning the Default linktype`,
-      );
-      return LinkType.Default;
-    }
-    for (const [domain, type] of this.linkDomains) {
-      if (url.host === domain || url.host.endsWith(`.${domain}`)) {
-        return type;
-      }
-    }
-    this.logger.info(
-      `Social link '${link}' matched no domains - assigning the Default linktype`,
-    );
-    return LinkType.Default;
-  }
 
   async run(task: TaskHandle) {
     task.update("Fetching all schema objects");
