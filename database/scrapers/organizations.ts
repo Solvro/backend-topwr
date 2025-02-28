@@ -12,6 +12,9 @@ import FilesService from "#services/files_service";
 interface DirectusResponse<T> {
   data: T[];
 }
+interface DirectusSingleResponse<T> {
+  data: T;
+}
 
 interface DirectusTag {
   id: number;
@@ -73,15 +76,10 @@ export default class OrganizationsScraper extends BaseScraperModule {
   ];
 
   public async run() {
-    const [orgs, tags, links] = (await Promise.all([
-      this.fetchJSON(this.urls.orgs, "organizations"),
-      this.fetchJSON(this.urls.tags, "tags"),
-      this.fetchJSON(this.urls.links, "links"),
-    ])) as [
-      DirectusResponse<DirectusOrganization>,
-      DirectusResponse<DirectusTag>,
-      DirectusResponse<DirectusLink>,
-    ];
+    const tags = (await this.fetchJSON(
+      this.urls.tags,
+      "tags",
+    )) as DirectusResponse<DirectusTag>;
     const tagsModels = new Map(
       tags.data.map((tag) => [
         tag.id,
@@ -92,15 +90,19 @@ export default class OrganizationsScraper extends BaseScraperModule {
       ...tagsModels.values().toArray(),
       { tag: "strategic" },
     ]);
-    const linksModels = links.data.map((link) => {
-      return {
-        id: link.id,
-        link: link.link,
-        type: this.detectLinkType(link.link),
-        studentOrganizationId: link.scientific_circle_id,
-      } as StudentOrganizationLink;
-    });
-    for (const org of orgs.data) {
+
+    for (let id = 1342; id <= 1588; id++) {
+      let res;
+      try {
+        res = (await this.fetchJSON(
+          `${this.urls.orgs}/${id}`,
+          `organization ${id}`,
+        )) as DirectusSingleResponse<DirectusOrganization>;
+      } catch (e) {
+        this.logger.warning(e);
+        continue;
+      }
+      const org = res.data;
       const logo =
         org.logo !== null && org.logo !== undefined
           ? await this.newAsset(org.logo)
@@ -132,14 +134,25 @@ export default class OrganizationsScraper extends BaseScraperModule {
       if (org.isStrategic) {
         a.push("strategic");
       }
-      await Promise.all([
-        orgModel.related("tags").attach(a),
-        orgModel
-          .related("links")
-          .createMany(
-            linksModels.filter((link) => link.studentOrganizationId === org.id),
-          ),
-      ]);
+      await orgModel.related("tags").attach(a);
+      const links = [];
+      for (const linkId of org.links) {
+        try {
+          const resp = (await this.fetchJSON(
+            `${this.urls.links}/${linkId}`,
+            `link ${linkId}`,
+          )) as DirectusSingleResponse<DirectusLink>;
+          const link = resp.data;
+          links.push({
+            id: link.id,
+            link: link.link,
+            type: this.detectLinkType(link.link),
+          } as StudentOrganizationLink);
+        } catch (e) {
+          this.logger.warning(`Failed to fetch link ${linkId}: ${e}`);
+        }
+      }
+      await orgModel.related("links").createMany(links);
     }
   }
 
