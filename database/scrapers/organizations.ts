@@ -99,7 +99,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
           `organization ${id}`,
         )) as DirectusSingleResponse<DirectusOrganization>;
       } catch (e) {
-        this.logger.warning(e);
+        this.logger.warning(`${e}`);
         continue;
       }
       const org = res.data;
