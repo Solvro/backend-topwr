@@ -123,18 +123,18 @@ export default class OrganizationsScraper extends BaseScraperModule {
         source: this.convertSource(org.source),
         organizationType: this.convertType(org.type),
       });
-      const a = org.tags
+      const tagNames = org.tags
         .map((tagId) => tagsModels.get(tagId)?.tag)
         .filter((tagModel) => tagModel !== undefined);
-      if (a.length < org.tags.length) {
+      if (tagNames.length < org.tags.length) {
         this.logger.warning(
           `There are some undefined tags in organization ${org.name}. Omitting these tags.`,
         );
       }
       if (org.isStrategic) {
-        a.push("strategic");
+        tagNames.push("strategic");
       }
-      await orgModel.related("tags").attach(a);
+      await orgModel.related("tags").attach(tagNames);
       const links = [];
       for (const linkId of org.links) {
         try {
@@ -220,7 +220,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
     return OrganizationType.StudentOrganization;
   }
   private async newAsset(directusId: string): Promise<string> {
-    const extension = (
+    let extension = (
       (await this.fetchJSON(
         `https://admin.topwr.solvro.pl/files/${directusId}?fields=filename_disk`,
         directusId,
@@ -232,6 +232,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
       this.logger.warning(
         `Failed to get extension for asset ${directusId} - using default 'bin'`,
       );
+      extension = "bin";
     }
     const imageStream = await this.fetchAndCheckStatus(
       `https://admin.topwr.solvro.pl/assets/${directusId}`,
