@@ -6,6 +6,7 @@ import path from "node:path";
 import { BaseCommand, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 
+import { LinkType, detectLinkType } from "#enums/link_type";
 import { Semaphore } from "#utils/semaphore";
 
 /*
@@ -28,6 +29,8 @@ import { Semaphore } from "#utils/semaphore";
  *   - the method may take a `task` parameter which can be used to update the task status
  *   - thrown errors are caught, printed and interpreted as task failure
  *   - the method may use `this.logger` for logging
+ *   - the method should use `this.semaphore` for limiting the amount of parallel requests (if such are made)
+ *   - the method may use utility methods inherited from the BaseScraperModule class
  */
 
 const LOADABLE_EXTENSIONS = [".js", ".cjs", ".mjs", ".ts"];
@@ -96,6 +99,21 @@ export abstract class BaseScraperModule {
       );
     }
     return result;
+  }
+
+  /**
+   * Detect the link type of the given URL.
+   *
+   * This is a wrapper around the `detectLinkType` function in `#enums/link_type` that automatically logs any returned warnings
+   * @param link - URL to examine
+   * @returns the detected LinkType
+   */
+  protected detectLinkType(link: string): LinkType {
+    const { type, warning } = detectLinkType(link);
+    if (warning !== undefined) {
+      this.logger.warning(warning);
+    }
+    return type;
   }
 }
 
