@@ -67,19 +67,6 @@ export default class OrganizationsScraper extends BaseScraperModule {
     links:
       "https://admin.topwr.solvro.pl/items/Scientific_Circles_Links?limit=-1",
   };
-  private readonly linkDomains: [string, LinkType][] = [
-    ["facebook.com", LinkType.Facebook],
-    ["instagram.com", LinkType.Instagram],
-    ["linkedin.com", LinkType.LinkedIn],
-    ["youtube.com", LinkType.YouTube],
-    ["github.com", LinkType.GitHub],
-    ["x.com", LinkType.X],
-    ["twitter.com", LinkType.X],
-    ["discord.com", LinkType.Discord],
-    ["discord.gg", LinkType.Discord],
-    ["tiktok.com", LinkType.TikTok],
-    ["twitch.tv", LinkType.Twitch],
-  ];
 
   public async run() {
     const [orgs, tags, links, tagsPivot] = (await Promise.all([
@@ -160,36 +147,6 @@ export default class OrganizationsScraper extends BaseScraperModule {
           } as StudentOrganizationLink;
         }),
     );
-  }
-
-  private detectLinkType(link: string): LinkType {
-    let url;
-    try {
-      url = new URL(link);
-    } catch {
-      this.logger.warning(
-        `Failed to parse social link '${link}' - assigning the Default linktype`,
-      );
-      return LinkType.Default;
-    }
-    if (url.protocol === "mailto:") {
-      return LinkType.Mail;
-    }
-    if (url.protocol !== "https:" && url.protocol !== "http:") {
-      this.logger.warning(
-        `Encountered an unknown protocol '${url.protocol}' in social link '${link}' - assigning the Default linktype`,
-      );
-      return LinkType.Default;
-    }
-    for (const [domain, type] of this.linkDomains) {
-      if (url.host === domain || url.host.endsWith(`.${domain}`)) {
-        return type;
-      }
-    }
-    this.logger.info(
-      `Social link '${link}' matched no domains - assigning the Default linktype`,
-    );
-    return LinkType.Default;
   }
 
   private convertSource(source: string): OrganizationSource {
