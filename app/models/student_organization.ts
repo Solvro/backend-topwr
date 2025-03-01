@@ -45,7 +45,7 @@ export default class StudentOrganization extends BaseModel {
   declare name: string;
 
   @column()
-  declare departmentId: number;
+  declare departmentId: number | null;
 
   @column()
   declare logo: string | null;
