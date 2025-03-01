@@ -1,6 +1,6 @@
 import { Readable } from "node:stream";
 
-import { BaseScraperModule } from "#commands/db_scrape";
+import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationType } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
@@ -67,7 +67,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
       "https://admin.topwr.solvro.pl/items/Scientific_Circles_Links?limit=-1",
   };
 
-  public async run() {
+  public async run(task: TaskHandle) {
     const [orgs, tags, links, tagsPivot] = (await Promise.all([
       this.fetchJSON(this.urls.orgs, "organizations"),
       this.fetchJSON(this.urls.tags, "tags"),
@@ -79,7 +79,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
       DirectusResponse<DirectusLink>,
       DirectusResponse<DirectusTagPivot>,
     ];
-    this.logger.info("Fetching...");
+    task.update("Fetching...");
     const tagsModels = new Map(
       tagsPivot.data.map((pivotCol) => [
         pivotCol.id,
@@ -88,7 +88,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
         },
       ]),
     );
-    this.logger.info("Creating tags...");
+    task.update("Creating tags...");
     await StudentOrganizationTag.createMany([
       ...tags.data.map((tag) => {
         return {
@@ -97,7 +97,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
       }),
       { tag: "strategiczne" },
     ]);
-    this.logger.info("Creating organizations...");
+    task.update("Creating organizations...");
     for (const org of orgs.data) {
       const logo = org.logo !== null ? await this.newAsset(org.logo) : null;
       const cover = org.cover !== null ? await this.newAsset(org.cover) : null;
@@ -133,7 +133,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
       }
       await orgModel.related("tags").attach(tagNames);
     }
-    this.logger.info("Creating links...");
+    task.update("Creating links...");
     await StudentOrganizationLink.createMany(
       links.data
         .filter((link) => link.scientific_circle_id !== null)
