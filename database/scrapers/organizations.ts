@@ -12,9 +12,6 @@ import FilesService from "#services/files_service";
 interface DirectusResponse<T> {
   data: T[];
 }
-interface DirectusSingleResponse<T> {
-  data: T;
-}
 
 interface DirectusTag {
   id: number;
@@ -25,7 +22,7 @@ interface DirectusLink {
   id: number;
   name: string;
   link: string;
-  scientific_circle_id: number;
+  scientific_circle_id: number | null;
 }
 
 interface DirectusOrganization {
@@ -33,13 +30,13 @@ interface DirectusOrganization {
   date_created: string;
   date_updated: string;
   name: string;
-  logo: string;
-  cover: string;
-  description: string;
+  logo: string | null;
+  cover: string | null;
+  description: string | null;
   type: string;
   source: string;
-  shortDescription: string;
-  department: number;
+  shortDescription: string | null;
+  department: number | null;
   useCoverAsPreviewPhoto: boolean;
   isStrategic: boolean;
   tags: number[];
@@ -49,6 +46,13 @@ interface DirectusOrganization {
 interface FileMetaResponse {
   data: { filename_disk: string };
 }
+
+interface DirectusTagPivot {
+  id: number;
+  Scientific_Circles_id: number | null;
+  Tags_id: number | null;
+}
+
 export default class OrganizationsScraper extends BaseScraperModule {
   static name = "Organizations";
   static description =
@@ -56,10 +60,12 @@ export default class OrganizationsScraper extends BaseScraperModule {
   static taskTitle = "Scraping organizations";
   private filesService = new FilesService();
   private readonly urls = {
-    orgs: "https://admin.topwr.solvro.pl/items/Scientific_Circles",
+    orgs: "https://admin.topwr.solvro.pl/items/Scientific_Circles?limit=-1",
     tags: "https://admin.topwr.solvro.pl/items/Tags",
-    pivot_tags: "https://admin.topwr.solvro.pl/items/Scientific_Circles_Tags",
-    links: "https://admin.topwr.solvro.pl/items/Scientific_Circles_Links",
+    pivot_tags:
+      "https://admin.topwr.solvro.pl/items/Scientific_Circles_Tags?limit=-1",
+    links:
+      "https://admin.topwr.solvro.pl/items/Scientific_Circles_Links?limit=-1",
   };
   private readonly linkDomains: [string, LinkType][] = [
     ["facebook.com", LinkType.Facebook],
@@ -76,41 +82,39 @@ export default class OrganizationsScraper extends BaseScraperModule {
   ];
 
   public async run() {
-    const tags = (await this.fetchJSON(
-      this.urls.tags,
-      "tags",
-    )) as DirectusResponse<DirectusTag>;
+    const [orgs, tags, links, tagsPivot] = (await Promise.all([
+      this.fetchJSON(this.urls.orgs, "organizations"),
+      this.fetchJSON(this.urls.tags, "tags"),
+      this.fetchJSON(this.urls.links, "links"),
+      this.fetchJSON(this.urls.pivot_tags, "pivot tags"),
+    ])) as [
+      DirectusResponse<DirectusOrganization>,
+      DirectusResponse<DirectusTag>,
+      DirectusResponse<DirectusLink>,
+      DirectusResponse<DirectusTagPivot>,
+    ];
+    this.logger.info("Fetching...");
     const tagsModels = new Map(
-      tags.data.map((tag) => [
-        tag.id,
-        { tag: tag.name } as StudentOrganizationTag,
+      tagsPivot.data.map((pivotCol) => [
+        pivotCol.id,
+        {
+          tag: tags.data.find((tag) => tag.id === pivotCol.Tags_id)?.name,
+        },
       ]),
     );
+    this.logger.info("Creating tags...");
     await StudentOrganizationTag.createMany([
-      ...tagsModels.values().toArray(),
-      { tag: "strategic" },
+      ...tags.data.map((tag) => {
+        return {
+          tag: tag.name,
+        };
+      }),
+      { tag: "strategiczne" },
     ]);
-
-    for (let id = 1342; id <= 1588; id++) {
-      let res;
-      try {
-        res = (await this.fetchJSON(
-          `${this.urls.orgs}/${id}`,
-          `organization ${id}`,
-        )) as DirectusSingleResponse<DirectusOrganization>;
-      } catch (e) {
-        this.logger.warning(`${e}`);
-        continue;
-      }
-      const org = res.data;
-      const logo =
-        org.logo !== null && org.logo !== undefined
-          ? await this.newAsset(org.logo)
-          : null;
-      const cover =
-        org.cover !== null && org.cover !== undefined
-          ? await this.newAsset(org.cover)
-          : null;
+    this.logger.info("Creating organizations...");
+    for (const org of orgs.data) {
+      const logo = org.logo !== null ? await this.newAsset(org.logo) : null;
+      const cover = org.cover !== null ? await this.newAsset(org.cover) : null;
       const orgModel = await StudentOrganization.create({
         id: org.id,
         name: org.name,
@@ -123,37 +127,39 @@ export default class OrganizationsScraper extends BaseScraperModule {
         source: this.convertSource(org.source),
         organizationType: this.convertType(org.type),
       });
-      const tagNames = org.tags
-        .map((tagId) => tagsModels.get(tagId)?.tag)
-        .filter((tagModel) => tagModel !== undefined);
-      if (tagNames.length < org.tags.length) {
+      const undefinedTags = [];
+      const tagNames = [];
+      for (const tagId of org.tags) {
+        const tagModel = tagsModels.get(tagId);
+        if (tagModel?.tag === undefined) {
+          undefinedTags.push(tagId);
+          continue;
+        }
+        tagNames.push(tagModel.tag);
+      }
+      if (undefinedTags.length > 0) {
         this.logger.warning(
-          `There are some undefined tags in organization ${org.name}. Omitting these tags.`,
+          `There are some undefined tags in organization ${org.name} (IDs: ${undefinedTags.join(", ")}). Omitting these tags.`,
         );
       }
       if (org.isStrategic) {
-        tagNames.push("strategic");
+        tagNames.push("strategiczne");
       }
       await orgModel.related("tags").attach(tagNames);
-      const links = [];
-      for (const linkId of org.links) {
-        try {
-          const resp = (await this.fetchJSON(
-            `${this.urls.links}/${linkId}`,
-            `link ${linkId}`,
-          )) as DirectusSingleResponse<DirectusLink>;
-          const link = resp.data;
-          links.push({
+    }
+    this.logger.info("Creating links...");
+    await StudentOrganizationLink.createMany(
+      links.data
+        .filter((link) => link.scientific_circle_id !== null)
+        .map((link) => {
+          return {
             id: link.id,
             link: link.link,
             type: this.detectLinkType(link.link),
-          } as StudentOrganizationLink);
-        } catch (e) {
-          this.logger.warning(`Failed to fetch link ${linkId}: ${e}`);
-        }
-      }
-      await orgModel.related("links").createMany(links);
-    }
+            studentOrganizationId: link.scientific_circle_id,
+          } as StudentOrganizationLink;
+        }),
+    );
   }
 
   private detectLinkType(link: string): LinkType {
@@ -220,19 +226,19 @@ export default class OrganizationsScraper extends BaseScraperModule {
     return OrganizationType.StudentOrganization;
   }
   private async newAsset(directusId: string): Promise<string> {
-    let extension = (
+    const fileNameSplit = (
       (await this.fetchJSON(
         `https://admin.topwr.solvro.pl/files/${directusId}?fields=filename_disk`,
-        directusId,
+        `Metadata for file with id ${directusId}`,
       )) as FileMetaResponse
-    ).data.filename_disk
-      .split(".")
-      .pop();
-    if (extension === undefined) {
+    ).data.filename_disk.split(".");
+    let extension;
+    if (fileNameSplit.length === 1) {
       this.logger.warning(
         `Failed to get extension for asset ${directusId} - using default 'bin'`,
       );
-      extension = "bin";
+    } else {
+      extension = fileNameSplit.pop();
     }
     const imageStream = await this.fetchAndCheckStatus(
       `https://admin.topwr.solvro.pl/assets/${directusId}`,
