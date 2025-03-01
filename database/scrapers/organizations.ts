@@ -1,7 +1,6 @@
 import { Readable } from "node:stream";
 
 import { BaseScraperModule } from "#commands/db_scrape";
-import { LinkType } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationType } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
