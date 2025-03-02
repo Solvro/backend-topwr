@@ -157,18 +157,19 @@ export default class DepartmentsScraper extends BaseScraperModule {
 
     await FieldOfStudyModel.createMany(formattedFieldsOfStudies);
     task.update("Fields of Studies created!");
-
     await DepartmentLinkModel.createMany(
-      DepartmentLink.data.map((linkEntry) => {
-        return {
-          id: linkEntry.id,
-          departmentId: linkEntry.department_id,
-          linkType: detectLinkType(linkEntry.link).type,
-          link: linkEntry.link,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        };
-      }),
+      DepartmentLink.data
+        .filter((linkEntry) => linkEntry.department_id !== null)
+        .map((linkEntry) => {
+          return {
+            id: linkEntry.id,
+            departmentId: linkEntry.department_id,
+            linkType: detectLinkType(linkEntry.link).type,
+            link: linkEntry.link,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          };
+        }),
     );
     task.update("Department Links created!");
   }
