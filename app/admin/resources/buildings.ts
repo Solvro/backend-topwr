@@ -14,6 +14,7 @@ import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 const navigation = {
   name: "Buildings",
+  icon: "Home",
 };
 
 const buildingResource = {

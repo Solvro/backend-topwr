@@ -4,7 +4,7 @@ import logger from "@adonisjs/core/services/logger";
 
 import User from "#models/user";
 
-import componentLoader from "./component_loader.js";
+import { componentLoader } from "./component_loader.js";
 
 /**
  * Your "authenticate" function. Depending on the auth provider used, the payload may be different.

@@ -1,4 +1,5 @@
 import { LucidResource } from "@adminjs/adonis";
+import { ResourceWithOptions } from "adminjs";
 
 import { linkTypeEnumsValues } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
@@ -8,11 +9,15 @@ import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 const navigation = {
   name: "About Us",
+  icon: "Users",
 };
 
-const aboutUsResource = {
+const aboutUsResource: ResourceWithOptions = {
   resource: new LucidResource(AboutUsGeneral, "postgres"),
   options: {
+    href: ({ h, resource }) => {
+      return h.showUrl(resource.decorate().id(), "1", undefined);
+    },
     navigation,
     properties: {
       id: {

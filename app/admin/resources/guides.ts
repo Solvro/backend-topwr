@@ -8,6 +8,7 @@ import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 const navigation = {
   name: "Guides",
+  icon: "Paperclip",
 };
 
 const guideArticleResource = {

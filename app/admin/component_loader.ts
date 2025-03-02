@@ -1,5 +1,7 @@
 import { ComponentLoader } from "adminjs";
 
-const componentLoader = new ComponentLoader();
+export const componentLoader = new ComponentLoader();
 
-export default componentLoader;
+export const Components = {
+  Dashboard: componentLoader.add("Dashboard", "./components/dashboard"),
+};

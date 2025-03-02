@@ -15,6 +15,7 @@ import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 const navigation = {
   name: "Versions",
+  icon: "GitBranch",
 };
 
 const changeResource = {
