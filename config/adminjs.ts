@@ -1,7 +1,9 @@
 import { AdminJSProviderConfig } from "@adminjs/adonis";
 
 import authProvider from "../app/admin/auth.js";
-import componentLoader from "../app/admin/component_loader.js";
+import { branding } from "../app/admin/branding.js";
+import { Components, componentLoader } from "../app/admin/component_loader.js";
+import { locale } from "../app/admin/locale.js";
 import { adminjsResources } from "../app/admin/resources/index.js";
 
 const adminjsConfig: AdminJSProviderConfig = {
@@ -15,31 +17,13 @@ const adminjsConfig: AdminJSProviderConfig = {
     componentLoader,
     resources: adminjsResources,
     pages: {},
-    locale: {
-      availableLanguages: ["en"],
-      language: "en",
-      translations: {
-        en: {
-          actions: {},
-          messages: {},
-          labels: {},
-          buttons: {},
-          properties: {},
-          components: {},
-          pages: {},
-          ExampleResource: {
-            actions: {},
-            messages: {},
-            labels: {},
-            buttons: {},
-            properties: {},
-          },
-        },
-      },
+    assets: {
+      styles: ["/main.css"],
     },
-    branding: {
-      companyName: "Solvro",
-      theme: {},
+    locale,
+    branding,
+    dashboard: {
+      component: Components.Dashboard,
     },
     settings: {
       defaultPerPage: 10,

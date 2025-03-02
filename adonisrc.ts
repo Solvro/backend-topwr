@@ -41,6 +41,7 @@ export default defineConfig({
       file: () => import("@adminjs/adonis/adminjs_provider"),
       environment: ["web"],
     },
+    () => import("@adonisjs/static/static_provider"),
   ],
 
   /*
@@ -77,5 +78,11 @@ export default defineConfig({
     ],
     forceExit: false,
   },
-  metaFiles: [{ pattern: "assets/**", reloadServer: false }],
+  metaFiles: [
+    { pattern: "assets/**", reloadServer: false },
+    {
+      pattern: "public/**",
+      reloadServer: false,
+    },
+  ],
 });

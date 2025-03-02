@@ -4,6 +4,7 @@ import { adminPanelResources } from "./admin_panel.js";
 import { buildingsResources } from "./buildings.js";
 import { departmentsResources } from "./departments.js";
 import { guidesResources } from "./guides.js";
+import { studentOrganizationsResources } from "./student_organizations.js";
 import { versionsResources } from "./versions.js";
 
 export const adminjsResources = [
@@ -13,5 +14,6 @@ export const adminjsResources = [
   ...buildingsResources,
   ...departmentsResources,
   ...guidesResources,
+  ...studentOrganizationsResources,
   ...versionsResources,
 ];

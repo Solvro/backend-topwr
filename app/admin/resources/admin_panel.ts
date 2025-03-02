@@ -6,6 +6,7 @@ import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 const navigation = {
   name: "Admin Panel",
+  icon: "Terminal",
 };
 
 const userResource = {

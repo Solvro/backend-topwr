@@ -8,6 +8,7 @@ import { readOnlyTimestamps } from "./utils/timestamps.js";
 
 const navigation = {
   name: "Academic Calendars",
+  icon: "Calendar",
 };
 
 const academicCalendarResource = {
