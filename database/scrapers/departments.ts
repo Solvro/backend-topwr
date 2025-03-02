@@ -107,8 +107,8 @@ export default class DepartmentsScraper extends BaseScraperModule {
 
         // Address
         const regex = /\b\d{2}-\d{3}\s+[A-ZĄĆĘŁŃÓŚŹŻa-ząćęłńóśźż-]+$/;
-        const match = departmentEntry.address.match(regex);
-        if (match) {
+        const match = regex.exec(departmentEntry.address);
+        if (match !== null) {
           const postalCodeAndCity = match[0];
           const addressLine1 = departmentEntry.address
             .replace(regex, "")
@@ -117,8 +117,8 @@ export default class DepartmentsScraper extends BaseScraperModule {
           return {
             id: departmentEntry.id,
             name: departmentEntry.name,
-            addressLine1: addressLine1,
-            addressLine2: addressLine2,
+            addressLine1,
+            addressLine2,
             code: departmentEntry.code,
             betterCode: departmentEntry.betterCode,
             logo: name,
@@ -159,18 +159,16 @@ export default class DepartmentsScraper extends BaseScraperModule {
     task.update("Fields of Studies created!");
 
     await DepartmentLinkModel.createMany(
-      DepartmentLink.data
-        .filter((linkEntry) => linkEntry.department_id !== null)
-        .map((linkEntry) => {
-          return {
-            id: linkEntry.id,
-            departmentId: linkEntry.department_id,
-            linkType: detectLinkType(linkEntry.link).type,
-            link: linkEntry.link,
-            createdAt: DateTime.now(),
-            updatedAt: DateTime.now(),
-          };
-        }),
+      DepartmentLink.data.map((linkEntry) => {
+        return {
+          id: linkEntry.id,
+          departmentId: linkEntry.department_id,
+          linkType: detectLinkType(linkEntry.link).type,
+          link: linkEntry.link,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        };
+      }),
     );
     task.update("Department Links created!");
   }
