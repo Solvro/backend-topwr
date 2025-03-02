@@ -4,7 +4,7 @@ export const branding: BrandingOptions | BrandingOptionsFunction | undefined = {
   logo: "https://docs.solvro.pl/_astro/logo_dark.CVKYDfDL.png",
   companyName: "ToPWR",
   withMadeWithLove: false,
-  favicon: "/assets/topwr_logo.ico",
+  favicon: "/topwr_logo.ico",
   theme: {
     colors: {
       primary100: "#152959",

@@ -55,6 +55,7 @@
     "@adonisjs/hash": "^9.0.5",
     "@adonisjs/lucid": "^20.0.0",
     "@adonisjs/session": "^7.5.0",
+    "@adonisjs/static": "^1.1.1",
     "@vinejs/vine": "^2.1.0",
     "adminjs": "^7.8.13",
     "luxon": "^3.5.0",

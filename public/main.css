@@ -1,10 +1,5 @@
 /* Define CSS here */
 
-html {
-  background-color: red !important;
-  color: yellow !important;
-}
-
 #hero {
   z-index: 0;
   position: relative;
