@@ -76,6 +76,7 @@
     "@swc/core": "1.7.26",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.7.5",
+    "@types/pg": "^8.11.11",
     "eslint": "^9.12.0",
     "hot-hook": "^0.3.1",
     "husky": "^9.1.7",
