@@ -130,7 +130,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
           };
         } else {
           this.logger.warning(
-            `Skiped record ${departmentEntry.id} because ${departmentEntry.address} don't match regex.`,
+            `Skipped record ${departmentEntry.id} because ${departmentEntry.address} doesn't match regex.`,
           );
           return undefined;
         }
