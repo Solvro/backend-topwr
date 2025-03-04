@@ -3,6 +3,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import BadRequestException from "#exceptions/bad_request_exception";
 import ResetPasswordService from "#services/reset_password_service";
+import { emailValidator } from "#validators/email";
 
 export default class ResetPasswordsController {
   /**
@@ -13,10 +14,7 @@ export default class ResetPasswordsController {
     { request, response }: HttpContext,
     resetPasswordService: ResetPasswordService,
   ) {
-    const email = request.input("email") as string | undefined; // TODO improve type assertion or validation
-    if (email === undefined) {
-      return response.badRequest("no email provided");
-    }
+    const { email } = await request.validateUsing(emailValidator);
     await resetPasswordService.trySendResetUrl(email);
     return response.ok({
       message: `If an account with that email exists,
