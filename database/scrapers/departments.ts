@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
-import { detectLinkType } from "#enums/link_type";
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
 import FieldOfStudyModel from "#models/field_of_study";
@@ -15,28 +14,28 @@ interface SourceResponse<T> {
 interface DepartmentsDraft {
   id: number;
   name: string;
-  logo: string;
-  description: string;
+  logo: string | null;
+  description: string | null;
   code: string;
   gradient_start: string;
   gradient_end: string;
   address: string;
   betterCode: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
 interface FieldOfStudyDraft {
   id: number;
   department_id: number;
   name: string;
-  url: string;
+  url: string | null;
   isEnglish: boolean;
   is2ndDegree: boolean;
   isLongCycleStudies: boolean;
   hasWeekendModeOption: boolean;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
 interface DepartmentLinkDraft {
@@ -45,7 +44,7 @@ interface DepartmentLinkDraft {
   linkType: string;
   link: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt: string | null;
 }
 
 export default class DepartmentsScraper extends BaseScraperModule {
@@ -61,6 +60,8 @@ export default class DepartmentsScraper extends BaseScraperModule {
     "FieldOfStudy",
     "Departments_Links",
   ];
+  private readonly addressRegex =
+    /\b\d{2}-\d{3}\s+[A-ZĄĆĘŁŃÓŚŹŻa-ząćęłńóśźż-]+$/;
 
   async run(task: TaskHandle) {
     task.update("Starting fetching all schema objects");
@@ -98,7 +99,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
         );
 
         if (fileResponse.body === null) {
-          throw new Error("Response body is null");
+          throw new Error(`Response body is null for ${departmentEntry.id}`);
         }
         const name = await this.filesService.uploadStream(
           Readable.fromWeb(fileResponse.body),
@@ -106,12 +107,11 @@ export default class DepartmentsScraper extends BaseScraperModule {
         );
 
         // Address
-        const regex = /\b\d{2}-\d{3}\s+[A-ZĄĆĘŁŃÓŚŹŻa-ząćęłńóśźż-]+$/;
-        const match = regex.exec(departmentEntry.address);
+        const match = this.addressRegex.exec(departmentEntry.address);
         if (match !== null) {
           const postalCodeAndCity = match[0];
           const addressLine1 = departmentEntry.address
-            .replace(regex, "")
+            .replace(this.addressRegex, "")
             .trim();
           const addressLine2 = postalCodeAndCity;
           return {
@@ -128,8 +128,12 @@ export default class DepartmentsScraper extends BaseScraperModule {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           };
+        } else {
+          this.logger.warning(
+            `Skiped record ${departmentEntry.id} because ${departmentEntry.address} don't match regex.`,
+          );
+          return undefined;
         }
-        return undefined;
       }),
     );
 
@@ -159,12 +163,20 @@ export default class DepartmentsScraper extends BaseScraperModule {
     task.update("Fields of Studies created!");
     await DepartmentLinkModel.createMany(
       DepartmentLink.data
-        .filter((linkEntry) => linkEntry.department_id !== null)
+        .filter((linkEntry) => {
+          if (!linkEntry.department_id) {
+            this.logger.warning(
+              `Skipped link entry ${linkEntry.id} due to missing department_id.`,
+            );
+            return false;
+          }
+          return true;
+        })
         .map((linkEntry) => {
           return {
             id: linkEntry.id,
             departmentId: linkEntry.department_id,
-            linkType: detectLinkType(linkEntry.link).type,
+            linkType: this.detectLinkType(linkEntry.link),
             link: linkEntry.link,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
