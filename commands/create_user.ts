@@ -7,9 +7,7 @@ export default class CreateUser extends BaseCommand {
   static commandName = "create:user";
   static description = "Create a new user in the system";
 
-  static options: CommandOptions = {
-    startApp: true,
-  };
+  static options: CommandOptions = {};
 
   @args.string({
     argumentName: "email",
