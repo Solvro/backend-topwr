@@ -13,6 +13,7 @@ export default defineConfig({
   commands: [
     () => import("@adonisjs/core/commands"),
     () => import("@adonisjs/lucid/commands"),
+    () => import("@adonisjs/mail/commands"),
   ],
 
   /*
@@ -41,6 +42,7 @@ export default defineConfig({
       file: () => import("@adminjs/adonis/adminjs_provider"),
       environment: ["web"],
     },
+    () => import("@adonisjs/mail/mail_provider"),
     () => import("@adonisjs/static/static_provider"),
   ],
 
