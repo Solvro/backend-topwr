@@ -22,12 +22,6 @@ export default class ResetPassword extends BaseCommand {
 
   @inject()
   async run(resetPasswordService: ResetPasswordService) {
-    try {
-      await resetPasswordService.trySendResetUrl(this.email);
-    } catch (error) {
-      this.logger.error(error.message);
-      this.error = error;
-      this.exitCode = 1;
-    }
+    await resetPasswordService.trySendResetUrl(this.email);
   }
 }
