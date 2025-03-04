@@ -16,7 +16,7 @@ export default class ResetPassword extends BaseCommand {
   @args.string({
     argumentName: "email",
     description:
-      "Email address associated with user for whom the reseting is done",
+      "Email address associated with user for whom the resetting is done",
   })
   declare email: string;
 
