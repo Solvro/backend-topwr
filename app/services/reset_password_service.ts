@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import crypto from "node:crypto";
 
+import hash from "@adonisjs/core/services/hash";
 import logger from "@adonisjs/core/services/logger";
 import mail from "@adonisjs/mail/services/main";
 
@@ -22,7 +23,7 @@ export default class ResetPasswordService {
       await mail.send(
         new ResetPasswordNotification(
           email,
-          `${env.get("APP_URL")}admin/resetpassword/${token}`,
+          `${env.get("APP_URL")}/admin/resetpassword/${token}`,
         ),
       );
       logger.info(`Reset password email sent to ${email}`);
@@ -51,7 +52,7 @@ export default class ResetPasswordService {
       await user.save();
       throw new UnathorizedException("Time out for request");
     }
-    if (password === user.password) {
+    if (await hash.verify(user.password, password)) {
       throw new BadRequestException(
         "Cannot change password for the already defined one",
       );
