@@ -7,6 +7,7 @@ import { BuildingIcon } from "#enums/building_icon";
 import Building from "#models/building";
 import Campus from "#models/campus";
 import FilesService from "#services/files_service";
+import { fixSequence } from "#utils/db";
 
 const buildingsPath = "https://admin.topwr.solvro.pl/items/Buildings/";
 const assetsPath = "https://admin.topwr.solvro.pl/assets/";
@@ -127,6 +128,8 @@ export default class BuildingsScraper extends BaseScraperModule {
       }),
     );
     task.update("Buildings created !");
+    await fixSequence("buildings", "id");
+    task.update("Fixed Buildings id autoincrementing");
     //save changes for campuses
     await Promise.all(updatedCampuses.map((campus) => campus.save()));
     task.update("campuses cover assigned !");
