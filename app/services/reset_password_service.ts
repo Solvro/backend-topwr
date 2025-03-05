@@ -15,23 +15,23 @@ export default class ResetPasswordService {
   async trySendResetUrl(email: string) {
     logger.info(`Reset password procedure started for email ${email}`);
     const user = await User.findBy("email", email);
-    if (user !== null) {
-      const token = await this.generateResetPasswordToken(
-        user,
-        DateTime.now().plus({ minutes: 15 }),
+    if (user === null) {
+      logger.info(
+        `No user associated ${email}, aborting reset password procedure`,
       );
-      await mail.send(
-        new ResetPasswordNotification(
-          email,
-          `${env.get("APP_URL")}/admin/resetpassword/${token}`,
-        ),
-      );
-      logger.info(`Reset password email sent to ${email}`);
       return;
     }
-    logger.info(
-      `No user associated ${email}, aborting reset password procedure`,
+    const token = await this.generateResetPasswordToken(
+      user,
+      DateTime.now().plus({ minutes: 15 }),
     );
+    await mail.send(
+      new ResetPasswordNotification(
+        email,
+        `${env.get("APP_URL")}/admin/resetpassword/${token}`,
+      ),
+    );
+    logger.info(`Reset password email sent to ${email}`);
   }
 
   async tryToResetForTokenOrFail(token: string, password: string) {
