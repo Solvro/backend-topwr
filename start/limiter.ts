@@ -21,7 +21,7 @@ export const resetPasswordThrottle = limiter.define("reset-password", () => {
     .blockFor("1 hour") //24 hours pure evil
     .limitExceeded((error) => {
       error
-        .setStatus(400)
+        .setStatus(429)
         .setMessage(
           "Maximum password reset attempts reached. Please try again later in 1 hour",
         );
