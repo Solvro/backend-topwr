@@ -5,28 +5,27 @@ import BadRequestException from "#exceptions/bad_request_exception";
 import ResetPasswordService from "#services/reset_password_service";
 import { emailValidator } from "#validators/email";
 
-export default class ResetPasswordsController {
+export default class UsersController {
   /**
-   * Page for password form submission
+   * handle form submission for password reset request (email stage)
    */
   @inject()
-  async store(
+  async resetPassword(
     { request, response }: HttpContext,
     resetPasswordService: ResetPasswordService,
   ) {
     const { email } = await request.validateUsing(emailValidator);
     await resetPasswordService.trySendResetUrl(email);
     return response.ok({
-      message: `If an account with that email exists,
-       you will receive instructions to reset your password shortly.`,
+      message: `If an account with that email exists, you will receive instructions to reset your password shortly.`,
     });
   }
 
   /**
-   * Handle form submission to update (reset) the user's password.
+   * Handle form submission to update (reset) the user's password. (new credentials stage)
    */
   @inject()
-  async update(
+  async updatePassword(
     { request, response }: HttpContext,
     resetPasswordService: ResetPasswordService,
   ) {
