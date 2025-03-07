@@ -9,14 +9,14 @@ import Role from "#models/role";
 import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
 
-import { ResourceFactory, ResourceInfo } from "../resource_factory.js";
+import { ResourceBuilder, ResourceInfo } from "../resource_factory.js";
 
 const navigation = {
   name: "Versions",
   icon: "GitBranch",
 };
 
-export function setUpVersions() {
+export function setUpVersions(): ResourceBuilder {
   const info: ResourceInfo[] = [
     { forModel: Change, additionalProperties: { type: changeTypeEnumsValues } },
     {
@@ -24,14 +24,14 @@ export function setUpVersions() {
       additionalProperties: { linkType: linkTypeEnumsValues },
     },
     { forModel: ChangeScreenshot },
-    { forModel: Contributor },
+    { forModel: Contributor, addImageHandling: true },
     { forModel: Milestone },
     { forModel: Role },
     { forModel: Version },
-    { forModel: VersionScreenshot },
+    { forModel: VersionScreenshot, addImageHandling: true },
   ];
-  ResourceFactory.registerResource({
+  return {
     navigation,
     builders: info,
-  });
+  };
 }

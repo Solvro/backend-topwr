@@ -8,26 +8,23 @@ import { setUpDepartments } from "./resourceRegisters/departments.js";
 import { setUpGuides } from "./resourceRegisters/guides.js";
 import { setUpStudentOrganizations } from "./resourceRegisters/student_organizations.js";
 import { setUpVersions } from "./resourceRegisters/versions.js";
-import { ResourceFactory } from "./resource_factory.js";
+import { ResourceBuilder, ResourceFactory } from "./resource_factory.js";
 
-function setUpResources() {
-  setUpBuildings();
-  setUpAdminPanel();
-  setUpAcademicCalendars();
-  setUpGuides();
-  setUpAboutUs();
-  setUpDepartments();
-  setUpStudentOrganizations();
-  setUpVersions();
+function setUpResources(): ResourceBuilder[] {
+  return [
+    setUpBuildings(),
+    setUpAdminPanel(),
+    setUpAcademicCalendars(),
+    setUpGuides(),
+    setUpAboutUs(),
+    setUpDepartments(),
+    setUpStudentOrganizations(),
+    setUpVersions(),
+  ];
 }
 
 function buildResources(): ResourceWithOptions[] {
-  return ResourceFactory.buildResources();
+  return new ResourceFactory(setUpResources()).buildResources();
 }
 
-function setUpAndBuildResources(): ResourceWithOptions[] {
-  setUpResources();
-  return buildResources();
-}
-
-export const adminJsResources = setUpAndBuildResources();
+export const adminJsResources = buildResources();

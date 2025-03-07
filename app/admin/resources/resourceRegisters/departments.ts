@@ -3,14 +3,14 @@ import Department from "#models/department";
 import DepartmentsLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 
-import { ResourceFactory, ResourceInfo } from "../resource_factory.js";
+import { ResourceBuilder, ResourceInfo } from "../resource_factory.js";
 
 const navigation = {
   name: "Departments",
   icon: "Book",
 };
 
-export function setUpDepartments() {
+export function setUpDepartments(): ResourceBuilder {
   const info: ResourceInfo[] = [
     { forModel: FieldsOfStudy },
     {
@@ -22,8 +22,8 @@ export function setUpDepartments() {
       additionalProperties: { description: { type: "richtext" } },
     },
   ];
-  ResourceFactory.registerResource({
+  return {
     navigation,
     builders: info,
-  });
+  };
 }

@@ -36,6 +36,13 @@ const hideOnEdit = {
   list: true,
 };
 
+const hideOnShow = {
+  list: false,
+  show: false,
+  new: true,
+  edit: true,
+};
+
 const DB_DRIVER = "postgres";
 
 const readOnlyTimestamps = {
@@ -60,30 +67,33 @@ const readOnlyTimestamps = {
 } as const;
 
 export class ResourceFactory {
-  private static registeredResources: ResourceBuilder[] = [];
+  private registeredResources: ResourceBuilder[];
 
-  public static registerResource(resourceBuilder: ResourceBuilder) {
+  constructor(registeredResources?: ResourceBuilder[]) {
+    this.registeredResources = registeredResources ?? [];
+  }
+
+  public registerResource(resourceBuilder: ResourceBuilder) {
     this.registeredResources.push(resourceBuilder);
   }
 
-  public static buildResources() {
+  public buildResources() {
     return this.registeredResources
-      .map((resourceBuilder) =>
-        ResourceFactory.createResources(resourceBuilder),
-      )
+      .map((resourceBuilder) => this.createResources(resourceBuilder))
       .flat(1);
   }
 
-  public static createResources(
+  public createResources(
     resourceBuilder: ResourceBuilder,
   ): ResourceWithOptions[] {
     return resourceBuilder.builders.map((resourceInfo) => {
-      return this.createResource(
+      return ResourceFactory.createResource(
         resourceInfo.forModel,
         resourceBuilder.navigation,
         resourceInfo.additionalProperties,
         resourceInfo.additionalActions,
         resourceInfo.additionalOptions,
+        resourceInfo.addImageHandling,
       );
     });
   }
@@ -128,8 +138,16 @@ export class ResourceFactory {
         ...newResource.options.properties,
         dummyFile: {
           type: "mixed",
+          isVisible: hideOnShow,
+          components: {
+            edit: "PhotoDropbox",
+          },
         },
         cover: {
+          isVisible: hideOnEdit,
+        },
+        dummyPreview: {
+          type: "mixed",
           isVisible: hideOnEdit,
         },
       };

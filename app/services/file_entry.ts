@@ -20,7 +20,7 @@ export default class FileEntry extends BaseModel {
     return FileEntry.query()
       .where("id", key)
       .delete()
-      .then((res) => res.length > 0);
+      .then((res: number[]) => res.length > 0 && res[0] > 0);
   }
 
   public static async fileExists(key: string): Promise<boolean> {

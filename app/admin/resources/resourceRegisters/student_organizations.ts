@@ -5,14 +5,14 @@ import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
 
-import { ResourceFactory, ResourceInfo } from "../resource_factory.js";
+import { ResourceBuilder, ResourceInfo } from "../resource_factory.js";
 
 const navigation = {
   name: "Student Organizations",
   icon: "Cpu",
 };
 
-export function setUpStudentOrganizations() {
+export function setUpStudentOrganizations(): ResourceBuilder {
   const info: ResourceInfo[] = [
     {
       forModel: StudentOrganization,
@@ -31,10 +31,11 @@ export function setUpStudentOrganizations() {
     {
       forModel: StudentOrganizationTag,
       additionalProperties: { description: { type: "richtext" } },
+      addImageHandling: true,
     },
   ];
-  ResourceFactory.registerResource({
+  return {
     navigation,
     builders: info,
-  });
+  };
 }
