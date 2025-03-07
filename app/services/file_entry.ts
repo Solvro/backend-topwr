@@ -16,14 +16,31 @@ export default class FileEntry extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  public static async deleteByKey(key: string): Promise<boolean> {
+  public static async deleteByKey(key: string) {
+    return FileEntry.query().where("id", key).delete();
+  }
+
+  public static async deleteByKeyAndReturnResult(
+    key: string,
+  ): Promise<boolean> {
     return FileEntry.query()
       .where("id", key)
       .delete()
       .then((res: number[]) => res.length > 0 && res[0] > 0);
   }
 
-  public static async fileExists(key: string): Promise<boolean> {
-    return FileEntry.find(key).then((res) => res !== null);
+  public static async updateFileType(
+    newFileType: string,
+    existingFileKey: string,
+  ) {
+    return FileEntry.query()
+      .where("id", existingFileKey)
+      .update({ file_type: newFileType });
+  }
+
+  public static async getExtensionIfExists(
+    key: string,
+  ): Promise<string | undefined> {
+    return FileEntry.find(key).then((res) => res?.fileType);
   }
 }

@@ -16,20 +16,25 @@ interface FileInformation {
   fileInstance: FileEntry;
   diskKey: string;
 }
+
 export default class FilesService {
+  private static getExtension(extname: string | undefined): string {
+    return extname !== undefined && extname.length > 0 ? extname : "bin";
+  }
+
   private static mapToFileInstance(extname: string | undefined): FileEntry {
-    let fileType = "bin";
-    if (extname !== undefined && extname.length > 0) {
-      fileType = extname;
-    }
     const fileEntry = new FileEntry();
     fileEntry.id = randomUUID();
-    fileEntry.fileType = fileType;
+    fileEntry.fileType = this.getExtension(extname);
     return fileEntry;
   }
 
-  private static mapToDiskKey(fileInstance: FileEntry): string {
+  private static mapInstanceToDiskKey(fileInstance: FileEntry): string {
     return `${fileInstance.id}.${fileInstance.fileType}`;
+  }
+
+  private static mapToDiskKey(fileKey: string, fileType: string): string {
+    return `${fileKey}.${fileType}`;
   }
 
   private static createFileInformation(
@@ -38,7 +43,7 @@ export default class FilesService {
     const fileInstance = FilesService.mapToFileInstance(extname);
     return {
       fileInstance,
-      diskKey: FilesService.mapToDiskKey(fileInstance),
+      diskKey: FilesService.mapInstanceToDiskKey(fileInstance),
     };
   }
 
@@ -59,6 +64,44 @@ export default class FilesService {
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
+  }
+
+  /**
+   * Replaces a multipart file in storage.
+   *
+   * Use this if you're handling an API request and received a `MultipartFile` from adonis
+   * @param file - The file to upload
+   * @param existingFileKey - the key of file you wish to replace, without the extension name
+   * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
+   */
+  static async replaceWithMultipartFile(
+    file: MultipartFile,
+    existingFileKey: string,
+  ): Promise<string> {
+    const oldExtension = await FileEntry.getExtensionIfExists(existingFileKey);
+    if (oldExtension === undefined) {
+      throw new FileServiceFileUploadError(Error("File does not exist"));
+    }
+    const newExtension: string = this.getExtension(file.extname);
+    const diskKey: string = this.mapToDiskKey(existingFileKey, newExtension);
+    if (oldExtension === newExtension) {
+      try {
+        await file.moveToDisk(diskKey);
+      } catch (error) {
+        throw new FileServiceFileUploadError(error as Error);
+      }
+    } else {
+      try {
+        await FileEntry.updateFileType(newExtension, existingFileKey);
+        await drive
+          .use()
+          .delete(this.mapToDiskKey(existingFileKey, oldExtension));
+        await file.moveToDisk(diskKey);
+      } catch (error) {
+        throw new FileServiceFileUploadError(error as Error);
+      }
+    }
+    return diskKey;
   }
 
   /**
@@ -156,17 +199,47 @@ export default class FilesService {
   /**
    * Deletes a file from storage
    *
-   * @param key - File's key
+   * @param diskKey - File's full key from disk
+   * @return - true if delete is successful, false if no file to delete, throws if error occurs
    * @throws {FileServiceFileDeleteError} There was an issue deleting the file. Check the cause prop for details.
    */
-  static async deleteFile(key: string): Promise<void> {
+  static async deleteFileWithDiskKey(diskKey: string): Promise<boolean> {
     try {
-      const recordExists = await FileEntry.deleteByKey(key);
+      const recordExists = await FileEntry.deleteByKeyAndReturnResult(
+        this.extractFileKeyFromDiskKey(diskKey),
+      );
       if (recordExists) {
-        await drive.use().delete(key);
+        await drive.use().delete(diskKey);
+        return true;
       }
+      return false;
     } catch (error) {
       throw new FileServiceFileDeleteError(error as Error);
     }
+  }
+
+  /**
+   * Deletes a file from storage
+   *
+   * @param key - File's key without extension. If you have the full diskKey, it is better to use the deleteFileWithDiskKey method
+   * @return - true if delete is successful, false if no file to delete, throws if error occurs
+   * @throws {FileServiceFileDeleteError} There was an issue deleting the file. Check the cause prop for details.
+   */
+  static async deleteFileWithKey(key: string): Promise<boolean> {
+    try {
+      const extension = await FileEntry.getExtensionIfExists(key);
+      if (extension !== undefined) {
+        await FileEntry.deleteByKey(key);
+        await drive.use().delete(this.mapToDiskKey(key, extension));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      throw new FileServiceFileDeleteError(error as Error);
+    }
+  }
+
+  static extractFileKeyFromDiskKey(diskKey: string): string {
+    return diskKey.substring(0, diskKey.lastIndexOf("."));
   }
 }

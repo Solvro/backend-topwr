@@ -136,7 +136,7 @@ export class ResourceFactory {
     if (addImageHandling) {
       newResource.options.properties = {
         ...newResource.options.properties,
-        dummyFile: {
+        uploadPhoto: {
           type: "mixed",
           isVisible: hideOnShow,
           components: {
@@ -146,35 +146,87 @@ export class ResourceFactory {
         cover: {
           isVisible: hideOnEdit,
         },
-        dummyPreview: {
-          type: "mixed",
-          isVisible: hideOnEdit,
-        },
       };
       newResource.options.actions = {
         ...newResource.options.actions,
-        new: this.addUploadHook(newResource.options.actions?.new),
+        new: this.addNewUploadHook(newResource.options.actions?.new),
+        edit: this.addEditUploadHook(newResource.options.actions?.edit),
+        delete: this.addDeleteHook(newResource.options.actions?.delete),
       };
     }
     return newResource;
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static addUploadHook(additionalNewActions?: Record<string, any>) {
+  private static addNewUploadHook(additionalNewActions?: Record<string, any>) {
     return {
       ...additionalNewActions,
-      before: async (request: ActionRequest) => {
-        if (request.payload?.dummyFile !== undefined) {
+      before: async (request: ActionRequest): Promise<ActionRequest> => {
+        if (request.payload?.uploadPhoto !== undefined) {
           request.payload = {
             ...request.payload,
             cover: await FilesService.uploadMultipartFile(
               // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-              request.payload.dummyFile,
+              request.payload.uploadPhoto,
             ),
           };
-          delete request.payload.dummyFile;
+          delete request.payload.uploadPhoto;
         }
         return request;
+      },
+    };
+  }
+
+  private static addEditUploadHook(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    additionalEditActions?: Record<string, any>,
+  ) {
+    return {
+      ...additionalEditActions,
+      before: async (request: ActionRequest): Promise<ActionRequest> => {
+        if (request.payload?.uploadPhoto !== undefined) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          const currentCover: string | null | undefined = request.payload.cover;
+          if (currentCover !== undefined && currentCover !== null) {
+            request.payload = {
+              ...request.payload,
+              cover: await FilesService.replaceWithMultipartFile(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+                request.payload.uploadPhoto,
+                FilesService.extractFileKeyFromDiskKey(currentCover),
+              ),
+            };
+          } else {
+            request.payload = {
+              ...request.payload,
+              cover: await FilesService.uploadMultipartFile(
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+                request.payload.uploadPhoto,
+              ),
+            };
+          }
+          delete request.payload.uploadPhoto;
+        }
+        return request;
+      },
+    };
+  }
+
+  private static addDeleteHook(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    additionalDeleteActions?: Record<string, any>,
+  ) {
+    return {
+      ...additionalDeleteActions,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      after: async (entity: any) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-non-null-assertion
+        const currentCover: string | undefined | null =
+          entity!.record!.params?.cover;
+        if (currentCover !== undefined && currentCover !== null) {
+          await FilesService.deleteFileWithDiskKey(currentCover);
+        }
+        return entity;
       },
     };
   }
