@@ -21,8 +21,7 @@ export default class extends BaseSeeder {
       <p dir="ltr">Rzuć okiem na <a href="https://solvro.pwr.edu.pl/portfolio/" target="_blank" rel="noopener">resztę naszych projekt&oacute;w</a>.</p>
       <p>Jeżeli to, co robimy, do Ciebie przemawia, zapraszamy w nasze szeregi! Informacje o trwających rekrutacjach znajdziesz na naszych mediach społecznościowych poniżej.</p>`;
 
-    const filesService = new FilesService();
-    const result = await filesService.uploadLocalFile(
+    const result = await FilesService.uploadLocalFile(
       "./assets/topwr_cover.png",
     );
 

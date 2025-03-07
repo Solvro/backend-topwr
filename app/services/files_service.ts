@@ -10,13 +10,36 @@ import {
   FileServiceFileReadError,
   FileServiceFileUploadError,
 } from "#exceptions/file_service_errors";
+import FileEntry from "#services/file_entry";
 
+interface FileInformation {
+  fileInstance: FileEntry;
+  diskKey: string;
+}
 export default class FilesService {
-  private generateKey(extname: string | undefined): string {
-    if (extname?.length === 0) {
-      extname = undefined;
+  private static mapToFileInstance(extname: string | undefined): FileEntry {
+    let fileType = "bin";
+    if (extname !== undefined && extname.length > 0) {
+      fileType = extname;
     }
-    return `${randomUUID()}.${extname ?? "bin"}`;
+    const fileEntry = new FileEntry();
+    fileEntry.id = randomUUID();
+    fileEntry.fileType = fileType;
+    return fileEntry;
+  }
+
+  private static mapToDiskKey(fileInstance: FileEntry): string {
+    return `${fileInstance.id}.${fileInstance.fileType}`;
+  }
+
+  private static createFileInformation(
+    extname: string | undefined,
+  ): FileInformation {
+    const fileInstance = FilesService.mapToFileInstance(extname);
+    return {
+      fileInstance,
+      diskKey: FilesService.mapToDiskKey(fileInstance),
+    };
   }
 
   /**
@@ -27,11 +50,12 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadMultipartFile(file: MultipartFile): Promise<string> {
-    const key = this.generateKey(file.extname);
+  static async uploadMultipartFile(file: MultipartFile): Promise<string> {
+    const fileInfo = FilesService.createFileInformation(file.extname);
     try {
-      await file.moveToDisk(key);
-      return key;
+      await fileInfo.fileInstance.save();
+      await file.moveToDisk(fileInfo.diskKey);
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
@@ -47,14 +71,15 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadStream(
+  static async uploadStream(
     stream: Readable,
     extname: string | undefined = undefined,
   ): Promise<string> {
-    const key = this.generateKey(extname);
+    const fileInfo = FilesService.createFileInformation(extname);
     try {
-      await drive.use().putStream(key, stream);
-      return key;
+      await fileInfo.fileInstance.save();
+      await drive.use().putStream(fileInfo.diskKey, stream);
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
@@ -69,14 +94,15 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadFromMemory(
+  static async uploadFromMemory(
     data: string | Uint8Array,
     extname: string | undefined = undefined,
   ): Promise<string> {
-    const key = this.generateKey(extname);
+    const fileInfo = FilesService.createFileInformation(extname);
     try {
-      await drive.use().put(key, data);
-      return key;
+      await fileInfo.fileInstance.save();
+      await drive.use().put(fileInfo.diskKey, data);
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
@@ -90,19 +116,23 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadLocalFile(
+  static async uploadLocalFile(
     path: string,
     removeSourceFile = false,
   ): Promise<string> {
     path = nodePath.resolve(path);
-    const key = this.generateKey(nodePath.extname(path).substring(1));
+    const fileInfo = FilesService.createFileInformation(
+      nodePath.extname(path).substring(1),
+    );
     try {
       if (removeSourceFile) {
-        await drive.use().moveFromFs(path, key);
+        await fileInfo.fileInstance.save();
+        await drive.use().moveFromFs(path, fileInfo.diskKey);
       } else {
-        await drive.use().copyFromFs(path, key);
+        await fileInfo.fileInstance.save();
+        await drive.use().copyFromFs(path, fileInfo.diskKey);
       }
-      return key;
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
@@ -115,8 +145,7 @@ export default class FilesService {
    * @returns The full URL to the file
    * @throws {FileServiceFileReadError} There was an issue constructing the URL. Check the cause prop for details.
    */
-  async getFileUrl(key: string): Promise<string> {
-    // Get file URL from storage
+  static async getFileUrl(key: string): Promise<string> {
     try {
       return await drive.use().getUrl(key);
     } catch (error) {
@@ -130,10 +159,12 @@ export default class FilesService {
    * @param key - File's key
    * @throws {FileServiceFileDeleteError} There was an issue deleting the file. Check the cause prop for details.
    */
-  async deleteFile(key: string): Promise<void> {
-    // Delete file from storage
+  static async deleteFile(key: string): Promise<void> {
     try {
-      await drive.use().delete(key);
+      const recordExists = await FileEntry.deleteByKey(key);
+      if (recordExists) {
+        await drive.use().delete(key);
+      }
     } catch (error) {
       throw new FileServiceFileDeleteError(error as Error);
     }

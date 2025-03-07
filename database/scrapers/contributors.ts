@@ -93,8 +93,6 @@ export default class ContributorsScraper extends BaseScraperModule {
     "Changelog_Screenshots",
   ];
 
-  private filesService = new FilesService();
-
   async run(task: TaskHandle) {
     task.update("Fetching all schema objects");
     const [
@@ -157,7 +155,7 @@ export default class ContributorsScraper extends BaseScraperModule {
             try {
               return [
                 id,
-                await this.filesService.uploadStream(
+                await FilesService.uploadStream(
                   Readable.fromWeb(fileResponse.body),
                   extension,
                 ),
