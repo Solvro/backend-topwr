@@ -1,11 +1,17 @@
 import { LucidResource } from "@adminjs/adonis";
 import {
+  Action,
   ActionRequest,
+  ActionResponse,
+  ParamsTypeValue,
   PropertyOptions,
+  RecordActionResponse,
+  RecordJSON,
   ResourceOptions,
   ResourceWithOptions,
 } from "adminjs";
 
+import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import { LucidModel } from "@adonisjs/lucid/types/model";
 
 import FilesService from "#services/files_service";
@@ -20,11 +26,22 @@ export interface ResourceBuilder {
   builders: ResourceInfo[];
 }
 
+type ImprovedRecordJSON = Omit<RecordJSON, "params"> & {
+  params: Record<string, ParamsTypeValue>;
+};
+type ImprovedRecordActionResponse = Omit<RecordActionResponse, "record"> & {
+  record: ImprovedRecordJSON;
+};
+export type ActionMap = Record<string, Partial<Action<ActionResponse>>>;
+type SubAction =
+  | Partial<Action<ActionResponse>>
+  | Partial<Action<RecordActionResponse>>;
+type HookReturnValue = Partial<Action<RecordActionResponse>>;
+
 export interface ResourceInfo {
   forModel: LucidModel;
   additionalProperties?: Record<string, PropertyOptions>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  additionalActions?: Record<string, any>;
+  additionalActions?: ActionMap;
   additionalOptions?: ResourceOptions;
   addImageHandling?: boolean;
 }
@@ -102,7 +119,7 @@ export class ResourceFactory {
     resourceModel: LucidModel,
     resourceNavigation: ResourceNavigation,
     additionalProperties?: Record<string, PropertyOptions>,
-    additionalActions?: Record<string, PropertyOptions>,
+    additionalActions?: ActionMap,
     additionalOptions?: ResourceOptions,
     addImageHandling = false,
   ): ResourceWithOptions {
@@ -157,8 +174,9 @@ export class ResourceFactory {
     return newResource;
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private static addNewUploadHook(additionalNewActions?: Record<string, any>) {
+  private static addNewUploadHook(
+    additionalNewActions?: SubAction,
+  ): HookReturnValue {
     return {
       ...additionalNewActions,
       before: async (request: ActionRequest): Promise<ActionRequest> => {
@@ -166,42 +184,36 @@ export class ResourceFactory {
           request.payload = {
             ...request.payload,
             cover: await FilesService.uploadMultipartFile(
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-              request.payload.uploadPhoto,
+              request.payload.uploadPhoto as MultipartFile,
             ),
           };
           delete request.payload.uploadPhoto;
         }
         return request;
       },
-    };
+    } as HookReturnValue;
   }
 
   private static addEditUploadHook(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    additionalEditActions?: Record<string, any>,
-  ) {
+    additionalEditActions?: SubAction,
+  ): HookReturnValue {
     return {
       ...additionalEditActions,
       before: async (request: ActionRequest): Promise<ActionRequest> => {
         if (request.payload?.uploadPhoto !== undefined) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          const currentCover: string | null | undefined = request.payload.cover;
-          if (currentCover !== undefined && currentCover !== null) {
+          if (typeof request.payload.cover === "string") {
             request.payload = {
               ...request.payload,
               cover: await FilesService.replaceWithMultipartFile(
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-                request.payload.uploadPhoto,
-                FilesService.extractFileKeyFromDiskKey(currentCover),
+                request.payload.uploadPhoto as MultipartFile,
+                FilesService.extractFileKeyFromDiskKey(request.payload.cover),
               ),
             };
           } else {
             request.payload = {
               ...request.payload,
               cover: await FilesService.uploadMultipartFile(
-                // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-                request.payload.uploadPhoto,
+                request.payload.uploadPhoto as MultipartFile,
               ),
             };
           }
@@ -209,26 +221,23 @@ export class ResourceFactory {
         }
         return request;
       },
-    };
+    } as HookReturnValue;
   }
 
   private static addDeleteHook(
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    additionalDeleteActions?: Record<string, any>,
-  ) {
+    additionalDeleteActions?: SubAction,
+  ): HookReturnValue {
     return {
       ...additionalDeleteActions,
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      after: async (entity: any) => {
-        // eslint-disable-next-line ,@typescript-eslint/no-unsafe-assignment
-        const currentCover: string | undefined | null =
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-non-null-assertion
-          entity!.record!.params?.cover;
-        if (currentCover !== undefined && currentCover !== null) {
+      after: async (
+        entity: ImprovedRecordActionResponse,
+      ): Promise<RecordActionResponse> => {
+        const currentCover: ParamsTypeValue = entity.record.params.cover;
+        if (typeof currentCover === "string") {
           await FilesService.deleteFileWithDiskKey(currentCover);
         }
         return entity;
       },
-    };
+    } as HookReturnValue;
   }
 }

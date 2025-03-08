@@ -11,20 +11,21 @@ async function fileToBase64(file: File): Promise<string> {
 const MAX_FILE_SIZE = 1024 * 1024 * 5;
 const ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion*/
 const PhotoDropbox: FC<BasePropertyProps> = (props) => {
   const [preview, setPreview] = React.useState<string | undefined>(undefined);
   const { property, onChange } = props;
-
+  if (onChange === undefined) {
+    throw new Error("Invalid dropbox configuration. onChange is not defined.");
+  }
   const handleChange = (files: File[]): void => {
     if (files.length > 0) {
       void fileToBase64(files[0]).then((bs) =>
         setPreview(`data:image/jpeg;base64,${bs}`),
       );
-      onChange!(property.name, files[0]);
+      onChange(property.name, files[0]);
     } else {
       setPreview(undefined);
-      onChange!(property.name, null);
+      onChange(property.name, null);
     }
   };
 
@@ -39,7 +40,7 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
       {preview !== undefined && (
         <DropZoneItem
           src={preview}
-          onRemove={() => onChange!(property.name, null)}
+          onRemove={() => onChange(property.name, null)}
         />
       )}
     </Box>
