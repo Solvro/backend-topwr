@@ -220,8 +220,9 @@ export class ResourceFactory {
       ...additionalDeleteActions,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       after: async (entity: any) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment,@typescript-eslint/no-non-null-assertion
+        // eslint-disable-next-line ,@typescript-eslint/no-unsafe-assignment
         const currentCover: string | undefined | null =
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-non-null-assertion
           entity!.record!.params?.cover;
         if (currentCover !== undefined && currentCover !== null) {
           await FilesService.deleteFileWithDiskKey(currentCover);
