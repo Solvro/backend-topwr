@@ -7,6 +7,7 @@ import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
 import FilesService from "#services/files_service";
+import { fixSequence } from "#utils/db";
 
 interface DirectusResponse<T> {
   data: T[];
@@ -133,6 +134,8 @@ export default class OrganizationsScraper extends BaseScraperModule {
       }
       await orgModel.related("tags").attach(tagNames);
     }
+    const newOrgId = await fixSequence("student_organizations");
+    task.update(`Organizations created, next ID set to ${newOrgId}`);
     task.update("Creating links...");
     await StudentOrganizationLink.createMany(
       links.data
@@ -146,6 +149,8 @@ export default class OrganizationsScraper extends BaseScraperModule {
           } as StudentOrganizationLink;
         }),
     );
+    const newLinkId = await fixSequence("student_organization_links");
+    task.update(`Links created, next ID set to ${newLinkId}`);
   }
 
   private convertSource(source: string): OrganizationSource {
