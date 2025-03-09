@@ -70,6 +70,9 @@ export function detectLinkType(link: string): {
   if (url.protocol === "mailto:") {
     return { type: LinkType.Mail };
   }
+  if (url.protocol === "tel:") {
+    return { type: LinkType.Phone };
+  }
   if (url.protocol !== "https:" && url.protocol !== "http:") {
     return {
       type: LinkType.Default,
