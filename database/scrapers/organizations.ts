@@ -141,10 +141,13 @@ export default class OrganizationsScraper extends BaseScraperModule {
       links.data
         .filter((link) => link.scientific_circle_id !== null)
         .map((link) => {
+          const url = link.link.includes(":")
+            ? link.link
+            : `https://${link.link}`;
           return {
             id: link.id,
-            link: link.link,
-            type: this.detectLinkType(link.link),
+            link: url,
+            type: this.detectLinkType(url),
             studentOrganizationId: link.scientific_circle_id,
           } as StudentOrganizationLink;
         }),
