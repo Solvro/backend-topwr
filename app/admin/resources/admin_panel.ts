@@ -15,6 +15,12 @@ const userResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+      resetPasswordToken: {
+        isVisible: false,
+      },
+      resetPasswordTokenExpiration: {
+        isVisible: false,
+      },
     },
   },
 };
