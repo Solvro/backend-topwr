@@ -20,7 +20,9 @@ export default class FilesController {
       return response.badRequest("Invalid key. Expected a string.");
     }
     const url = await FilesService.getFileUrl(key);
-
+    if (url === null) {
+      return response.notFound();
+    }
     return response.status(200).send({ url });
   }
 }
