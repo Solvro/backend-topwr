@@ -139,47 +139,51 @@ export default class DepartmentsScraper extends BaseScraperModule {
     );
     task.update("Departments created!");
 
-    const formattedFieldsOfStudies = await Promise.all(
-      fieldOfStudyData.data.map(async (data) => {
-        return {
-          id: data.id,
-          departmentId: data.department_id ?? undefined,
-          name: data.name,
-          url: data.url,
-          isEnglish: data.isEnglish,
-          is2ndDegree: data.is2ndDegree,
-          semesterCount: data.isLongCycleStudies ? 12 : 7,
-          hasWeekendOption: data.hasWeekendModeOption,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        };
+    await FieldOfStudyModel.createMany(
+      fieldOfStudyData.data.flatMap((data) => {
+        if (data.department_id === null) {
+          this.logger.warning(
+            `Skipped field of study entry ${data.id} due to missing department_id.`,
+          );
+          return [];
+        }
+        return [
+          {
+            id: data.id,
+            departmentId: data.department_id,
+            name: data.name,
+            url: data.url,
+            isEnglish: data.isEnglish,
+            is2ndDegree: data.is2ndDegree,
+            semesterCount: data.isLongCycleStudies ? 12 : 7,
+            hasWeekendOption: data.hasWeekendModeOption,
+            createdAt: DateTime.now(),
+            updatedAt: DateTime.now(),
+          },
+        ];
       }),
     );
-
-    await FieldOfStudyModel.createMany(formattedFieldsOfStudies);
-
     task.update("Fields of Studies created!");
+
     await DepartmentLinkModel.createMany(
-      departmentLinkData.data
-        .filter((linkEntry) => {
-          if (linkEntry.department_id === null) {
-            this.logger.warning(
-              `Skipped link entry ${linkEntry.id} due to missing department_id.`,
-            );
-            return false;
-          }
-          return true;
-        })
-        .map((linkEntry) => {
-          return {
+      departmentLinkData.data.flatMap((linkEntry) => {
+        if (linkEntry.department_id === null) {
+          this.logger.warning(
+            `Skipped link entry ${linkEntry.id} due to missing department_id.`,
+          );
+          return [];
+        }
+        return [
+          {
             id: linkEntry.id,
-            departmentId: linkEntry.department_id ?? undefined,
+            departmentId: linkEntry.department_id,
             linkType: this.detectLinkType(linkEntry.link),
             link: linkEntry.link,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
-          };
-        }),
+          },
+        ];
+      }),
     );
     task.update("Department Links created!");
   }
