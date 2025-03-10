@@ -17,11 +17,11 @@ export default class FileEntry extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  get diskKey() {
+  get keyWithExtension() {
     return `${this.id}.${this.fileExtension}`;
   }
 
-  public static createFileEntry(extname: string | undefined): FileEntry {
+  public static createNew(extname: string | undefined): FileEntry {
     const fileEntry = new FileEntry();
     fileEntry.id = randomUUID();
     fileEntry.fileExtension =
@@ -29,29 +29,15 @@ export default class FileEntry extends BaseModel {
     return fileEntry;
   }
 
-  public static async deleteByKeyAndReturnResult(
+  public static async fetchKeyWithExtension(
     key: string,
-  ): Promise<boolean> {
-    return FileEntry.query()
-      .where("id", key)
-      .delete()
-      .then((res: number[]) => res.length > 0 && res[0] > 0);
-  }
-
-  public static async updateFileType(
-    newFileType: string,
-    existingFileKey: string,
-  ) {
-    return FileEntry.query()
-      .where("id", existingFileKey)
-      .update({ file_type: newFileType });
-  }
-
-  public static async getExtensionIfExists(key: string) {
+  ): Promise<string | null> {
     return FileEntry.query()
       .select("file_extension")
       .where("id", key)
       .first()
-      .then((value) => value?.fileExtension);
+      .then((value) =>
+        value !== null ? `${key}.${value.fileExtension}` : null,
+      );
   }
 }
