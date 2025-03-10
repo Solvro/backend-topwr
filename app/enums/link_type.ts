@@ -32,18 +32,19 @@ export const linkTypeEnumsValues = {
   ],
 };
 
-const linkDomains: [string, LinkType][] = [
-  ["facebook.com", LinkType.Facebook],
-  ["instagram.com", LinkType.Instagram],
-  ["linkedin.com", LinkType.LinkedIn],
-  ["youtube.com", LinkType.YouTube],
-  ["github.com", LinkType.GitHub],
-  ["x.com", LinkType.X],
-  ["twitter.com", LinkType.X],
-  ["discord.com", LinkType.Discord],
-  ["discord.gg", LinkType.Discord],
-  ["tiktok.com", LinkType.TikTok],
-  ["twitch.tv", LinkType.Twitch],
+const linkPatterns: [string, RegExp | undefined, LinkType][] = [
+  ["facebook.com", undefined, LinkType.Facebook],
+  ["instagram.com", undefined, LinkType.Instagram],
+  ["linkedin.com", undefined, LinkType.LinkedIn],
+  ["youtube.com", undefined, LinkType.YouTube],
+  ["github.com", undefined, LinkType.GitHub],
+  ["x.com", undefined, LinkType.X],
+  ["twitter.com", undefined, LinkType.X],
+  ["discord.com", undefined, LinkType.Discord],
+  ["discord.gg", undefined, LinkType.Discord],
+  ["tiktok.com", undefined, LinkType.TikTok],
+  ["twitch.tv", undefined, LinkType.Twitch],
+  ["topwr.solvro.pl", /^\/buildings\/\d+$/i, LinkType.TopwrBuildings],
 ];
 
 /**
@@ -79,13 +80,16 @@ export function detectLinkType(link: string): {
       warning: `Encountered an unknown protocol '${url.protocol}' in social link '${link}' - assigned the Default linktype`,
     };
   }
-  for (const [domain, type] of linkDomains) {
-    if (url.host === domain || url.host.endsWith(`.${domain}`)) {
+  for (const [domain, pathPattern, type] of linkPatterns) {
+    if (
+      (url.host === domain || url.host.endsWith(`.${domain}`)) &&
+      (pathPattern === undefined || pathPattern.test(url.pathname))
+    ) {
       return { type };
     }
   }
   return {
     type: LinkType.Default,
-    warning: `Social link '${link}' matched no domains - assigned the Default linktype`,
+    warning: `Social link '${link}' matched no known patterns - assigned the Default linktype`,
   };
 }
