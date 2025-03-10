@@ -8,7 +8,7 @@ export default class extends BaseSchema {
       table.uuid("id").primary();
       table.string("file_type").notNullable();
       table.timestamp("created_at").notNullable();
-      table.timestamp("updated_at").nullable();
+      table.timestamp("updated_at").notNullable();
     });
   }
 

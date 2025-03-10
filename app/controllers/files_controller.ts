@@ -1,10 +1,8 @@
-import { inject } from "@adonisjs/core";
 import type { HttpContext } from "@adonisjs/core/http";
 
 import FilesService from "#services/files_service";
 
 export default class FilesController {
-  @inject()
   async post({ request, response }: HttpContext) {
     const file = request.file("file");
     if (file === null) {
@@ -16,7 +14,6 @@ export default class FilesController {
     return response.status(201).send({ key });
   }
 
-  @inject()
   async get({ params, response }: HttpContext) {
     const { key } = params;
     if (typeof key !== "string") {

@@ -12,6 +12,12 @@ export class FileServiceFileUploadError extends FileServiceError {
   }
 }
 
+export class FileServiceFilePersistError extends FileServiceError {
+  constructor(cause: Error) {
+    super("Couldn't persist the file to the database", cause);
+  }
+}
+
 export class FileServiceFileReadError extends FileServiceError {
   constructor(cause: Error) {
     super("Could't read the file", cause);
