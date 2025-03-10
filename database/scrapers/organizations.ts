@@ -58,7 +58,6 @@ export default class OrganizationsScraper extends BaseScraperModule {
   static description =
     "populates all required tables for organizations (tags, links,...)";
   static taskTitle = "Scraping organizations";
-  private filesService = new FilesService();
   private readonly urls = {
     orgs: "https://admin.topwr.solvro.pl/items/Scientific_Circles?limit=-1",
     tags: "https://admin.topwr.solvro.pl/items/Tags",
@@ -211,9 +210,6 @@ export default class OrganizationsScraper extends BaseScraperModule {
     if (imageStream === null) {
       throw new Error(`Failed to get image stream for asset ${directusId}`);
     }
-    return this.filesService.uploadStream(
-      Readable.fromWeb(imageStream),
-      extension,
-    );
+    return FilesService.uploadStream(Readable.fromWeb(imageStream), extension);
   }
 }
