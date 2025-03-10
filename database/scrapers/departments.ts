@@ -6,6 +6,7 @@ import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
 import FieldOfStudyModel from "#models/field_of_study";
 import FilesService from "#services/files_service";
+import { fixSequence } from "#utils/db";
 
 interface SourceResponse<T> {
   data: T[];
@@ -137,7 +138,10 @@ export default class DepartmentsScraper extends BaseScraperModule {
     await DepartmentModel.createMany(
       departmentEntries.filter((entry) => entry !== undefined),
     );
-    task.update("Departments created!");
+    const nextDepartmentId = await fixSequence("departments");
+    task.update(
+      `Departments created, ID sequence updated to ${nextDepartmentId}`,
+    );
 
     await FieldOfStudyModel.createMany(
       fieldOfStudyData.data.flatMap((data) => {
@@ -163,7 +167,8 @@ export default class DepartmentsScraper extends BaseScraperModule {
         ];
       }),
     );
-    task.update("Fields of Studies created!");
+    const nextFosId = await fixSequence("fields_of_studies");
+    task.update(`Fields of Study created, ID sequence updated to ${nextFosId}`);
 
     await DepartmentLinkModel.createMany(
       departmentLinkData.data.flatMap((linkEntry) => {
@@ -185,6 +190,9 @@ export default class DepartmentsScraper extends BaseScraperModule {
         ];
       }),
     );
-    task.update("Department Links created!");
+    const nextDlinksId = await fixSequence("departments_links");
+    task.update(
+      `Department Links created, ID sequence updated to ${nextDlinksId}`,
+    );
   }
 }
