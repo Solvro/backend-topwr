@@ -21,30 +21,24 @@ interface DepartmentsDraft {
   gradient_end: string;
   address: string;
   betterCode: string;
-  createdAt: string;
-  updatedAt: string | null;
 }
 
 interface FieldOfStudyDraft {
   id: number;
-  department_id: number;
+  department_id: number | null;
   name: string;
   url: string | null;
   isEnglish: boolean;
   is2ndDegree: boolean;
   isLongCycleStudies: boolean;
   hasWeekendModeOption: boolean;
-  createdAt: string;
-  updatedAt: string | null;
 }
 
 interface DepartmentLinkDraft {
   id: number;
-  department_id: number;
+  department_id: number | null;
   linkType: string;
   link: string;
-  createdAt: string;
-  updatedAt: string | null;
 }
 
 export default class DepartmentsScraper extends BaseScraperModule {
@@ -66,23 +60,24 @@ export default class DepartmentsScraper extends BaseScraperModule {
   async run(task: TaskHandle) {
     task.update("Starting fetching all schema objects");
 
-    const [Departments, FieldOfStudy, DepartmentLink] = (await Promise.all(
-      this.directusSchemas.map((schema) =>
-        this.semaphore.runTask(() =>
-          this.fetchJSON(
-            `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
-            schema,
+    const [departmentsData, fieldOfStudyData, departmentLinkData] =
+      (await Promise.all(
+        this.directusSchemas.map((schema) =>
+          this.semaphore.runTask(() =>
+            this.fetchJSON(
+              `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
+              schema,
+            ),
           ),
         ),
-      ),
-    )) as [
-      SourceResponse<DepartmentsDraft>,
-      SourceResponse<FieldOfStudyDraft>,
-      SourceResponse<DepartmentLinkDraft>,
-    ];
+      )) as [
+        SourceResponse<DepartmentsDraft>,
+        SourceResponse<FieldOfStudyDraft>,
+        SourceResponse<DepartmentLinkDraft>,
+      ];
 
     const departmentEntries = await Promise.all(
-      Departments.data.map(async (departmentEntry) => {
+      departmentsData.data.map(async (departmentEntry) => {
         // Logo
         const details = (await this.fetchJSON(
           `https://admin.topwr.solvro.pl/files/${departmentEntry.logo}?fields=filename_disk`,
@@ -99,7 +94,9 @@ export default class DepartmentsScraper extends BaseScraperModule {
         );
 
         if (fileResponse.body === null) {
-          throw new Error(`Response body is null for ${departmentEntry.id}`);
+          throw new Error(
+            `Response body is null for department ${departmentEntry.id} with asset id ${departmentEntry.logo}`,
+          );
         }
         const name = await this.filesService.uploadStream(
           Readable.fromWeb(fileResponse.body),
@@ -143,10 +140,10 @@ export default class DepartmentsScraper extends BaseScraperModule {
     task.update("Departments created!");
 
     const formattedFieldsOfStudies = await Promise.all(
-      FieldOfStudy.data.map(async (data) => {
+      fieldOfStudyData.data.map(async (data) => {
         return {
           id: data.id,
-          departmentId: data.department_id,
+          departmentId: data.department_id ?? undefined,
           name: data.name,
           url: data.url,
           isEnglish: data.isEnglish,
@@ -160,11 +157,12 @@ export default class DepartmentsScraper extends BaseScraperModule {
     );
 
     await FieldOfStudyModel.createMany(formattedFieldsOfStudies);
+
     task.update("Fields of Studies created!");
     await DepartmentLinkModel.createMany(
-      DepartmentLink.data
+      departmentLinkData.data
         .filter((linkEntry) => {
-          if (!linkEntry.department_id) {
+          if (linkEntry.department_id === null) {
             this.logger.warning(
               `Skipped link entry ${linkEntry.id} due to missing department_id.`,
             );
@@ -175,7 +173,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
         .map((linkEntry) => {
           return {
             id: linkEntry.id,
-            departmentId: linkEntry.department_id,
+            departmentId: linkEntry.department_id ?? undefined,
             linkType: this.detectLinkType(linkEntry.link),
             link: linkEntry.link,
             createdAt: DateTime.now(),
