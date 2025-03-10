@@ -10,13 +10,41 @@ import {
   FileServiceFileReadError,
   FileServiceFileUploadError,
 } from "#exceptions/file_service_errors";
+import FileEntry from "#services/file_entry";
+
+interface FileInformation {
+  fileInstance: FileEntry;
+  diskKey: string;
+}
 
 export default class FilesService {
-  private generateKey(extname: string | undefined): string {
-    if (extname?.length === 0) {
-      extname = undefined;
-    }
-    return `${randomUUID()}.${extname ?? "bin"}`;
+  private static getExtension(extname: string | undefined): string {
+    return extname !== undefined && extname.length > 0 ? extname : "bin";
+  }
+
+  private static mapToFileInstance(extname: string | undefined): FileEntry {
+    const fileEntry = new FileEntry();
+    fileEntry.id = randomUUID();
+    fileEntry.fileType = this.getExtension(extname);
+    return fileEntry;
+  }
+
+  private static mapInstanceToDiskKey(fileInstance: FileEntry): string {
+    return `${fileInstance.id}.${fileInstance.fileType}`;
+  }
+
+  private static mapToDiskKey(fileKey: string, fileType: string): string {
+    return `${fileKey}.${fileType}`;
+  }
+
+  private static createFileInformation(
+    extname: string | undefined,
+  ): FileInformation {
+    const fileInstance = FilesService.mapToFileInstance(extname);
+    return {
+      fileInstance,
+      diskKey: FilesService.mapInstanceToDiskKey(fileInstance),
+    };
   }
 
   /**
@@ -27,14 +55,53 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadMultipartFile(file: MultipartFile): Promise<string> {
-    const key = this.generateKey(file.extname);
+  static async uploadMultipartFile(file: MultipartFile): Promise<string> {
+    const fileInfo = FilesService.createFileInformation(file.extname);
     try {
-      await file.moveToDisk(key);
-      return key;
+      await fileInfo.fileInstance.save();
+      await file.moveToDisk(fileInfo.diskKey);
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
+  }
+
+  /**
+   * Replaces a multipart file in storage.
+   *
+   * Use this if you're handling an API request and received a `MultipartFile` from adonis
+   * @param file - The file to upload
+   * @param existingFileKey - the key of file you wish to replace, without the extension name
+   * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
+   */
+  static async replaceWithMultipartFile(
+    file: MultipartFile,
+    existingFileKey: string,
+  ): Promise<string> {
+    const oldExtension = await FileEntry.getExtensionIfExists(existingFileKey);
+    if (oldExtension === undefined) {
+      throw new FileServiceFileUploadError(Error("File does not exist"));
+    }
+    const newExtension: string = this.getExtension(file.extname);
+    const diskKey: string = this.mapToDiskKey(existingFileKey, newExtension);
+    if (oldExtension === newExtension) {
+      try {
+        await file.moveToDisk(diskKey);
+      } catch (error) {
+        throw new FileServiceFileUploadError(error as Error);
+      }
+    } else {
+      try {
+        await FileEntry.updateFileType(newExtension, existingFileKey);
+        await drive
+          .use()
+          .delete(this.mapToDiskKey(existingFileKey, oldExtension));
+        await file.moveToDisk(diskKey);
+      } catch (error) {
+        throw new FileServiceFileUploadError(error as Error);
+      }
+    }
+    return diskKey;
   }
 
   /**
@@ -47,14 +114,15 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadStream(
+  static async uploadStream(
     stream: Readable,
     extname: string | undefined = undefined,
   ): Promise<string> {
-    const key = this.generateKey(extname);
+    const fileInfo = FilesService.createFileInformation(extname);
     try {
-      await drive.use().putStream(key, stream);
-      return key;
+      await fileInfo.fileInstance.save();
+      await drive.use().putStream(fileInfo.diskKey, stream);
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
@@ -69,14 +137,15 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadFromMemory(
+  static async uploadFromMemory(
     data: string | Uint8Array,
     extname: string | undefined = undefined,
   ): Promise<string> {
-    const key = this.generateKey(extname);
+    const fileInfo = FilesService.createFileInformation(extname);
     try {
-      await drive.use().put(key, data);
-      return key;
+      await fileInfo.fileInstance.save();
+      await drive.use().put(fileInfo.diskKey, data);
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
@@ -90,19 +159,23 @@ export default class FilesService {
    * @returns Key of the newly uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  async uploadLocalFile(
+  static async uploadLocalFile(
     path: string,
     removeSourceFile = false,
   ): Promise<string> {
     path = nodePath.resolve(path);
-    const key = this.generateKey(nodePath.extname(path).substring(1));
+    const fileInfo = FilesService.createFileInformation(
+      nodePath.extname(path).substring(1),
+    );
     try {
       if (removeSourceFile) {
-        await drive.use().moveFromFs(path, key);
+        await fileInfo.fileInstance.save();
+        await drive.use().moveFromFs(path, fileInfo.diskKey);
       } else {
-        await drive.use().copyFromFs(path, key);
+        await fileInfo.fileInstance.save();
+        await drive.use().copyFromFs(path, fileInfo.diskKey);
       }
-      return key;
+      return fileInfo.diskKey;
     } catch (error) {
       throw new FileServiceFileUploadError(error as Error);
     }
@@ -115,8 +188,7 @@ export default class FilesService {
    * @returns The full URL to the file
    * @throws {FileServiceFileReadError} There was an issue constructing the URL. Check the cause prop for details.
    */
-  async getFileUrl(key: string): Promise<string> {
-    // Get file URL from storage
+  static async getFileUrl(key: string): Promise<string> {
     try {
       return await drive.use().getUrl(key);
     } catch (error) {
@@ -127,15 +199,47 @@ export default class FilesService {
   /**
    * Deletes a file from storage
    *
-   * @param key - File's key
+   * @param diskKey - File's full key from disk
+   * @return - true if delete is successful, false if no file to delete, throws if error occurs
    * @throws {FileServiceFileDeleteError} There was an issue deleting the file. Check the cause prop for details.
    */
-  async deleteFile(key: string): Promise<void> {
-    // Delete file from storage
+  static async deleteFileWithDiskKey(diskKey: string): Promise<boolean> {
     try {
-      await drive.use().delete(key);
+      const recordExists = await FileEntry.deleteByKeyAndReturnResult(
+        this.extractFileKeyFromDiskKey(diskKey),
+      );
+      if (recordExists) {
+        await drive.use().delete(diskKey);
+        return true;
+      }
+      return false;
     } catch (error) {
       throw new FileServiceFileDeleteError(error as Error);
     }
+  }
+
+  /**
+   * Deletes a file from storage
+   *
+   * @param key - File's key without extension. If you have the full diskKey, it is better to use the deleteFileWithDiskKey method
+   * @return - true if delete is successful, false if no file to delete, throws if error occurs
+   * @throws {FileServiceFileDeleteError} There was an issue deleting the file. Check the cause prop for details.
+   */
+  static async deleteFileWithKey(key: string): Promise<boolean> {
+    try {
+      const extension = await FileEntry.getExtensionIfExists(key);
+      if (extension !== undefined) {
+        await FileEntry.deleteByKey(key);
+        await drive.use().delete(this.mapToDiskKey(key, extension));
+        return true;
+      }
+      return false;
+    } catch (error) {
+      throw new FileServiceFileDeleteError(error as Error);
+    }
+  }
+
+  static extractFileKeyFromDiskKey(diskKey: string): string {
+    return diskKey.substring(0, diskKey.lastIndexOf("."));
   }
 }
