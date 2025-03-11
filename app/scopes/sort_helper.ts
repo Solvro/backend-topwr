@@ -28,7 +28,7 @@ export const handleSortQuery = <T extends LucidModel>(model: T) =>
       // means no value provided
       return;
     }
-    const match = /^([+-])(\w+)$/.exec(sort);
+    const match = /^([+\- ])(\w+)$/.exec(sort);
     if (match === null) {
       throw new BadRequestException(
         `Invalid sort param '${sort}' ` +
