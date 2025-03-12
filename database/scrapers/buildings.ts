@@ -45,8 +45,6 @@ export default class BuildingsScraper extends BaseScraperModule {
     "Scrapes pwr buildings data from directus and campuses from local file: './assets/campuses.json'";
   static taskTitle = "Scrape buildings and campuses";
 
-  private filesService = new FilesService();
-
   async run(task: TaskHandle) {
     task.update("starting reading campuses file...");
     const campusesData = await fs
@@ -155,7 +153,7 @@ export default class BuildingsScraper extends BaseScraperModule {
       );
     }
     try {
-      return await this.filesService.uploadStream(
+      return await FilesService.uploadStream(
         Readable.fromWeb(imageStream),
         extension,
       );
