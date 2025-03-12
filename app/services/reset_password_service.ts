@@ -34,15 +34,7 @@ export default class ResetPasswordService {
     logger.info(`Reset password email sent to ${email}`);
   }
 
-  async tryToResetForTokenOrFail(token: string, password: string) {
-    const user = await User.query()
-      .withScopes((scopes) => {
-        scopes.compareTokens(token);
-      })
-      .first();
-    if (user === null) {
-      throw new UnathorizedException("Invalid token");
-    }
+  async tryToResetForUser(user: User, password: string) {
     if (
       user.resetPasswordTokenExpiration !== null &&
       user.resetPasswordTokenExpiration < DateTime.now()
@@ -76,7 +68,7 @@ export default class ResetPasswordService {
     user: User,
     expirationDate: DateTime<true>,
   ): Promise<string> {
-    const token = crypto.randomBytes(20).toString("hex");
+    const token = crypto.randomUUID().toString();
     user.resetPasswordToken = token;
     user.resetPasswordTokenExpiration = expirationDate;
     await user.save();

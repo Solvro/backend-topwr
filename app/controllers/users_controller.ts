@@ -1,9 +1,10 @@
 import { inject } from "@adonisjs/core";
 import type { HttpContext } from "@adonisjs/core/http";
 
-import BadRequestException from "#exceptions/bad_request_exception";
 import ResetPasswordService from "#services/reset_password_service";
 import { emailValidator } from "#validators/email";
+import { passwordValidator } from "#validators/password";
+import { resetPasswordTokenValidator } from "#validators/token";
 
 export default class UsersController {
   /**
@@ -29,12 +30,13 @@ export default class UsersController {
     { request, response }: HttpContext,
     resetPasswordService: ResetPasswordService,
   ) {
-    const token = request.param("token") as string;
-    const { password } = request.body() as { password: string | undefined };
-    if (password === undefined) {
-      throw new BadRequestException("No password provided");
-    }
-    await resetPasswordService.tryToResetForTokenOrFail(token, password);
+    const {
+      params: {
+        token: { userWithToken }, // dont kill me
+      },
+    } = await request.validateUsing(resetPasswordTokenValidator);
+    const { password } = await request.validateUsing(passwordValidator);
+    await resetPasswordService.tryToResetForUser(userWithToken, password);
     return response.ok({ message: "Password updated successfully" });
   }
 }
