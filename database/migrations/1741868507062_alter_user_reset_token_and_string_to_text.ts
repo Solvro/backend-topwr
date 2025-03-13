@@ -8,9 +8,9 @@ export default class extends BaseSchema {
       table.text("full_name").alter({ alterNullable: false, alterType: true });
       table.text("email").alter({ alterNullable: false, alterType: true });
       table.text("password").alter({ alterNullable: false, alterType: true });
-      table
-        .text("reset_password_token")
-        .alter({ alterNullable: false, alterType: true });
+
+      table.text("reset_password_token").nullable();
+      table.text("reset_password_token_expiration").nullable();
     });
   }
 }
