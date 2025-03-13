@@ -10,7 +10,7 @@ export default class extends BaseSchema {
       table.text("password").alter({ alterNullable: false, alterType: true });
 
       table.text("reset_password_token").nullable();
-      table.text("reset_password_token_expiration").nullable();
+      table.timestamp("reset_password_token_expiration").nullable();
     });
   }
 }
