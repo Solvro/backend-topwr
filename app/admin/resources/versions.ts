@@ -1,4 +1,6 @@
 import { LucidResource } from "@adminjs/adonis";
+import { ValidationMessages } from "@vinejs/vine/types";
+import { ActionRequest, PropertyErrors, ValidationError } from "adminjs";
 
 import { changeTypeEnumsValues } from "#enums/change_type";
 import { linkTypeEnumsValues } from "#enums/link_type";
@@ -12,6 +14,7 @@ import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
+import { versionValidator } from "./validators/versions.js";
 
 const navigation = {
   name: "Versions",
@@ -86,6 +89,26 @@ const versionResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) => {
+          const { method, payload } = request;
+          if (method === "post" && payload !== undefined) {
+            try {
+              await versionValidator.validate(payload);
+            } catch (errors) {
+              throw new ValidationError(
+                errors.messages.reduce((acc, error) => {
+                  acc[error.field] = { message: error.message };
+                  return acc;
+                }, {}),
+              );
+            }
+            return request;
+          }
+        },
+      },
     },
   },
 };
