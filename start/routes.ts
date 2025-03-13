@@ -47,10 +47,11 @@ router.get("/", async () => {
 
 router
   .group(() => {
-    router.post("/", [ResetPasswordsController, "resetPassword"]);
+    router
+      .post("/", [ResetPasswordsController, "resetPassword"])
+      .use(resetPasswordThrottle);
     router.put("/:token", [ResetPasswordsController, "updatePassword"]);
   })
-  .use(resetPasswordThrottle)
   .prefix("admin/resetpassword"); //reset_password_service dependency
 
 router
