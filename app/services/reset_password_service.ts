@@ -6,7 +6,6 @@ import logger from "@adonisjs/core/services/logger";
 import mail from "@adonisjs/mail/services/main";
 
 import BadRequestException from "#exceptions/bad_request_exception";
-import UnathorizedException from "#exceptions/unathorized_exception";
 import ResetPasswordNotification from "#mails/reset_password_notification";
 import User from "#models/user";
 import env from "#start/env";
@@ -42,7 +41,6 @@ export default class ResetPasswordService {
       user.resetPasswordToken = null;
       user.resetPasswordTokenExpiration = null;
       await user.save();
-      throw new UnathorizedException("Time out for request");
     }
     if (await hash.verify(user.password, password)) {
       throw new BadRequestException(
@@ -54,6 +52,12 @@ export default class ResetPasswordService {
     user.resetPasswordTokenExpiration = null;
     await user.save();
     logger.info(`password changed for user ${user.email}`);
+  }
+
+  async destroyToken(user: User) {
+    user.resetPasswordToken = null;
+    user.resetPasswordTokenExpiration = null;
+    await user.save();
   }
 
   /**
