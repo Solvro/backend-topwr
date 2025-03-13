@@ -1,6 +1,6 @@
 import { LucidResource } from "@adminjs/adonis";
-import { ValidationMessages } from "@vinejs/vine/types";
-import { ActionRequest, PropertyErrors, ValidationError } from "adminjs";
+import { errors } from "@vinejs/vine";
+import { ActionRequest, ValidationError } from "adminjs";
 
 import { changeTypeEnumsValues } from "#enums/change_type";
 import { linkTypeEnumsValues } from "#enums/link_type";
@@ -20,6 +20,12 @@ const navigation = {
   name: "Versions",
   icon: "GitBranch",
 };
+
+interface VineError {
+  message: string;
+  rule: string;
+  field: string;
+}
 
 const changeResource = {
   resource: new LucidResource(Change, "postgres"),
@@ -97,13 +103,20 @@ const versionResource = {
           if (method === "post" && payload !== undefined) {
             try {
               await versionValidator.validate(payload);
-            } catch (errors) {
-              throw new ValidationError(
-                errors.messages.reduce((acc, error) => {
-                  acc[error.field] = { message: error.message };
-                  return acc;
-                }, {}),
-              );
+            } catch (err) {
+              if (err instanceof errors.E_VALIDATION_ERROR) {
+                const errorMessages = err.messages as VineError[];
+                const errorsMap = errorMessages.reduce(
+                  (acc, { message, field, rule }) => ({
+                    ...acc,
+                    [field]: { message, type: rule },
+                  }),
+                  {},
+                );
+                throw new ValidationError(errorsMap, {
+                  message: "dupa chuj",
+                });
+              }
             }
             return request;
           }
