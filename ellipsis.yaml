@@ -1,7 +1,4 @@
 version: 1.3
 pr_review:
   auto_review_enabled: false
-
-  user_overrides:
-    - usernames: ["mini-bomba"]
-      auto_summarize_pr: false
+  auto_summarize_pr: false
