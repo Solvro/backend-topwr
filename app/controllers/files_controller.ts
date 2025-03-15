@@ -1,9 +1,13 @@
 import type { HttpContext } from "@adonisjs/core/http";
+import app from "@adonisjs/core/services/app";
 
 import FilesService from "#services/files_service";
 
 export default class FilesController {
   async post({ request, response }: HttpContext) {
+    if (app.inProduction) {
+      return response.forbidden();
+    }
     const file = request.file("file");
     if (file === null) {
       return response.badRequest("No file provided");
