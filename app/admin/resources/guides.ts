@@ -1,10 +1,17 @@
 import { LucidResource } from "@adminjs/adonis";
+import { ActionRequest } from "adminjs";
 
 import GuideArticle from "#models/guide_article";
 import GuideAuthor from "#models/guide_author";
 import GuideQuestion from "#models/guide_question";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
+import {
+  guideArticleValidator,
+  guideAuthorValidator,
+  guideQuestionValidator,
+} from "./validators/guide.js";
+import { validateResource } from "./validators/utils.js";
 
 const navigation = {
   name: "Guides",
@@ -21,6 +28,12 @@ const guideArticleResource = {
       },
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(guideArticleValidator, request),
+      },
+    },
   },
 };
 
@@ -30,6 +43,12 @@ const guideAuthorResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(guideAuthorValidator, request),
+      },
     },
   },
 };
@@ -43,6 +62,12 @@ const guideQuestionResource = {
         type: "richtext",
       },
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(guideQuestionValidator, request),
+      },
     },
   },
 };

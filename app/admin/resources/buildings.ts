@@ -1,4 +1,5 @@
 import { LucidResource } from "@adminjs/adonis";
+import { ActionRequest } from "adminjs";
 
 import { buildingIconEnumsValues } from "#enums/building_icon";
 import Aed from "#models/aed";
@@ -11,6 +12,17 @@ import RegularHour from "#models/regular_hour";
 import SpecialHour from "#models/special_hour";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
+import {
+  aedValidator,
+  bicycleShowerValidator,
+  buildingValidator,
+  campusValidator,
+  foodSpotValidator,
+  libraryValidator,
+  regularHourValidator,
+  specialHourValidator,
+} from "./validators/buildings.js";
+import { validateResource } from "./validators/utils.js";
 
 const navigation = {
   name: "Buildings",
@@ -25,6 +37,12 @@ const buildingResource = {
       iconType: buildingIconEnumsValues,
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(buildingValidator, request),
+      },
+    },
   },
 };
 
@@ -34,6 +52,12 @@ const campusResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(campusValidator, request),
+      },
     },
   },
 };
@@ -45,6 +69,12 @@ const aedResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(aedValidator, request),
+      },
+    },
   },
 };
 
@@ -54,6 +84,12 @@ const bicycleShowerResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(bicycleShowerValidator, request),
+      },
     },
   },
 };
@@ -65,6 +101,12 @@ const foodSpotResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(foodSpotValidator, request),
+      },
+    },
   },
 };
 
@@ -74,6 +116,12 @@ const libraryResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(libraryValidator, request),
+      },
     },
   },
 };
@@ -85,6 +133,12 @@ const regularHourResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(regularHourValidator, request),
+      },
+    },
   },
 };
 
@@ -94,6 +148,12 @@ const specialHourResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(specialHourValidator, request),
+      },
     },
   },
 };

@@ -1,11 +1,16 @@
 import { LucidResource } from "@adminjs/adonis";
-import { ResourceWithOptions } from "adminjs";
+import { ActionRequest, ResourceWithOptions } from "adminjs";
 
 import { linkTypeEnumsValues } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
+import {
+  aboutUsGeneralLinkValidator,
+  aboutUsGeneralValidator,
+} from "./validators/about_us.js";
+import { validateResource } from "./validators/utils.js";
 
 const navigation = {
   name: "About Us",
@@ -32,6 +37,8 @@ const aboutUsResource: ResourceWithOptions = {
       new: {
         isAccessible: false,
         isVisible: false,
+        before: async (request: ActionRequest) =>
+          await validateResource(aboutUsGeneralValidator, request),
       },
       delete: {
         isAccessible: false,
@@ -52,6 +59,12 @@ const aboutUsLinkResource = {
     properties: {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(aboutUsGeneralLinkValidator, request),
+      },
     },
   },
 };
