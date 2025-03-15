@@ -1,6 +1,5 @@
 import { LucidResource } from "@adminjs/adonis";
-import { errors } from "@vinejs/vine";
-import { ActionRequest, ValidationError } from "adminjs";
+import { ActionRequest } from "adminjs";
 
 import { changeTypeEnumsValues } from "#enums/change_type";
 import { linkTypeEnumsValues } from "#enums/link_type";
@@ -14,18 +13,21 @@ import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
-import { versionValidator } from "./validators/versions.js";
+import { validateResource } from "./validators/utils.js";
+import {
+  changeScreenshotValidator,
+  changesValidator,
+  contributorSocialLinksValidator,
+  contributorValidator,
+  milestoneValidator,
+  roleValidator,
+  versionValidator,
+} from "./validators/versions.js";
 
 const navigation = {
   name: "Versions",
   icon: "GitBranch",
 };
-
-interface VineError {
-  message: string;
-  rule: string;
-  field: string;
-}
 
 const changeResource = {
   resource: new LucidResource(Change, "postgres"),
@@ -34,6 +36,12 @@ const changeResource = {
     properties: {
       type: changeTypeEnumsValues,
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(changesValidator, request),
+      },
     },
   },
 };
@@ -45,6 +53,12 @@ const changeScreenshotResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(changeScreenshotValidator, request),
+      },
+    },
   },
 };
 
@@ -54,6 +68,12 @@ const contributorResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(contributorValidator, request),
+      },
     },
   },
 };
@@ -66,6 +86,12 @@ const contributorSocialLinksResource = {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(contributorSocialLinksValidator, request),
+      },
+    },
   },
 };
 
@@ -76,6 +102,12 @@ const milestoneResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(milestoneValidator, request),
+      },
+    },
   },
 };
 
@@ -85,6 +117,12 @@ const roleResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(roleValidator, request),
+      },
     },
   },
 };
@@ -98,29 +136,8 @@ const versionResource = {
     },
     actions: {
       new: {
-        before: async (request: ActionRequest) => {
-          const { method, payload } = request;
-          if (method === "post" && payload !== undefined) {
-            try {
-              await versionValidator.validate(payload);
-            } catch (err) {
-              if (err instanceof errors.E_VALIDATION_ERROR) {
-                const errorMessages = err.messages as VineError[];
-                const errorsMap = errorMessages.reduce(
-                  (acc, { message, field, rule }) => ({
-                    ...acc,
-                    [field]: { message, type: rule },
-                  }),
-                  {},
-                );
-                throw new ValidationError(errorsMap, {
-                  message: "dupa chuj",
-                });
-              }
-            }
-            return request;
-          }
-        },
+        before: async (request: ActionRequest) =>
+          validateResource(versionValidator, request),
       },
     },
   },
@@ -132,6 +149,12 @@ const versionScreenshotResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(versionValidator, request),
+      },
     },
   },
 };
