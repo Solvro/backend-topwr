@@ -1,3 +1,4 @@
+import { Logger } from "@poppinss/cliui";
 import { DateTime } from "luxon";
 import { Readable } from "node:stream";
 
@@ -46,7 +47,7 @@ interface ImageMetadata {
   };
 }
 
-async function uploadImage(imageUrl: string) {
+async function uploadImage(imageUrl: string, logger: Logger) {
   const filesService = new FilesService();
 
   const [fetchedImage, fetchedImageMetadata] = await Promise.all([
@@ -69,29 +70,30 @@ async function uploadImage(imageUrl: string) {
   const imageMetadata = (await fetchedImageMetadata.json()) as ImageMetadata;
   let extension: string | undefined = "";
   if (imageMetadata.data.filename_disk !== null) {
-    if (imageMetadata.data.filename_disk.split(".").length > 1) {
-      extension = imageMetadata.data.filename_disk.split(".").pop();
+    const filenameDiskParts = imageMetadata.data.filename_disk.split(".");
+    if (filenameDiskParts.length > 1) {
+      extension = filenameDiskParts.pop();
     }
   }
   if (extension === "") {
     if (imageMetadata.data.filename_download !== null) {
-      if (imageMetadata.data.filename_download.split(".").length > 1) {
-        extension = imageMetadata.data.filename_download.split(".").pop();
+      const filenameDownloadParts =
+        imageMetadata.data.filename_download.split(".");
+      if (filenameDownloadParts.length > 1) {
+        extension = filenameDownloadParts.pop();
       }
     }
   }
 
   if (extension === undefined || extension === "") {
-    throw new Error("Failed to determine image extension");
+    logger.warning(
+      "Failed to determine image extension, using a .bin instead.",
+    );
   }
 
   const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
 
-  try {
-    return await filesService.uploadStream(stream, extension);
-  } catch (error) {
-    throw new Error(`Failed to upload image.`, { cause: error });
-  }
+  return await filesService.uploadStream(stream, extension);
 }
 
 export default class FaqSectionScrapper extends BaseScraperModule {
@@ -162,7 +164,14 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         }
       }
 
-      const imagePath = await uploadImage(article.cover);
+      let imagePath = "";
+      try {
+        imagePath = await uploadImage(article.cover, this.logger);
+      } catch (error) {
+        this.logger.error(
+          `Failed to upload article cover image for article: ${article.id}: ${error}`,
+        );
+      }
 
       await GuideArticle.create({
         id: article.id,
