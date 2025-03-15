@@ -53,8 +53,6 @@ export default class FaqSectionScrapper extends BaseScraperModule {
   static taskTitle = "Scrape the faq section";
 
   async uploadImage(imageUrl: string) {
-    const filesService = new FilesService();
-
     const [fetchedImage, fetchedImageMetadata] = await Promise.all([
       fetch(`https://admin.topwr.solvro.pl/assets/${imageUrl}`),
       fetch(`https://admin.topwr.solvro.pl/files/${imageUrl}`),
@@ -98,7 +96,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
 
     const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
 
-    return await filesService.uploadStream(stream, extension);
+    return await FilesService.uploadStream(stream, extension);
   }
 
   async run(task: TaskHandle) {
