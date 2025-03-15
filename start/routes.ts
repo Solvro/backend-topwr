@@ -10,6 +10,8 @@ import router from "@adonisjs/core/services/router";
 
 import env from "#start/env";
 
+import { resetPasswordThrottle } from "./limiter.js";
+
 const FilesController = () => import("#controllers/files_controller");
 const BuildingsController = () => import("#controllers/buildings_controller");
 const CampusesController = () => import("#controllers/campuses_controller");
@@ -37,10 +39,20 @@ const AcademicCalendarsController = () =>
 const HolidaysController = () => import("#controllers/holidays_controller");
 const DaySwapsController = () => import("#controllers/day_swaps_controller");
 const LibrariesController = () => import("#controllers/libraries_controller");
+const ResetPasswordsController = () => import("#controllers/users_controller");
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
 });
+
+router
+  .group(() => {
+    router
+      .post("/", [ResetPasswordsController, "resetPassword"])
+      .use(resetPasswordThrottle);
+    router.put("/:token", [ResetPasswordsController, "updatePassword"]);
+  })
+  .prefix("admin/resetpassword"); //reset_password_service dependency
 
 router
   .group(() => {
