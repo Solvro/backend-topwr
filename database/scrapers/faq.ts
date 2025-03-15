@@ -1,8 +1,7 @@
-import { Logger } from "@poppinss/cliui";
 import { DateTime } from "luxon";
 import { Readable } from "node:stream";
 
-import { BaseScraperModule } from "#commands/db_scrape";
+import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
 import FilesService from "#services/files_service";
@@ -47,63 +46,63 @@ interface ImageMetadata {
   };
 }
 
-async function uploadImage(imageUrl: string, logger: Logger) {
-  const filesService = new FilesService();
-
-  const [fetchedImage, fetchedImageMetadata] = await Promise.all([
-    fetch(`https://admin.topwr.solvro.pl/assets/${imageUrl}`),
-    fetch(`https://admin.topwr.solvro.pl/files/${imageUrl}`),
-  ]);
-
-  if (!fetchedImage.ok) {
-    throw new Error(
-      `Failed to fetch the image. HTTP status: ${fetchedImage.status}`,
-    );
-  }
-
-  if (!fetchedImageMetadata.ok) {
-    throw new Error(
-      `Failed to fetch the image metadata. HTTP status: ${fetchedImageMetadata.status}`,
-    );
-  }
-
-  const imageMetadata = (await fetchedImageMetadata.json()) as ImageMetadata;
-  let extension: string | undefined = "";
-  if (imageMetadata.data.filename_disk !== null) {
-    const filenameDiskParts = imageMetadata.data.filename_disk.split(".");
-    if (filenameDiskParts.length > 1) {
-      extension = filenameDiskParts.pop();
-    }
-  }
-  if (extension === "") {
-    if (imageMetadata.data.filename_download !== null) {
-      const filenameDownloadParts =
-        imageMetadata.data.filename_download.split(".");
-      if (filenameDownloadParts.length > 1) {
-        extension = filenameDownloadParts.pop();
-      }
-    }
-  }
-
-  if (extension === undefined || extension === "") {
-    logger.warning(
-      "Failed to determine image extension, using a .bin instead.",
-    );
-  }
-
-  const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
-
-  return await filesService.uploadStream(stream, extension);
-}
-
 export default class FaqSectionScrapper extends BaseScraperModule {
-  static name = "FAQ section";
+  static name = "FAQs";
   static description =
     "Articles, questions, answers, and authors of the FAQ section";
   static taskTitle = "Scrape the faq section";
 
-  async run() {
-    this.logger.info("Fetching data...");
+  async uploadImage(imageUrl: string) {
+    const filesService = new FilesService();
+
+    const [fetchedImage, fetchedImageMetadata] = await Promise.all([
+      fetch(`https://admin.topwr.solvro.pl/assets/${imageUrl}`),
+      fetch(`https://admin.topwr.solvro.pl/files/${imageUrl}`),
+    ]);
+
+    if (!fetchedImage.ok) {
+      throw new Error(
+        `Failed to fetch the image. HTTP status: ${fetchedImage.status}`,
+      );
+    }
+
+    if (!fetchedImageMetadata.ok) {
+      throw new Error(
+        `Failed to fetch the image metadata. HTTP status: ${fetchedImageMetadata.status}`,
+      );
+    }
+
+    const imageMetadata = (await fetchedImageMetadata.json()) as ImageMetadata;
+    let extension: string | undefined = "";
+    if (imageMetadata.data.filename_disk !== null) {
+      const filenameDiskParts = imageMetadata.data.filename_disk.split(".");
+      if (filenameDiskParts.length > 1) {
+        extension = filenameDiskParts.pop();
+      }
+    }
+    if (extension === "") {
+      if (imageMetadata.data.filename_download !== null) {
+        const filenameDownloadParts =
+          imageMetadata.data.filename_download.split(".");
+        if (filenameDownloadParts.length > 1) {
+          extension = filenameDownloadParts.pop();
+        }
+      }
+    }
+
+    if (extension === undefined || extension === "") {
+      this.logger.warning(
+        "Failed to determine image extension, using a .bin instead.",
+      );
+    }
+
+    const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
+
+    return await filesService.uploadStream(stream, extension);
+  }
+
+  async run(task: TaskHandle) {
+    task.update("Fetching data...");
     const [articlesResponse, questionsResponse, pivotTableResponse] =
       await Promise.all([
         fetch("https://admin.topwr.solvro.pl/items/FAQ_Types"),
@@ -133,6 +132,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         pivotTableResponse.json() as Promise<PivotTable>,
       ]);
 
+    task.update("Migrating images & saving data...");
     for (const article of articlesResult.data) {
       let createdAt: DateTime = DateTime.now();
       let updatedAt = DateTime.fromMillis(0);
@@ -166,7 +166,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
 
       let imagePath = "";
       try {
-        imagePath = await uploadImage(article.cover, this.logger);
+        imagePath = await this.uploadImage(article.cover);
       } catch (error) {
         this.logger.error(
           `Failed to upload article cover image for article: ${article.id}: ${error}`,
@@ -212,7 +212,5 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         );
       }
     }
-
-    this.logger.info("FAQ data successfully added to the database!");
   }
 }
