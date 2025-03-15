@@ -21,6 +21,7 @@ import {
   contributorValidator,
   milestoneValidator,
   roleValidator,
+  versionScreenshotValidator,
   versionValidator,
 } from "./validators/versions.js";
 
@@ -153,7 +154,7 @@ const versionScreenshotResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(versionValidator, request),
+          validateResource(versionScreenshotValidator, request),
       },
     },
   },
