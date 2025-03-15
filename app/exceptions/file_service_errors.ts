@@ -12,14 +12,26 @@ export class FileServiceFileUploadError extends FileServiceError {
   }
 }
 
+export class FileServiceFilePersistError extends FileServiceError {
+  constructor(cause: Error) {
+    super("Couldn't save file metadata", cause);
+  }
+}
+
 export class FileServiceFileReadError extends FileServiceError {
   constructor(cause: Error) {
     super("Could't read the file", cause);
   }
 }
 
-export class FileServiceFileDeleteError extends FileServiceError {
+export class FileServiceFileDiskDeleteError extends FileServiceError {
   constructor(cause: Error) {
-    super("Couldn't delete the file", cause);
+    super("Couldn't delete the file from disk", cause);
+  }
+}
+
+export class FileServiceFileMetadataDeleteError extends FileServiceError {
+  constructor(cause: Error) {
+    super("Couldn't delete the file metadata", cause);
   }
 }

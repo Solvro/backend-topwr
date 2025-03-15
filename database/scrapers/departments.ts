@@ -48,8 +48,6 @@ export default class DepartmentsScraper extends BaseScraperModule {
     "Scrapes pwr departments, field of study and departments links data from directus";
   static taskTitle = "Scrape departments, field of study and departments links";
 
-  private filesService = new FilesService();
-
   private readonly directusSchemas = [
     "Departments",
     "FieldOfStudy",
@@ -99,7 +97,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             `Response body is null for department ${departmentEntry.id} with asset id ${departmentEntry.logo}`,
           );
         }
-        const name = await this.filesService.uploadStream(
+        const name = await FilesService.uploadStream(
           Readable.fromWeb(fileResponse.body),
           extension,
         );
