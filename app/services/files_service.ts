@@ -12,13 +12,18 @@ import {
   FileServiceFileReadError,
   FileServiceFileUploadError,
 } from "#exceptions/file_service_errors";
+// Notes on the file storage system:
+// - files are currently saved on disk, under the `storage/` directory
+//   - this may be changed to use some external file storage service in the future
+// - files are renamed to randomly generated UUID4s, with the file extension kept
+// - file metadata is saved in the database, which also enforces uniqueness constraints
+// - files are immutable: file contents may not be changed after upload
+//   - making files mutable would increase complexity related to caching
+//   - the mobile client currently caches files by URL/key for 1 month
+
 import FileEntry from "#models/file_entry";
 
 export default class FilesService {
-  private static getExtension(extname: string | undefined): string {
-    return extname !== undefined && extname.length > 0 ? extname : "bin";
-  }
-
   /**
    * Uploads a multipart file to storage.
    *
@@ -42,55 +47,6 @@ export default class FilesService {
         throw new FileServiceFileUploadError(error as Error);
       }
     });
-  }
-
-  /**
-   * Replaces a multipart file in storage.
-   *
-   * Use this if you're handling an API request and received a `MultipartFile` from adonis
-   * @param file - The file to upload
-   * @param existingFileKey - the key of file you wish to replace, preferably without the extension name
-   * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
-   */
-  static async replaceWithMultipartFile(
-    file: MultipartFile,
-    existingFileKey: string,
-  ): Promise<string> {
-    existingFileKey = this.trimKey(existingFileKey);
-    const fileEntry = await FileEntry.find(existingFileKey);
-    if (fileEntry === null) {
-      throw new FileServiceFileUploadError(
-        Error("File does not exist. Use uploadMultipartFile method instead."),
-      );
-    }
-    try {
-      await drive.use().delete(fileEntry.keyWithExtension);
-    } catch (error) {
-      throw new FileServiceFileDiskDeleteError(error as Error);
-    }
-    const newExtension = this.getExtension(file.extname);
-    if (newExtension !== fileEntry.fileExtension) {
-      return await db.transaction(async (trx) => {
-        fileEntry.fileExtension = newExtension;
-        try {
-          await fileEntry.useTransaction(trx).save();
-        } catch (error) {
-          throw new FileServiceFilePersistError(error as Error);
-        }
-        try {
-          await file.moveToDisk(fileEntry.keyWithExtension);
-        } catch (error) {
-          throw new FileServiceFileUploadError(error as Error);
-        }
-        return fileEntry.keyWithExtension;
-      });
-    }
-    try {
-      await file.moveToDisk(fileEntry.keyWithExtension);
-    } catch (error) {
-      throw new FileServiceFileMetadataDeleteError(error as Error);
-    }
-    return fileEntry.keyWithExtension;
   }
 
   /**
