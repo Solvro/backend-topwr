@@ -1,4 +1,5 @@
 import { LucidResource } from "@adminjs/adonis";
+import { ActionRequest } from "adminjs";
 
 import { linkTypeEnumsValues } from "#enums/link_type";
 import Department from "#models/department";
@@ -6,6 +7,12 @@ import DepartmentsLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
+import {
+  departmentLinkValidator,
+  departmentValidator,
+  fieldsOfStudyValidator,
+} from "./validators/departments.js";
+import { validateResource } from "./validators/utils.js";
 
 const navigation = {
   name: "Departments",
@@ -22,6 +29,12 @@ const departmentResource = {
       },
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(departmentValidator, request),
+      },
+    },
   },
 };
 
@@ -33,6 +46,12 @@ const departmentsLinkResource = {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(departmentLinkValidator, request),
+      },
+    },
   },
 };
 
@@ -42,6 +61,12 @@ const fieldsOfStudyResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          validateResource(fieldsOfStudyValidator, request),
+      },
     },
   },
 };
