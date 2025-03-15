@@ -12,7 +12,7 @@ export const changesValidator = vine.compile(
   }),
 );
 
-export const changeScreenShotValidator = vine.compile(
+export const changeScreenshotValidator = vine.compile(
   vine.object({
     changeId: vine.number().min(0).withoutDecimals(),
     imageKey: vine.string().trim().minLength(1),
@@ -27,7 +27,7 @@ export const contributorValidator = vine.compile(
   }),
 );
 
-export const contributorSocialLinkValidator = vine.compile(
+export const contributorSocialLinksValidator = vine.compile(
   vine.object({
     contributorId: vine.number().min(0).withoutDecimals(),
     linkType: vine.enum(LinkType),
