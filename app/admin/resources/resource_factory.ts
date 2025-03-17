@@ -42,26 +42,46 @@ type HookReturnValue = Partial<Action<RecordActionResponse>>;
 type ContextWithCover = ActionContext & {
   old_cover?: string;
 };
+type ResourceOptionsWithProperties = Omit<ResourceOptions, "properties"> & {
+  properties: Record<string, PropertyOptions>;
+};
+type ResourceWithProperties = Omit<ResourceWithOptions, "options"> & {
+  options: ResourceOptionsWithProperties;
+};
+type BeforeHookLink = (
+  request: ActionRequest,
+  context: ActionContext,
+) => Promise<ActionRequest>;
+type AfterHookLink = (
+  entity: ImprovedRecordActionResponse,
+  request?: ActionRequest,
+  context?: ActionContext,
+) => Promise<RecordActionResponse>;
 
 export interface ResourceInfo {
   forModel: LucidModel;
   additionalProperties?: Record<string, PropertyOptions>;
   additionalActions?: ActionMap;
   additionalOptions?: ResourceOptions;
-  addImageHandling?: boolean;
+  addImageHandlingForProperties?: ImageHandlingForProperty[];
+}
+
+export interface ImageHandlingForProperty {
+  property: string;
+  allowRemoval: boolean;
 }
 
 const hideOnEdit = {
   list: true,
   show: true,
-  new: false,
+  filter: true,
   edit: false,
 };
 
 const hideOnShow = {
   list: false,
   show: false,
-  new: true,
+  filter: false,
   edit: true,
 };
 
@@ -120,7 +140,7 @@ export class ResourceFactory {
     resourceInfo: ResourceInfo,
     navigation: ResourceNavigation,
   ): ResourceWithOptions {
-    const newResource: ResourceWithOptions = {
+    const newResource: ResourceWithProperties = {
       resource: new LucidResource(resourceInfo.forModel, DB_DRIVER),
       options: {
         navigation,
@@ -147,25 +167,86 @@ export class ResourceFactory {
         ...resourceInfo.additionalActions,
       };
     }
-    if (resourceInfo.addImageHandling === true) {
-      newResource.options.properties = {
-        ...newResource.options.properties,
-        uploadPhoto: {
+    if (resourceInfo.addImageHandlingForProperties !== undefined) {
+      const beforeEditHooksToChain: BeforeHookLink[] = [];
+      const afterEditHooksToChain: AfterHookLink[] = [];
+      const beforeNewHooksToChain: BeforeHookLink[] = [];
+      const afterDeleteHooksToChain: AfterHookLink[] = [];
+      resourceInfo.addImageHandlingForProperties.forEach((propertyInfo) => {
+        const uploadPropertyName = `Upload new ${propertyInfo.property}`;
+        newResource.options.properties[uploadPropertyName] = {
           type: "mixed",
           isVisible: hideOnShow,
           components: {
             edit: "PhotoDropbox",
           },
-        },
-        cover: {
+          custom: {
+            previewSourceProperty: propertyInfo.property,
+          },
+        };
+        newResource.options.properties[propertyInfo.property] = {
           isVisible: hideOnEdit,
-        },
-      };
+        };
+        if (propertyInfo.allowRemoval) {
+          const removePropertyName = `Remove current ${propertyInfo.property}`;
+          newResource.options.properties[removePropertyName] = {
+            type: "boolean",
+            isVisible: hideOnShow,
+          };
+          beforeEditHooksToChain.push(
+            ResourceFactory.createBeforeEditUploadHookLink(
+              propertyInfo.property,
+              uploadPropertyName,
+              removePropertyName,
+            ),
+          );
+          beforeNewHooksToChain.push(
+            ResourceFactory.createBeforeNewUploadHookLink(
+              propertyInfo.property,
+              uploadPropertyName,
+              removePropertyName,
+            ),
+          );
+        } else {
+          beforeEditHooksToChain.push(
+            ResourceFactory.createBeforeEditUploadHookLink(
+              propertyInfo.property,
+              uploadPropertyName,
+            ),
+          );
+        }
+        afterEditHooksToChain.push(
+          ResourceFactory.createAfterEditUploadHookLink(propertyInfo.property),
+        );
+        beforeNewHooksToChain.push(
+          ResourceFactory.createBeforeNewUploadHookLink(
+            propertyInfo.property,
+            uploadPropertyName,
+          ),
+        );
+        afterDeleteHooksToChain.push(
+          ResourceFactory.createAfterDeleteUploadHookLink(
+            propertyInfo.property,
+          ),
+        );
+      });
       newResource.options.actions = {
         ...newResource.options.actions,
-        new: this.addNewUploadHook(newResource.options.actions?.new),
-        edit: this.addEditUploadHook(newResource.options.actions?.edit),
-        delete: this.addDeleteHook(newResource.options.actions?.delete),
+        new: this.addNewUploadHook(
+          newResource.options.actions?.new,
+          beforeNewHooksToChain,
+          [],
+        ),
+        edit: this.addEditUploadHook(
+          newResource.options.actions?.edit,
+          beforeEditHooksToChain,
+          afterEditHooksToChain,
+        ),
+        delete: this.addDeleteHook(
+          newResource.options.actions?.delete,
+          [],
+          afterDeleteHooksToChain,
+        ),
       };
     }
     return newResource;
@@ -173,88 +254,174 @@ export class ResourceFactory {
 
   private static addNewUploadHook(
     additionalNewActions?: SubAction,
+    beforeNewHooksToChain?: BeforeHookLink[],
+    afterNewHooksToChain?: AfterHookLink[],
   ): HookReturnValue {
     return {
       ...additionalNewActions,
-      before: async (request: ActionRequest): Promise<ActionRequest> => {
-        if (request.payload?.uploadPhoto !== undefined) {
-          request.payload = {
-            ...request.payload,
-            cover: await FilesService.uploadMultipartFile(
-              request.payload.uploadPhoto as MultipartFile,
-            ),
-          };
-          delete request.payload.uploadPhoto;
-        }
-        return request;
-      },
+      before: this.anchorBeforeHook(beforeNewHooksToChain),
+      after: this.anchorAfterHook(afterNewHooksToChain),
     } as HookReturnValue;
   }
 
   private static addEditUploadHook(
     additionalEditActions?: SubAction,
+    beforeEditHooksToChain?: BeforeHookLink[],
+    afterEditHooksToChain?: AfterHookLink[],
   ): HookReturnValue {
     return {
       ...additionalEditActions,
-      before: async (
-        request: ActionRequest,
-        context: ActionContext,
-      ): Promise<ActionRequest> => {
-        if (request.payload?.uploadPhoto !== undefined) {
-          if (typeof request.payload.cover === "string") {
-            context.old_cover = request.payload.cover;
-            request.payload = {
-              ...request.payload,
-              cover: await FilesService.uploadMultipartFile(
-                request.payload.uploadPhoto as MultipartFile,
-              ),
-            };
-          } else {
-            request.payload = {
-              ...request.payload,
-              cover: await FilesService.uploadMultipartFile(
-                request.payload.uploadPhoto as MultipartFile,
-              ),
-            };
-          }
-          delete request.payload.uploadPhoto;
-        }
-
-        return request;
-      },
-      after: async (
-        entity: ImprovedRecordActionResponse,
-        _: ActionRequest,
-        context: ContextWithCover,
-      ): Promise<RecordActionResponse> => {
-        const oldCover: string | undefined = context.old_cover;
-        if (typeof oldCover === "string") {
-          const result = await FilesService.deleteFileWithKey(oldCover);
-          if (!result) {
-            logger.info(
-              "Cover edit: Old file does not exist - no file was deleted",
-            );
-          }
-        }
-        return entity;
-      },
+      before: this.anchorBeforeHook(beforeEditHooksToChain),
+      after: this.anchorAfterHook(afterEditHooksToChain),
     } as HookReturnValue;
   }
 
   private static addDeleteHook(
     additionalDeleteActions?: SubAction,
+    beforeDeleteHooksToChain?: BeforeHookLink[],
+    afterDeleteHooksToChain?: AfterHookLink[],
   ): HookReturnValue {
     return {
       ...additionalDeleteActions,
-      after: async (
-        entity: ImprovedRecordActionResponse,
-      ): Promise<RecordActionResponse> => {
-        const currentCover: ParamsTypeValue = entity.record.params.cover;
-        if (typeof currentCover === "string") {
-          await FilesService.deleteFileWithKey(currentCover);
-        }
-        return entity;
-      },
+      before: this.anchorBeforeHook(beforeDeleteHooksToChain),
+      after: this.anchorAfterHook(afterDeleteHooksToChain),
     } as HookReturnValue;
+  }
+
+  private static anchorBeforeHook(
+    beforeHookLinksToChain?: BeforeHookLink[],
+  ): BeforeHookLink {
+    return async (
+      request: ActionRequest,
+      context: ActionContext,
+    ): Promise<ActionRequest> => {
+      if (
+        beforeHookLinksToChain === undefined ||
+        beforeHookLinksToChain.length === 0
+      ) {
+        return request;
+      }
+      for (const hookFn of beforeHookLinksToChain) {
+        request = await hookFn(request, context);
+      }
+      return request;
+    };
+  }
+
+  private static anchorAfterHook(
+    afterHookLinksToChain?: AfterHookLink[],
+  ): AfterHookLink {
+    return async (
+      entity: ImprovedRecordActionResponse,
+      request?: ActionRequest,
+      context?: ContextWithCover,
+    ): Promise<RecordActionResponse> => {
+      if (
+        afterHookLinksToChain === undefined ||
+        afterHookLinksToChain.length === 0
+      ) {
+        return entity;
+      }
+      for (const hookFn of afterHookLinksToChain) {
+        entity = await hookFn(entity, request, context);
+      }
+      return entity;
+    };
+  }
+
+  private static createBeforeNewUploadHookLink(
+    property: string,
+    uploadProperty: string,
+    removeProperty?: string,
+  ): BeforeHookLink {
+    return async (request: ActionRequest): Promise<ActionRequest> => {
+      if (request.payload !== undefined) {
+        if (request.payload[uploadProperty] !== undefined) {
+          request.payload[property] = await FilesService.uploadMultipartFile(
+            request.payload[uploadProperty] as MultipartFile,
+          );
+          delete request.payload[uploadProperty];
+        }
+        if (removeProperty !== undefined) {
+          delete request.payload[removeProperty];
+        }
+      }
+      return request;
+    };
+  }
+
+  private static createBeforeEditUploadHookLink(
+    property: string,
+    uploadProperty: string,
+    removeProperty?: string,
+  ): BeforeHookLink {
+    return async (
+      request: ActionRequest,
+      context: ActionContext,
+    ): Promise<ActionRequest> => {
+      if (
+        removeProperty !== undefined &&
+        request.payload?.[removeProperty] === true
+      ) {
+        if (typeof request.payload[property] === "string") {
+          context[this.getOldPropertyKey(property)] = request.payload[property];
+        }
+        request.payload[property] = null;
+        delete request.payload[removeProperty];
+        delete request.payload[uploadProperty];
+      } else if (request.payload?.[uploadProperty] !== undefined) {
+        if (typeof request.payload[property] === "string") {
+          context[this.getOldPropertyKey(property)] = request.payload[property];
+          request.payload[property] = await FilesService.uploadMultipartFile(
+            request.payload[uploadProperty] as MultipartFile,
+          );
+        } else {
+          request.payload[property] = await FilesService.uploadMultipartFile(
+            request.payload[uploadProperty] as MultipartFile,
+          );
+        }
+        delete request.payload[uploadProperty];
+      }
+      return request;
+    };
+  }
+
+  private static createAfterEditUploadHookLink(
+    property: string,
+  ): AfterHookLink {
+    return async (
+      entity: ImprovedRecordActionResponse,
+      _?: ActionRequest,
+      context?: ActionContext,
+    ): Promise<RecordActionResponse> => {
+      const key = ResourceFactory.getOldPropertyKey(property);
+      if (context !== undefined && typeof context[key] === "string") {
+        const result = await FilesService.deleteFileWithKey(context[key]);
+        if (!result) {
+          logger.warn(
+            "Cover edit: Old file does not exist - no file was deleted",
+          );
+        }
+      }
+      return entity;
+    };
+  }
+
+  private static createAfterDeleteUploadHookLink(
+    property: string,
+  ): AfterHookLink {
+    return async (
+      entity: ImprovedRecordActionResponse,
+    ): Promise<RecordActionResponse> => {
+      const currentCover: ParamsTypeValue = entity.record.params[property];
+      if (typeof currentCover === "string") {
+        await FilesService.deleteFileWithKey(currentCover);
+      }
+      return entity;
+    };
+  }
+
+  private static getOldPropertyKey(property: string): string {
+    return `old_${property}`;
   }
 }

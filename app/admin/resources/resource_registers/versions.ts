@@ -24,11 +24,21 @@ export const VersionsBuilder: ResourceBuilder = {
       additionalProperties: { linkType: linkTypeEnumsValues },
     },
     { forModel: ChangeScreenshot },
-    { forModel: Contributor, addImageHandling: true },
+    {
+      forModel: Contributor,
+      addImageHandlingForProperties: [
+        { property: "photoKey", allowRemoval: true },
+      ],
+    },
     { forModel: Milestone },
     { forModel: Role },
     { forModel: Version },
-    { forModel: VersionScreenshot, addImageHandling: true },
+    {
+      forModel: VersionScreenshot,
+      addImageHandlingForProperties: [
+        { property: "imageKey", allowRemoval: false },
+      ],
+    },
   ],
   navigation,
 };

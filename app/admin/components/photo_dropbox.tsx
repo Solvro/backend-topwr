@@ -22,7 +22,7 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
   };
 
   return (
-    <Box>
+    <Box style={{ marginBottom: "16px" }}>
       <Label>{property.label}</Label>
       <DropZone
         onChange={handleChange}
