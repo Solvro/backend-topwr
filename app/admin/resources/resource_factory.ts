@@ -12,6 +12,7 @@ import {
   ResourceWithOptions,
 } from "adminjs";
 
+import logger from "@adonisjs/core/services/logger";
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import { LucidModel } from "@adonisjs/lucid/types/model";
 
@@ -222,15 +223,20 @@ export class ResourceFactory {
         return request;
       },
       after: async (
-        _: ImprovedRecordActionResponse,
-        __: ActionRequest,
+        entity: ImprovedRecordActionResponse,
+        _: ActionRequest,
         context: ContextWithCover,
       ): Promise<RecordActionResponse> => {
         const oldCover: string | undefined = context.old_cover;
         if (typeof oldCover === "string") {
-          await FilesService.deleteFileWithKey(oldCover);
+          const result = await FilesService.deleteFileWithKey(oldCover);
+          if (!result) {
+            logger.info(
+              "Cover edit: Old file does not exist - no file was deleted",
+            );
+          }
         }
-        return _;
+        return entity;
       },
     } as HookReturnValue;
   }
