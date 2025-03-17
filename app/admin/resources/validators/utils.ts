@@ -11,10 +11,11 @@ export async function validateResource(
   validator: ReturnType<typeof vine.compile>,
   request: ActionRequest,
 ): Promise<ActionRequest> {
-  const { method, payload } = request;
+  const { method } = request;
+  const { payload } = request;
   if (method === "post" && payload !== undefined) {
     try {
-      await validator.validate(payload);
+      request = await validator.validate(payload).then(() => request);
     } catch (err) {
       if (err instanceof errors.E_VALIDATION_ERROR) {
         const errorMessages = err.messages as VineError[];
