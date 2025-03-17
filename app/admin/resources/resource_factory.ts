@@ -1,6 +1,7 @@
 import { LucidResource } from "@adminjs/adonis";
 import {
   Action,
+  ActionContext,
   ActionRequest,
   ActionResponse,
   ParamsTypeValue,
@@ -37,6 +38,9 @@ type SubAction =
   | Partial<Action<ActionResponse>>
   | Partial<Action<RecordActionResponse>>;
 type HookReturnValue = Partial<Action<RecordActionResponse>>;
+type ContextWithCover = ActionContext & {
+  old_cover?: string;
+};
 
 export interface ResourceInfo {
   forModel: LucidModel;
@@ -191,13 +195,16 @@ export class ResourceFactory {
   ): HookReturnValue {
     return {
       ...additionalEditActions,
-      before: async (request: ActionRequest): Promise<ActionRequest> => {
+      before: async (
+        request: ActionRequest,
+        context: ActionContext,
+      ): Promise<ActionRequest> => {
         if (request.payload?.uploadPhoto !== undefined) {
           if (typeof request.payload.cover === "string") {
+            context.old_cover = request.payload.cover;
             request.payload = {
               ...request.payload,
-              cover: await ResourceFactory.replaceExistingCover(
-                request.payload.cover,
+              cover: await FilesService.uploadMultipartFile(
                 request.payload.uploadPhoto as MultipartFile,
               ),
             };
@@ -211,7 +218,19 @@ export class ResourceFactory {
           }
           delete request.payload.uploadPhoto;
         }
+
         return request;
+      },
+      after: async (
+        _: ImprovedRecordActionResponse,
+        __: ActionRequest,
+        context: ContextWithCover,
+      ): Promise<RecordActionResponse> => {
+        const oldCover: string | undefined = context.old_cover;
+        if (typeof oldCover === "string") {
+          await FilesService.deleteFileWithKey(oldCover);
+        }
+        return _;
       },
     } as HookReturnValue;
   }
@@ -231,13 +250,5 @@ export class ResourceFactory {
         return entity;
       },
     } as HookReturnValue;
-  }
-
-  private static async replaceExistingCover(
-    currentCover: string,
-    newCover: MultipartFile,
-  ): Promise<string> {
-    await FilesService.deleteFileWithKey(currentCover);
-    return FilesService.uploadMultipartFile(newCover);
   }
 }
