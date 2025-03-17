@@ -1,6 +1,6 @@
 import { DateTime } from "luxon";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import { BaseScraperModule } from "#commands/db_scrape";
 import { Weekday } from "#enums/weekday";
 import AcademicCalendar from "#models/academic_calendar";
 
@@ -8,18 +8,18 @@ interface AcademicCalendarData {
   data: {
     id: number;
     user_updated: string;
-    date_updated: DateTime;
-    semesterStartDate: DateTime;
-    examSessionStartDate: DateTime;
+    date_updated: string;
+    semesterStartDate: string;
+    examSessionStartDate: string;
     isFirstWeekEven: boolean;
-    examSessionLastDay: DateTime;
+    examSessionLastDay: string;
   };
 }
 
 interface WeekExceptions {
   data: {
     id: number;
-    day: DateTime;
+    day: string;
     changedWeekday: string;
     changedDayIsEven: boolean;
   }[];
@@ -28,10 +28,9 @@ interface WeekExceptions {
 export default class AcademicCalendarScraper extends BaseScraperModule {
   static name = "academic calendar scraper";
   static description = "Import data about academic calendars and day swaps";
+  static taskTitle = "Fetching academic calendar and day swaps data";
 
-  async run(task: TaskHandle): Promise<void> {
-    task.update("Fetching academic calendar and day swaps data");
-
+  async run(): Promise<void> {
     const [academicCalendarResponse, daySwapsResponse] = await Promise.all([
       fetch("https://admin.topwr.solvro.pl/items/AcademicCalendarData"),
       fetch("https://admin.topwr.solvro.pl/items/WeekExceptions"),
@@ -54,13 +53,19 @@ export default class AcademicCalendarScraper extends BaseScraperModule {
     ]);
 
     const academicCalendar = await AcademicCalendar.create({
-      name: "",
-      semesterStartDate: academicCalendarResult.data.semesterStartDate,
-      examSessionStartDate: academicCalendarResult.data.examSessionStartDate,
-      examSessionLastDate: academicCalendarResult.data.examSessionLastDay,
+      name: "2024/2025 Lato",
+      semesterStartDate: DateTime.fromISO(
+        academicCalendarResult.data.semesterStartDate,
+      ),
+      examSessionStartDate: DateTime.fromISO(
+        academicCalendarResult.data.examSessionStartDate,
+      ),
+      examSessionLastDate: DateTime.fromISO(
+        academicCalendarResult.data.examSessionLastDay,
+      ),
       isFirstWeekEven: academicCalendarResult.data.isFirstWeekEven,
-      createdAt: academicCalendarResult.data.date_updated,
-      updatedAt: academicCalendarResult.data.date_updated,
+      createdAt: DateTime.fromISO(academicCalendarResult.data.date_updated),
+      updatedAt: DateTime.fromISO(academicCalendarResult.data.date_updated),
     });
 
     const weekdayMap = {
@@ -73,17 +78,21 @@ export default class AcademicCalendarScraper extends BaseScraperModule {
       Sun: Weekday.Sunday,
     };
 
-    for (const daySwap of daySwapsResult.data) {
-      await academicCalendar.related("daySwaps").create({
-        date: daySwap.day,
-        changedWeekday:
-          weekdayMap[daySwap.changedWeekday as keyof typeof weekdayMap],
-        changedDayIsEven: daySwap.changedDayIsEven,
-      });
-    }
+    const validDaySwaps = daySwapsResult.data.filter(
+      (daySwap) =>
+        weekdayMap[daySwap.changedWeekday as keyof typeof weekdayMap] !==
+        undefined,
+    );
 
-    task.update(
-      "The academic calendar and day swaps data have been successfully migrated to the database",
+    await Promise.all(
+      validDaySwaps.map((daySwap) =>
+        academicCalendar.related("daySwaps").create({
+          date: DateTime.fromISO(daySwap.day),
+          changedWeekday:
+            weekdayMap[daySwap.changedWeekday as keyof typeof weekdayMap],
+          changedDayIsEven: daySwap.changedDayIsEven,
+        }),
+      ),
     );
   }
 }
