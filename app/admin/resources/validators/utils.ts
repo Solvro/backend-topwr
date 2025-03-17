@@ -15,7 +15,10 @@ export async function validateResource(
   const { payload } = request;
   if (method === "post" && payload !== undefined) {
     try {
-      request = await validator.validate(payload).then(() => request);
+      request.payload = (await validator.validate(payload)) as Record<
+        string,
+        unknown
+      >;
     } catch (err) {
       if (err instanceof errors.E_VALIDATION_ERROR) {
         const errorMessages = err.messages as VineError[];
@@ -31,7 +34,6 @@ export async function validateResource(
         });
       }
     }
-    return request;
   }
   return request;
 }
