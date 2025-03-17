@@ -11,8 +11,7 @@ export async function validateResource(
   validator: ReturnType<typeof vine.compile>,
   request: ActionRequest,
 ): Promise<ActionRequest> {
-  const { method } = request;
-  const { payload } = request;
+  const { method, payload } = request;
   if (method === "post" && payload !== undefined) {
     try {
       request.payload = (await validator.validate(payload)) as Record<
@@ -33,6 +32,7 @@ export async function validateResource(
           message: "Oops you have validation errors",
         });
       }
+      throw err;
     }
   }
   return request;
