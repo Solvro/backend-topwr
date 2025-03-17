@@ -8,15 +8,15 @@ import Library from "#models/library";
 import RegularHour from "#models/regular_hour";
 import SpecialHour from "#models/special_hour";
 
-import { ResourceBuilder, ResourceInfo } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "Buildings",
   icon: "Home",
 };
 
-export function setUpBuildings(): ResourceBuilder {
-  const info: ResourceInfo[] = [
+export const BuildingsBuilder: ResourceBuilder = {
+  builders: [
     {
       forModel: Building,
       additionalProperties: { iconType: buildingIconEnumsValues },
@@ -29,9 +29,6 @@ export function setUpBuildings(): ResourceBuilder {
     { forModel: Library },
     { forModel: RegularHour },
     { forModel: SpecialHour },
-  ];
-  return {
-    navigation,
-    builders: info,
-  };
-}
+  ],
+  navigation,
+};

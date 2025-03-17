@@ -2,15 +2,15 @@ import GuideArticle from "#models/guide_article";
 import GuideAuthor from "#models/guide_author";
 import GuideQuestion from "#models/guide_question";
 
-import { ResourceBuilder, ResourceInfo } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "Guides",
   icon: "Paperclip",
 };
 
-export function setUpGuides(): ResourceBuilder {
-  const info: ResourceInfo[] = [
+export const GuidesBuilder: ResourceBuilder = {
+  builders: [
     { forModel: GuideAuthor },
     {
       forModel: GuideQuestion,
@@ -20,9 +20,6 @@ export function setUpGuides(): ResourceBuilder {
       forModel: GuideArticle,
       additionalProperties: { description: { type: "richtext" } },
     },
-  ];
-  return {
-    navigation,
-    builders: info,
-  };
-}
+  ],
+  navigation,
+};

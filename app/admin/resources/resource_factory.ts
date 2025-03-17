@@ -47,10 +47,10 @@ export interface ResourceInfo {
 }
 
 const hideOnEdit = {
-  edit: false,
+  list: true,
   show: true,
   new: false,
-  list: true,
+  edit: false,
 };
 
 const hideOnShow = {
@@ -94,7 +94,7 @@ export class ResourceFactory {
     this.registeredResources.push(resourceBuilder);
   }
 
-  public buildResources() {
+  public buildResources(): ResourceWithOptions[] {
     return this.registeredResources
       .map((resourceBuilder) => this.createResources(resourceBuilder))
       .flat(1);
@@ -105,52 +105,44 @@ export class ResourceFactory {
   ): ResourceWithOptions[] {
     return resourceBuilder.builders.map((resourceInfo) => {
       return ResourceFactory.createResource(
-        resourceInfo.forModel,
+        resourceInfo,
         resourceBuilder.navigation,
-        resourceInfo.additionalProperties,
-        resourceInfo.additionalActions,
-        resourceInfo.additionalOptions,
-        resourceInfo.addImageHandling,
       );
     });
   }
 
   private static createResource(
-    resourceModel: LucidModel,
-    resourceNavigation: ResourceNavigation,
-    additionalProperties?: Record<string, PropertyOptions>,
-    additionalActions?: ActionMap,
-    additionalOptions?: ResourceOptions,
-    addImageHandling = false,
+    resourceInfo: ResourceInfo,
+    navigation: ResourceNavigation,
   ): ResourceWithOptions {
     const newResource: ResourceWithOptions = {
-      resource: new LucidResource(resourceModel, DB_DRIVER),
+      resource: new LucidResource(resourceInfo.forModel, DB_DRIVER),
       options: {
-        navigation: resourceNavigation,
+        navigation,
         properties: {
           ...readOnlyTimestamps,
         },
       },
     };
-    if (additionalOptions !== undefined) {
+    if (resourceInfo.additionalOptions !== undefined) {
       newResource.options = {
         ...newResource.options,
-        ...additionalOptions,
+        ...resourceInfo.additionalOptions,
       };
     }
-    if (additionalProperties !== undefined) {
+    if (resourceInfo.additionalProperties !== undefined) {
       newResource.options.properties = {
         ...newResource.options.properties,
-        ...additionalProperties,
+        ...resourceInfo.additionalProperties,
       };
     }
-    if (additionalActions !== undefined) {
+    if (resourceInfo.additionalActions !== undefined) {
       newResource.options.actions = {
         ...newResource.options.actions,
-        ...additionalActions,
+        ...resourceInfo.additionalActions,
       };
     }
-    if (addImageHandling) {
+    if (resourceInfo.addImageHandling === true) {
       newResource.options.properties = {
         ...newResource.options.properties,
         uploadPhoto: {
@@ -241,12 +233,11 @@ export class ResourceFactory {
     } as HookReturnValue;
   }
 
-  private static replaceExistingCover(
+  private static async replaceExistingCover(
     currentCover: string,
     newCover: MultipartFile,
   ): Promise<string> {
-    return FilesService.deleteFileWithKey(currentCover).then(() => {
-      return FilesService.uploadMultipartFile(newCover);
-    });
+    await FilesService.deleteFileWithKey(currentCover);
+    return FilesService.uploadMultipartFile(newCover);
   }
 }

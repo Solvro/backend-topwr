@@ -4,15 +4,15 @@ import { linkTypeEnumsValues } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";
 
-import { ResourceBuilder, ResourceInfo } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "About Us",
   icon: "Users",
 };
 
-export function setUpAboutUs(): ResourceBuilder {
-  const info: ResourceInfo[] = [
+export const AboutUsBuilder: ResourceBuilder = {
+  builders: [
     {
       forModel: AboutUsGeneralLink,
       additionalProperties: { linkType: linkTypeEnumsValues },
@@ -47,9 +47,6 @@ export function setUpAboutUs(): ResourceBuilder {
         },
       },
     },
-  ];
-  return {
-    navigation,
-    builders: info,
-  };
-}
+  ],
+  navigation,
+};

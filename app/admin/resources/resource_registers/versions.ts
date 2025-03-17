@@ -9,15 +9,15 @@ import Role from "#models/role";
 import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
 
-import { ResourceBuilder, ResourceInfo } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "Versions",
   icon: "GitBranch",
 };
 
-export function setUpVersions(): ResourceBuilder {
-  const info: ResourceInfo[] = [
+export const VersionsBuilder: ResourceBuilder = {
+  builders: [
     { forModel: Change, additionalProperties: { type: changeTypeEnumsValues } },
     {
       forModel: ContributorSocialLink,
@@ -29,9 +29,6 @@ export function setUpVersions(): ResourceBuilder {
     { forModel: Role },
     { forModel: Version },
     { forModel: VersionScreenshot, addImageHandling: true },
-  ];
-  return {
-    navigation,
-    builders: info,
-  };
-}
+  ],
+  navigation,
+};
