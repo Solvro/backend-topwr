@@ -28,7 +28,7 @@ const academicCalendarResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(academicCalendarValidator, request),
+          await validateResource(academicCalendarValidator, request),
       },
     },
   },
@@ -44,7 +44,7 @@ const daySwapResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(daySwapValidator, request),
+          await validateResource(daySwapValidator, request),
       },
     },
   },
@@ -60,7 +60,7 @@ const holidayResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(holidayValidator, request),
+          await validateResource(holidayValidator, request),
       },
     },
   },

@@ -31,7 +31,7 @@ const guideArticleResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(guideArticleValidator, request),
+          await validateResource(guideArticleValidator, request),
       },
     },
   },
@@ -47,7 +47,7 @@ const guideAuthorResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(guideAuthorValidator, request),
+          await validateResource(guideAuthorValidator, request),
       },
     },
   },
@@ -66,7 +66,7 @@ const guideQuestionResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(guideQuestionValidator, request),
+          await validateResource(guideQuestionValidator, request),
       },
     },
   },

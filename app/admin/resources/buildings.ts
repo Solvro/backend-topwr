@@ -40,7 +40,7 @@ const buildingResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(buildingValidator, request),
+          await validateResource(buildingValidator, request),
       },
     },
   },
@@ -56,7 +56,7 @@ const campusResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(campusValidator, request),
+          await validateResource(campusValidator, request),
       },
     },
   },
@@ -72,7 +72,7 @@ const aedResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(aedValidator, request),
+          await validateResource(aedValidator, request),
       },
     },
   },
@@ -88,7 +88,7 @@ const bicycleShowerResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(bicycleShowerValidator, request),
+          await validateResource(bicycleShowerValidator, request),
       },
     },
   },
@@ -104,7 +104,7 @@ const foodSpotResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(foodSpotValidator, request),
+          await validateResource(foodSpotValidator, request),
       },
     },
   },
@@ -120,7 +120,7 @@ const libraryResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(libraryValidator, request),
+          await validateResource(libraryValidator, request),
       },
     },
   },
@@ -136,7 +136,7 @@ const regularHourResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(regularHourValidator, request),
+          await validateResource(regularHourValidator, request),
       },
     },
   },
@@ -152,7 +152,7 @@ const specialHourResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(specialHourValidator, request),
+          await validateResource(specialHourValidator, request),
       },
     },
   },

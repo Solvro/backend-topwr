@@ -22,7 +22,7 @@ const userResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(userValidator, request),
+          await validateResource(userValidator, request),
       },
     },
   },

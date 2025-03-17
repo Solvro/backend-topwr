@@ -41,7 +41,7 @@ const changeResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(changesValidator, request),
+          await validateResource(changesValidator, request),
       },
     },
   },
@@ -57,7 +57,7 @@ const changeScreenshotResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(changeScreenshotValidator, request),
+          await validateResource(changeScreenshotValidator, request),
       },
     },
   },
@@ -73,7 +73,7 @@ const contributorResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(contributorValidator, request),
+          await validateResource(contributorValidator, request),
       },
     },
   },
@@ -90,7 +90,7 @@ const contributorSocialLinksResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(contributorSocialLinksValidator, request),
+          await validateResource(contributorSocialLinksValidator, request),
       },
     },
   },
@@ -106,7 +106,7 @@ const milestoneResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(milestoneValidator, request),
+          await validateResource(milestoneValidator, request),
       },
     },
   },
@@ -122,7 +122,7 @@ const roleResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(roleValidator, request),
+          await validateResource(roleValidator, request),
       },
     },
   },
@@ -138,7 +138,7 @@ const versionResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(versionValidator, request),
+          await validateResource(versionValidator, request),
       },
     },
   },
@@ -154,7 +154,7 @@ const versionScreenshotResource = {
     actions: {
       new: {
         before: async (request: ActionRequest) =>
-          validateResource(versionScreenshotValidator, request),
+          await validateResource(versionScreenshotValidator, request),
       },
     },
   },
