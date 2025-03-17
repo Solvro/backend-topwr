@@ -7,10 +7,10 @@ interface VineError {
   field: string;
 }
 
-export const validateResource = async (
+export async function validateResource(
   validator: ReturnType<typeof vine.compile>,
   request: ActionRequest,
-) => {
+) {
   const { method, payload } = request;
   if (method === "post" && payload !== undefined) {
     try {
@@ -32,4 +32,4 @@ export const validateResource = async (
     }
     return request;
   }
-};
+}
