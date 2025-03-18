@@ -1,11 +1,9 @@
 import { DateTime } from "luxon";
 import crypto from "node:crypto";
 
-import hash from "@adonisjs/core/services/hash";
 import logger from "@adonisjs/core/services/logger";
 import mail from "@adonisjs/mail/services/main";
 
-import BadRequestException from "#exceptions/bad_request_exception";
 import ResetPasswordNotification from "#mails/reset_password_notification";
 import User from "#models/user";
 import env from "#start/env";
@@ -33,25 +31,10 @@ export default class ResetPasswordService {
     logger.info(`Reset password email sent to ${email}`);
   }
 
-  async tryToResetForUser(user: User, password: string) {
-    if (
-      user.resetPasswordTokenExpiration !== null &&
-      user.resetPasswordTokenExpiration < DateTime.now()
-    ) {
-      user.resetPasswordToken = null;
-      user.resetPasswordTokenExpiration = null;
-      await user.save();
-    }
-    if (await hash.verify(user.password, password)) {
-      throw new BadRequestException(
-        "Cannot change password for the already defined one",
-      );
-    }
+  async resetPassword(user: User, password: string) {
     user.password = password;
-    user.resetPasswordToken = null;
-    user.resetPasswordTokenExpiration = null;
-    await user.save();
-    logger.info(`password changed for user ${user.email}`);
+    await this.destroyToken(user);
+    logger.info(`Password changed for user ${user.email}`);
   }
 
   async destroyToken(user: User) {
