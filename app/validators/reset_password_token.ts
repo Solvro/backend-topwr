@@ -1,10 +1,9 @@
 import vine, { BaseLiteralType, VineString } from "@vinejs/vine";
 import { FieldContext } from "@vinejs/vine/types";
-import { DateTime } from "luxon";
 
 import User from "#models/user";
 
-const errorMessage = "Invalid reset token field. Request rejected";
+const errorMessage = "Invalid reset token field";
 
 export interface ResetToken {
   token: string;
@@ -12,7 +11,7 @@ export interface ResetToken {
   /**
    * Expiration based validity. false if reset password token expiration date is less than now
    */
-  isValid(): boolean;
+  isValid: boolean;
 }
 
 const isValidToken = vine.createRule(
@@ -37,17 +36,10 @@ const isValidToken = vine.createRule(
     const output: ResetToken = {
       token,
       user,
-      isValid: () => {
-        return true;
-      },
+      isValid: true,
     };
-    if (
-      user.resetPasswordTokenExpiration === null ||
-      user.resetPasswordTokenExpiration < DateTime.now()
-    ) {
-      output.isValid = () => {
-        return false;
-      };
+    if (user.hasValidResetToken()) {
+      output.isValid = false;
     }
     field.mutate(output, field);
   },

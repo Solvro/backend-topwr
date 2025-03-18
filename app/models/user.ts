@@ -6,6 +6,8 @@ import { compose } from "@adonisjs/core/helpers";
 import hash from "@adonisjs/core/services/hash";
 import { BaseModel, beforeSave, column, scope } from "@adonisjs/lucid/orm";
 
+import { sha256 } from "#utils/hash";
+
 const AuthFinder = withAuthFinder(() => hash.use("scrypt"), {
   uids: ["email"],
   passwordColumnName: "password",
@@ -43,10 +45,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
       user.resetPasswordToken !== null
     ) {
       // deterministic hash for easier lookup
-      user.resetPasswordToken = crypto
-        .createHash("sha256")
-        .update(user.resetPasswordToken, "utf-8")
-        .digest("hex");
+      user.resetPasswordToken = sha256(user.resetPasswordToken);
     }
   }
 
@@ -56,4 +55,11 @@ export default class User extends compose(BaseModel, AuthFinder) {
       crypto.createHash("sha256").update(token, "utf-8").digest("hex"),
     );
   });
+
+  hasValidResetToken() {
+    return (
+      this.resetPasswordTokenExpiration !== null &&
+      this.resetPasswordTokenExpiration >= DateTime.now()
+    );
+  }
 }
