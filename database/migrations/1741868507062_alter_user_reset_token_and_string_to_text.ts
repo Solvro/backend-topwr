@@ -13,4 +13,17 @@ export default class extends BaseSchema {
       table.timestamp("reset_password_token_expiration").nullable();
     });
   }
+
+  async down() {
+    this.schema.alterTable(this.tableName, (table) => {
+      table
+        .string("full_name")
+        .alter({ alterNullable: false, alterType: true });
+      table.string("email").alter({ alterNullable: false, alterType: true });
+      table.string("password").alter({ alterNullable: false, alterType: true });
+
+      table.dropColumn("reset_password_token");
+      table.dropColumn("reset_password_token_expiration");
+    });
+  }
 }
