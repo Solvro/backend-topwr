@@ -52,15 +52,17 @@ export default class UsersController {
       params: { token },
     } = result;
 
-    if (!token.isValid()) {
-      await resetPasswordService.destroyToken(token.user);
+    const user = token.user;
+
+    if (!token.isValid) {
+      await resetPasswordService.destroyToken(user);
       return response.unauthorized({
-        message: "Time out for request",
+        message: "Token expired",
       });
     }
 
     const { password } = await request.validateUsing(passwordValidator);
-    await resetPasswordService.tryToResetForUser(token.user, password);
+    await resetPasswordService.resetPassword(user, password);
 
     return response.ok({ message: "Password updated successfully" });
   }
