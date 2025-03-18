@@ -39,14 +39,16 @@ const digitRule = vine.createRule((value, _, field) => {
   }
 });
 
+export const passwordRules = vine
+  .string()
+  .minLength(8)
+  .use(lowerCaseLetterRule())
+  .use(upperCaseLetterRule())
+  .use(digitRule())
+  .bail(false);
+
 export const passwordValidator = vine.compile(
   vine.object({
-    password: vine
-      .string()
-      .minLength(8)
-      .use(lowerCaseLetterRule())
-      .use(upperCaseLetterRule())
-      .use(digitRule())
-      .bail(false),
+    password: passwordRules,
   }),
 );
