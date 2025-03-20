@@ -1,9 +1,12 @@
 import { DateTime } from "luxon";
+import crypto from "node:crypto";
 
 import { withAuthFinder } from "@adonisjs/auth/mixins/lucid";
 import { compose } from "@adonisjs/core/helpers";
 import hash from "@adonisjs/core/services/hash";
-import { BaseModel, column } from "@adonisjs/lucid/orm";
+import { BaseModel, beforeSave, column, scope } from "@adonisjs/lucid/orm";
+
+import { sha256 } from "#utils/hash";
 
 const AuthFinder = withAuthFinder(() => hash.use("scrypt"), {
   uids: ["email"],
@@ -23,9 +26,40 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column({ serializeAs: null })
   declare password: string;
 
+  @column({ serializeAs: null })
+  declare resetPasswordToken: string | null;
+
+  @column({ serializeAs: null })
+  declare resetPasswordTokenExpiration: DateTime | null;
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null;
+
+  @beforeSave()
+  static async hashToken(user: User) {
+    if (
+      user.$dirty.resetPasswordToken !== undefined &&
+      user.resetPasswordToken !== null
+    ) {
+      // deterministic hash for easier lookup
+      user.resetPasswordToken = sha256(user.resetPasswordToken);
+    }
+  }
+
+  static compareTokens = scope((query, token: string) => {
+    void query.where(
+      "reset_password_token",
+      crypto.createHash("sha256").update(token, "utf-8").digest("hex"),
+    );
+  });
+
+  hasValidResetToken() {
+    return (
+      this.resetPasswordTokenExpiration !== null &&
+      this.resetPasswordTokenExpiration >= DateTime.now()
+    );
+  }
 }
