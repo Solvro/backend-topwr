@@ -40,7 +40,8 @@ export default class CampusesController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Campus with ID ${id} does not exist`);
 
     return { data: campus };
   }

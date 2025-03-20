@@ -32,7 +32,8 @@ export default class FieldsOfStudiesController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Field of study with ID ${id} does not exist`);
 
     return { data: fieldsOfStudy };
   }

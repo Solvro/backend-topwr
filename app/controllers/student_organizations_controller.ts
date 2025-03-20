@@ -38,7 +38,10 @@ export default class StudentOrganizationsController {
         scopes.preloadRelations(request.only(["tags", "links"]));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(
+        () => `Student organization with ID ${id} does not exist`,
+      );
 
     return { data: studentOrganization };
   }

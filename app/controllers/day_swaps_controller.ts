@@ -38,7 +38,8 @@ export default class DaySwapsController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Day swap with ID ${id} does not exist`);
 
     return { data: academicCalendar };
   }

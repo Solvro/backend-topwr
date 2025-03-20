@@ -41,7 +41,8 @@ export default class RolesController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Role with ID ${id} does not exist`);
 
     return { data: role };
   }
