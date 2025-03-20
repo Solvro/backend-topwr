@@ -38,7 +38,8 @@ export default class AcademicCalendarsController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Academic calendar with ID ${id} does not exist`);
 
     return { data: academicCalendar };
   }

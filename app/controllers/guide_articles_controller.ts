@@ -37,7 +37,8 @@ export default class GuideArticlesController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Guide article with ID ${id} does not exist`);
 
     return { data: article };
   }

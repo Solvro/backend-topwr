@@ -39,7 +39,8 @@ export default class DepartmentsController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Department with ID ${id} does not exist`);
 
     return { data: department };
   }

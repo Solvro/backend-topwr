@@ -38,7 +38,8 @@ export default class HolidaysController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Holiday with ID ${id} does not exist`);
 
     return { data: academicCalendar };
   }
