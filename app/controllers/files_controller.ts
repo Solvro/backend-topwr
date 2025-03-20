@@ -13,7 +13,9 @@ import FilesService from "#services/files_service";
 const getValidator = vine.compile(
   vine.object({
     params: vine.object({
-      key: vine.string().uuid({ version: [4] }),
+      key: vine
+        .string()
+        .regex(/^[\da-f]{8}-(?:[\da-f]{4}-){3}[\da-f]{12}(?:\..+)?$/),
     }),
   }),
 );
