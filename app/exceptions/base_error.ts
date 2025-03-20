@@ -195,7 +195,7 @@ export class BaseError extends Error implements IBaseError {
 
   constructor(
     message: string,
-    { code, status, messages, cause, sensitive, silent }: BaseErrorOptions,
+    { code, status, messages, cause, sensitive, silent }: BaseErrorOptions = {},
   ) {
     super(message);
     this.code = code;

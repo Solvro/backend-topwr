@@ -1,7 +1,7 @@
 import { scope } from "@adonisjs/lucid/orm";
 import { LucidModel } from "@adonisjs/lucid/types/model";
 
-import BadRequestException from "#exceptions/bad_request_exception";
+import { BadRequestException } from "#exceptions/http_exceptions";
 
 /**
  * Thanks to Dawid Linek for concept

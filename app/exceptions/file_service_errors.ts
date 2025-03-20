@@ -1,36 +1,50 @@
-class FileServiceError extends Error {
-  constructor(message: string, cause: Error) {
-    super(message);
-    this.name = this.constructor.name;
-    this.cause = cause;
+import { BaseError } from "./base_error.js";
+
+class FileServiceError extends BaseError {}
+
+class FileServiceFSError extends FileServiceError {
+  constructor(message: string, cause: unknown) {
+    super(message, {
+      code: "E_FILE_SYSTEM_ERROR",
+      cause,
+    });
   }
 }
 
-export class FileServiceFileUploadError extends FileServiceError {
+class FileServiceDBError extends FileServiceError {
+  constructor(message: string, cause: unknown) {
+    super(message, {
+      code: "E_DATABASE_ERROR",
+      cause,
+    });
+  }
+}
+
+export class FileServiceFileUploadError extends FileServiceFSError {
   constructor(cause: Error) {
     super("Couldn't upload the file", cause);
   }
 }
 
-export class FileServiceFilePersistError extends FileServiceError {
+export class FileServiceFilePersistError extends FileServiceDBError {
   constructor(cause: Error) {
     super("Couldn't save file metadata", cause);
   }
 }
 
-export class FileServiceFileReadError extends FileServiceError {
+export class FileServiceFileReadError extends FileServiceFSError {
   constructor(cause: Error) {
     super("Could't read the file", cause);
   }
 }
 
-export class FileServiceFileDiskDeleteError extends FileServiceError {
+export class FileServiceFileDiskDeleteError extends FileServiceFSError {
   constructor(cause: Error) {
     super("Couldn't delete the file from disk", cause);
   }
 }
 
-export class FileServiceFileMetadataDeleteError extends FileServiceError {
+export class FileServiceFileMetadataDeleteError extends FileServiceDBError {
   constructor(cause: Error) {
     super("Couldn't delete the file metadata", cause);
   }

@@ -1,4 +1,4 @@
-import NotImplementedException from "./not_implemented_exception.js";
+import { NotImplementedException } from "./http_exceptions.js";
 
 export default class ColumnTypeNotImplementedException extends NotImplementedException {
   constructor(columnName: string) {
