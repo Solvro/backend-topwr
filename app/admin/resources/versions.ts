@@ -1,4 +1,5 @@
 import { LucidResource } from "@adminjs/adonis";
+import { ActionRequest } from "adminjs";
 
 import { changeTypeEnumsValues } from "#enums/change_type";
 import { linkTypeEnumsValues } from "#enums/link_type";
@@ -12,6 +13,17 @@ import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
 
 import { readOnlyTimestamps } from "./utils/timestamps.js";
+import { validateResource } from "./validators/utils.js";
+import {
+  changeScreenshotValidator,
+  changesValidator,
+  contributorSocialLinksValidator,
+  contributorValidator,
+  milestoneValidator,
+  roleValidator,
+  versionScreenshotValidator,
+  versionValidator,
+} from "./validators/versions.js";
 
 const navigation = {
   name: "Versions",
@@ -26,6 +38,12 @@ const changeResource = {
       type: changeTypeEnumsValues,
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(changesValidator, request),
+      },
+    },
   },
 };
 
@@ -36,6 +54,12 @@ const changeScreenshotResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(changeScreenshotValidator, request),
+      },
+    },
   },
 };
 
@@ -45,6 +69,12 @@ const contributorResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(contributorValidator, request),
+      },
     },
   },
 };
@@ -57,6 +87,12 @@ const contributorSocialLinksResource = {
       linkType: linkTypeEnumsValues,
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(contributorSocialLinksValidator, request),
+      },
+    },
   },
 };
 
@@ -66,6 +102,12 @@ const milestoneResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(milestoneValidator, request),
+      },
     },
   },
 };
@@ -77,6 +119,12 @@ const roleResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(roleValidator, request),
+      },
+    },
   },
 };
 
@@ -87,6 +135,12 @@ const versionResource = {
     properties: {
       ...readOnlyTimestamps,
     },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(versionValidator, request),
+      },
+    },
   },
 };
 
@@ -96,6 +150,12 @@ const versionScreenshotResource = {
     navigation,
     properties: {
       ...readOnlyTimestamps,
+    },
+    actions: {
+      new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(versionScreenshotValidator, request),
+      },
     },
   },
 };
