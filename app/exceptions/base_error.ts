@@ -284,8 +284,7 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
     sensitive: result.sensitive ?? false,
     silent: result.silent ?? false,
     rootStackTrace:
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- uhm... no????
-      lastStack?.split("\n")?.flatMap((line) => {
+      lastStack?.split("\n").flatMap((line) => {
         line = line.trim();
         if (!line.startsWith("at ")) {
           return [];
