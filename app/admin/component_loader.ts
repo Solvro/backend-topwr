@@ -8,4 +8,8 @@ export const Components = {
     "PhotoDropbox",
     "./components/photo_dropbox",
   ),
+  PhotoDisplay: componentLoader.add(
+    "PhotoDisplay",
+    "./components/photo_display",
+  ),
 };
