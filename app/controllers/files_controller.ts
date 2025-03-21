@@ -20,8 +20,14 @@ export default class FilesController {
 
   async get({ params, response }: HttpContext) {
     const { key } = params;
-    if (typeof key !== "string") {
-      return response.badRequest("Invalid key. Expected a string.");
+    if (
+      typeof key !== "string" ||
+      key.length <= 38 ||
+      !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
+        key.substring(0, 36),
+      )
+    ) {
+      return response.badRequest("Invalid key. Expected a valid UUID.");
     }
     const url = await FilesService.getFileUrl(key);
     if (url === null) {

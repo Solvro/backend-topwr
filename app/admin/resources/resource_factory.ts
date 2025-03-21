@@ -78,9 +78,9 @@ const hideOnEdit = {
   edit: false,
 };
 
-const hideOnShow = {
+const photoHandlerVisibility = {
   list: false,
-  show: false,
+  show: true,
   filter: false,
   edit: true,
 };
@@ -173,41 +173,25 @@ export class ResourceFactory {
       const beforeNewHooksToChain: BeforeHookLink[] = [];
       const afterDeleteHooksToChain: AfterHookLink[] = [];
       resourceInfo.addImageHandlingForProperties.forEach((propertyInfo) => {
-        const uploadPropertyName = `Upload new ${propertyInfo.property}`;
-        newResource.options.properties[uploadPropertyName] = {
-          type: "mixed",
-          isVisible: hideOnShow,
-          components: {
-            edit: "PhotoDropbox",
-          },
-          custom: {
-            previewSourceProperty: propertyInfo.property,
-          },
-        };
-        newResource.options.properties[propertyInfo.property] = {
-          isVisible: hideOnEdit,
-        };
+        const uploadPropertyName = `_${propertyInfo.property}`;
+        const customProperties: Record<string, string> = {};
+
         if (propertyInfo.allowRemoval) {
-          const removePropertyName = `Remove current ${propertyInfo.property}`;
-          newResource.options.properties[removePropertyName] = {
-            type: "boolean",
-            isVisible: hideOnShow,
-          };
+          customProperties[`${propertyInfo.property}_isRemovable`] = "true";
           beforeEditHooksToChain.push(
             ResourceFactory.createBeforeEditUploadHookLink(
               propertyInfo.property,
               uploadPropertyName,
-              removePropertyName,
             ),
           );
           beforeNewHooksToChain.push(
             ResourceFactory.createBeforeNewUploadHookLink(
               propertyInfo.property,
               uploadPropertyName,
-              removePropertyName,
             ),
           );
         } else {
+          customProperties[`${propertyInfo.property}_isRemovable`] = "false";
           beforeEditHooksToChain.push(
             ResourceFactory.createBeforeEditUploadHookLink(
               propertyInfo.property,
@@ -215,6 +199,18 @@ export class ResourceFactory {
             ),
           );
         }
+        newResource.options.properties[uploadPropertyName] = {
+          type: "mixed",
+          isVisible: photoHandlerVisibility,
+          components: {
+            edit: "PhotoDropbox",
+            show: "PhotoDisplay",
+          },
+          custom: customProperties,
+        };
+        newResource.options.properties[propertyInfo.property] = {
+          isVisible: hideOnEdit,
+        };
         afterEditHooksToChain.push(
           ResourceFactory.createAfterEditUploadHookLink(propertyInfo.property),
         );
@@ -332,18 +328,18 @@ export class ResourceFactory {
   private static createBeforeNewUploadHookLink(
     property: string,
     uploadProperty: string,
-    removeProperty?: string,
   ): BeforeHookLink {
     return async (request: ActionRequest): Promise<ActionRequest> => {
       if (request.payload !== undefined) {
-        if (request.payload[uploadProperty] !== undefined) {
+        //if any photo selected, upload it
+        if (
+          request.payload[uploadProperty] !== undefined &&
+          request.payload[uploadProperty] !== null
+        ) {
           request.payload[property] = await FilesService.uploadMultipartFile(
             request.payload[uploadProperty] as MultipartFile,
           );
           delete request.payload[uploadProperty];
-        }
-        if (removeProperty !== undefined) {
-          delete request.payload[removeProperty];
         }
       }
       return request;
@@ -353,35 +349,36 @@ export class ResourceFactory {
   private static createBeforeEditUploadHookLink(
     property: string,
     uploadProperty: string,
-    removeProperty?: string,
   ): BeforeHookLink {
     return async (
       request: ActionRequest,
       context: ActionContext,
     ): Promise<ActionRequest> => {
-      if (
-        removeProperty !== undefined &&
-        request.payload?.[removeProperty] === true
-      ) {
+      //do nothing
+      if (request.payload === undefined) {
+        return request;
+      }
+      //delete current
+      if (request.payload[uploadProperty] === null) {
         if (typeof request.payload[property] === "string") {
           context[this.getOldPropertyKey(property)] = request.payload[property];
         }
         request.payload[property] = null;
-        delete request.payload[removeProperty];
-        delete request.payload[uploadProperty];
-      } else if (request.payload?.[uploadProperty] !== undefined) {
+      } else if (request.payload[uploadProperty] !== undefined) {
+        //replace current
         if (typeof request.payload[property] === "string") {
           context[this.getOldPropertyKey(property)] = request.payload[property];
           request.payload[property] = await FilesService.uploadMultipartFile(
             request.payload[uploadProperty] as MultipartFile,
           );
         } else {
+          //upload new
           request.payload[property] = await FilesService.uploadMultipartFile(
             request.payload[uploadProperty] as MultipartFile,
           );
         }
-        delete request.payload[uploadProperty];
       }
+      delete request.payload[uploadProperty];
       return request;
     };
   }
@@ -395,6 +392,7 @@ export class ResourceFactory {
       context?: ActionContext,
     ): Promise<RecordActionResponse> => {
       const key = ResourceFactory.getOldPropertyKey(property);
+      //delete the old file after having uploaded a new one
       if (context !== undefined && typeof context[key] === "string") {
         const result = await FilesService.deleteFileWithKey(context[key]);
         if (!result) {
