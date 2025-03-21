@@ -12,7 +12,11 @@ const ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 const PhotoDropbox: FC<BasePropertyProps> = (props) => {
   const { property, onChange } = props;
   const [isHidden, setIsHidden] = useState(false);
+
+  // @ts-expect-error DOM is not present in compiler options.
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
   const isOnEdit: boolean = window.location.href.endsWith("/edit");
+
   const propertyName = property.name.substring(1);
 
   const isRemovableKey = `${propertyName}_isRemovable`;
@@ -35,6 +39,8 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
   };
 
   const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    // @ts-expect-error DOM is not present in compiler options.
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     const isChecked = !event.target.checked;
     setIsHidden(isChecked);
     if (isChecked) {
