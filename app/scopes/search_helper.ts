@@ -10,7 +10,7 @@ import {
   ModelQueryBuilderContract,
 } from "@adonisjs/lucid/types/model";
 
-import BadRequestException from "#exceptions/bad_request_exception";
+import { BadRequestException } from "#exceptions/http_exceptions";
 import env from "#start/env";
 
 import { ColumnDef, ColumnType } from "../decorators/typed_model.js";

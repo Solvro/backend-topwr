@@ -37,7 +37,8 @@ export default class GuideQuestionsController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Guide question with ID ${id} does not exist`);
 
     return { data: question };
   }

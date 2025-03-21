@@ -42,7 +42,8 @@ export default class VersionsController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Version with ID ${id} does not exist`);
 
     return { data: version };
   }

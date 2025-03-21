@@ -46,7 +46,8 @@ export default class BuildingsController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Building with ID ${id} does not exist`);
 
     return { data: building };
   }

@@ -38,7 +38,8 @@ export default class LibrariesController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Library with ID ${id} does not exist`);
 
     return { data: library };
   }

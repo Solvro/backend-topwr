@@ -41,7 +41,8 @@ export default class ChangesController {
         scopes.preloadRelations(request.only(this.relations));
       })
       .where("id", id)
-      .firstOrFail();
+      .firstOrFail()
+      .addErrorContext(() => `Change with ID ${id} does not exist`);
 
     return { data: change };
   }
