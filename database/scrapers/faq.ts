@@ -5,6 +5,7 @@ import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
 import FilesService from "#services/files_service";
+import { fixSequence } from "#utils/db";
 
 interface GuideArticlesOld {
   data: {
@@ -210,5 +211,8 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         );
       }
     }
+    task.update("Fixing primary key sequences");
+    const newId = await fixSequence("guide_articles");
+    task.update(`Next ID for guide_articles updated to ${newId}`);
   }
 }
