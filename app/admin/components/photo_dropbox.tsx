@@ -134,6 +134,10 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
       ? "info"
       : "success";
 
+  const buttonStyle = {
+    marginRight: "0.5em",
+  };
+
   return (
     <FormGroup>
       {/* minor code borrowing from adminjs (modified PropertyLabel, edit components for standard values) */}
@@ -169,17 +173,21 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
         </>
       )}
       {showUploadButton && (
-        <Button onClick={onUploadClicked} variant={uploadButtonVariant}>
+        <Button
+          onClick={onUploadClicked}
+          variant={uploadButtonVariant}
+          style={buttonStyle}
+        >
           {uploadButtonLabel}
         </Button>
       )}
       {showDeleteButton && (
-        <Button onClick={onDeleteClicked} variant="danger">
+        <Button onClick={onDeleteClicked} variant="danger" style={buttonStyle}>
           Delete
         </Button>
       )}
       {showRestoreButton && (
-        <Button onClick={onRestoreClicked} variant="info">
+        <Button onClick={onRestoreClicked} variant="info" style={buttonStyle}>
           Restore
         </Button>
       )}
