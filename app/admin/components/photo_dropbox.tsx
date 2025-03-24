@@ -135,7 +135,8 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
       : "success";
 
   const buttonStyle = {
-    marginRight: "0.5em",
+    margin: "0.5em",
+    marginLeft: 0,
   };
 
   return (
