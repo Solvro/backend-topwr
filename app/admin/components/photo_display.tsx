@@ -34,11 +34,8 @@ const PhotoDisplay: FC<BasePropertyProps> = (props) => {
         urlOrMessage: "No photo uploaded yet.",
       });
     } else {
-      async function loadPreview(key: string) {
-        setPreviewFetchResponse(await getPreviewUrl(key));
-      }
-
-      void loadPreview(photoKey);
+      // errors handled internally inside
+      void getPreviewUrl(photoKey).then(setPreviewFetchResponse);
     }
   }, []);
 
