@@ -26,7 +26,7 @@ interface WeekExceptions {
 }
 
 export default class AcademicCalendarScraper extends BaseScraperModule {
-  static name = "academic calendar scraper";
+  static name = "Academic calendar scraper";
   static description = "Import data about academic calendars and day swaps";
   static taskTitle = "Fetching academic calendar and day swaps data";
 
@@ -51,18 +51,24 @@ export default class AcademicCalendarScraper extends BaseScraperModule {
       academicCalendarResponse.json() as Promise<AcademicCalendarData>,
       daySwapsResponse.json() as Promise<WeekExceptions>,
     ]);
+    const semesterStartDate = DateTime.fromISO(
+      academicCalendarResult.data.semesterStartDate,
+    );
+    const examSessionStartDate = DateTime.fromISO(
+      academicCalendarResult.data.examSessionStartDate,
+    );
+    const examSessionLastDate = DateTime.fromISO(
+      academicCalendarResult.data.examSessionLastDay,
+    );
 
     const academicCalendar = await AcademicCalendar.create({
-      name: "2024/2025 Lato",
-      semesterStartDate: DateTime.fromISO(
-        academicCalendarResult.data.semesterStartDate,
-      ),
-      examSessionStartDate: DateTime.fromISO(
-        academicCalendarResult.data.examSessionStartDate,
-      ),
-      examSessionLastDate: DateTime.fromISO(
-        academicCalendarResult.data.examSessionLastDay,
-      ),
+      name:
+        semesterStartDate.year === examSessionLastDate.year
+          ? `${examSessionLastDate.year - 1}/${examSessionLastDate.year} Lato`
+          : `${semesterStartDate.year}/${examSessionLastDate.year} Zima`,
+      semesterStartDate,
+      examSessionStartDate,
+      examSessionLastDate,
       isFirstWeekEven: academicCalendarResult.data.isFirstWeekEven,
       createdAt: DateTime.fromISO(academicCalendarResult.data.date_updated),
       updatedAt: DateTime.fromISO(academicCalendarResult.data.date_updated),
@@ -78,11 +84,15 @@ export default class AcademicCalendarScraper extends BaseScraperModule {
       Sun: Weekday.Sunday,
     };
 
-    const validDaySwaps = daySwapsResult.data.filter(
-      (daySwap) =>
-        weekdayMap[daySwap.changedWeekday as keyof typeof weekdayMap] !==
-        undefined,
-    );
+    const validDaySwaps = daySwapsResult.data.filter((daySwap) => {
+      if (daySwap.changedWeekday in weekdayMap) {
+        return true;
+      }
+      this.logger.warning(
+        `Day swap for ${daySwap.day} skipped due to an invalid weekday (${daySwap.changedWeekday})`,
+      );
+      return false;
+    });
 
     await Promise.all(
       validDaySwaps.map((daySwap) =>
