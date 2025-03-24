@@ -1,6 +1,12 @@
-import { Box, CheckBox, DropZone } from "@adminjs/design-system";
-import { BasePropertyJSON, BasePropertyProps } from "adminjs";
-import React, { FC, useState } from "react";
+import { Button, DropZone, FormGroup, Label } from "@adminjs/design-system";
+import {
+  BasePropertyJSON,
+  BasePropertyProps,
+  PropertyDescription,
+  PropertyJSON,
+  useTranslation,
+} from "adminjs";
+import React, { FC, MouseEvent, useEffect, useState } from "react";
 
 import PhotoDisplay from "./photo_display.js";
 
@@ -9,11 +15,28 @@ const MAX_FILE_SIZE = 1024 * 1024 * 5;
 //MIME types that the dropbox will allow to upload
 const ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
-const PhotoDropbox: FC<BasePropertyProps> = (props) => {
-  const { property, onChange, resource } = props;
-  const [isHidden, setIsHidden] = useState(false);
+type State = "unmodified" | "delete" | "upload";
 
-  const isOnEdit: boolean = props.where === "edit";
+const PhotoDropbox: FC<BasePropertyProps> = (props) => {
+  const { property, onChange, resource, record } = props;
+  const [currentState, setState] = useState<State>("unmodified");
+  const [uploadZoneVisible, setUploadZoneVisible] = useState(false);
+  const [uploadPreviewURL, setUploadPreviewURL] = useState<string | undefined>(
+    undefined,
+  );
+  const { translateProperty } = useTranslation();
+
+  useEffect(
+    () => () =>
+      void (
+        uploadPreviewURL !== undefined && URL.revokeObjectURL(uploadPreviewURL)
+      ),
+    [uploadPreviewURL],
+  );
+
+  if (onChange === undefined) {
+    throw new Error("Invalid dropbox configuration. onChange is not defined.");
+  }
 
   const propertyName = property.name.substring(1);
   const originalProperty = resource.properties[propertyName] as
@@ -26,76 +49,151 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
     );
   }
 
-  if (onChange === undefined) {
-    throw new Error("Invalid dropbox configuration. onChange is not defined.");
+  // exclusively for the PropertyDescription component
+  // according to the docs, path and propertyPath should be equal for non-array properties
+  const originalExtendedProperty = {
+    path: originalProperty.propertyPath,
+    ...originalProperty,
+  } as PropertyJSON;
+
+  const isNewRecord: boolean =
+    props.where === "edit" && record?.params[propertyName] === undefined;
+  const photoExists = (record?.params[propertyName] ?? null) !== null;
+
+  if (!uploadZoneVisible && isNewRecord && currentState === "unmodified") {
+    setUploadZoneVisible(true);
   }
-  const handleChange = (files: File[]): void => {
-    if (files.length > 0) {
-      onChange(property.name, files[0]);
-    } else {
-      onChange(property.name, undefined);
+
+  const handleFileDrop = (files: File[]): void => {
+    if (files.length <= 0) {
+      return;
     }
+    setUploadPreviewURL(URL.createObjectURL(files[0]));
+    setState("upload");
+    onChange(property.name, files[0]);
+    setUploadZoneVisible(false);
   };
 
-  const handleCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    // @ts-expect-error DOM is not present in compiler options.
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    const isChecked = !event.target.checked;
-    setIsHidden(isChecked);
-    if (isChecked) {
+  const onUploadClicked = (event: MouseEvent) => {
+    event.preventDefault();
+    setUploadZoneVisible(!uploadZoneVisible);
+  };
+  const onDeleteClicked = (event: MouseEvent) => {
+    event.preventDefault();
+    if (originalProperty.isRequired) {
+      return;
+    }
+    setUploadPreviewURL(undefined);
+    setUploadZoneVisible(false);
+    if (isNewRecord) {
+      setState("unmodified");
+      onChange(property.name, undefined);
+    } else {
+      setState("delete");
       onChange(property.name, null);
     }
   };
+  const onRestoreClicked = (event: MouseEvent) => {
+    event.preventDefault();
+    if (isNewRecord && originalProperty.isRequired) {
+      return;
+    }
+    setUploadPreviewURL(undefined);
+    setUploadZoneVisible(false);
+    setState("unmodified");
+    onChange(property.name, undefined);
+  };
+
+  // show delete only if:
+  // - the image is not required
+  // - and either:
+  //   - a new photo was queued for upload
+  //   - or a photo already exists and no modifications were made yet
+  const showDeleteButton =
+    !originalProperty.isRequired &&
+    (currentState === "upload" ||
+      (photoExists && currentState === "unmodified"));
+  // hide upload only if we're on a new record and no image was uploaded yet
+  const showUploadButton = !(isNewRecord && currentState === "unmodified");
+  // show restore if:
+  // - a modification was made
+  // - and this is NOT a new record
+  const showRestoreButton = currentState !== "unmodified" && !isNewRecord;
+  const photoWillExist =
+    (photoExists || currentState === "upload") && currentState !== "delete";
+  const uploadButtonLabel = photoWillExist
+    ? uploadZoneVisible
+      ? "Cancel replace"
+      : "Replace"
+    : uploadZoneVisible
+      ? "Cancel upload"
+      : "Upload";
+  const uploadButtonVariant = uploadZoneVisible
+    ? "secondary"
+    : photoWillExist
+      ? "info"
+      : "success";
 
   return (
-    <Box
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "16px",
-        marginTop: "16px",
-      }}
-    >
-      <span style={{ fontSize: "20px" }}>
-        Upload new {property.label.substring(1)}
-      </span>
-      {isOnEdit && (
-        <Box>
-          <PhotoDisplay {...props} />
-          {!originalProperty.isRequired && (
-            <div
-              style={{
-                marginTop: "16px",
-                display: "flex",
-                gap: "16px",
-                alignItems: "center",
-              }}
-            >
-              <span>Check this to remove the current photo.</span>
-              <CheckBox
-                id={`${property.name}-toggle`}
-                label="Remove the current photo"
-                checked={isHidden}
-                onChange={handleCheckboxChange}
-              />
-            </div>
-          )}
-        </Box>
+    <FormGroup>
+      {/* minor code borrowing from adminjs (modified PropertyLabel, edit components for standard values) */}
+      <Label required={originalProperty.isRequired}>
+        {translateProperty(originalProperty.label, originalProperty.resourceId)}
+        {property.description !== undefined && (
+          <PropertyDescription property={originalExtendedProperty} />
+        )}
+      </Label>
+      {!isNewRecord && (
+        <div
+          style={{ display: currentState === "unmodified" ? "block" : "none" }}
+        >
+          <PhotoDisplay isEmbedded={true} {...props} />
+        </div>
       )}
-      {!isHidden && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          <span>
-            Upload a new photo or, if it exists, replace the current one:
+      {uploadPreviewURL !== undefined && (
+        <>
+          <img
+            src={uploadPreviewURL}
+            alt={`Upload preview image for ${propertyName}`}
+            style={{ maxHeight: "400px", maxWidth: "100%" }}
+          />
+          <br />
+        </>
+      )}
+      {currentState === "delete" && (
+        <>
+          <span style={{ color: "orangered" }}>
+            The current image will be deleted
           </span>
+          <br />
+        </>
+      )}
+      {showUploadButton && (
+        <Button onClick={onUploadClicked} variant={uploadButtonVariant}>
+          {uploadButtonLabel}
+        </Button>
+      )}
+      {showDeleteButton && (
+        <Button onClick={onDeleteClicked} variant="danger">
+          Delete
+        </Button>
+      )}
+      {showRestoreButton && (
+        <Button onClick={onRestoreClicked} variant="info">
+          Restore
+        </Button>
+      )}
+      {uploadZoneVisible && (
+        <div>
+          <Label>Upload a new image:</Label>
           <DropZone
-            onChange={handleChange}
+            onChange={handleFileDrop}
             multiple={false}
             validate={{ maxSize: MAX_FILE_SIZE, mimeTypes: ALLOWED_FILE_TYPES }}
           />
         </div>
       )}
-    </Box>
+    </FormGroup>
   );
 };
 

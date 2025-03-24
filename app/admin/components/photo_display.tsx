@@ -1,34 +1,39 @@
-import { Box } from "@adminjs/design-system";
-import { BasePropertyProps } from "adminjs";
+import { ValueGroup } from "@adminjs/design-system";
+import { BasePropertyJSON, BasePropertyProps, useTranslation } from "adminjs";
 import React, { FC, useEffect, useState } from "react";
 
 interface FetchResponse {
   isSuccess: boolean;
   urlOrMessage: string;
 }
+type DisplayProps = BasePropertyProps & {
+  isEmbedded?: boolean;
+};
 
 const FILE_META_ENDPOINT = "/api/v1/files";
 
-const PhotoDisplay: FC<BasePropertyProps> = (props) => {
-  const { property, record } = props;
+const PhotoDisplay: FC<DisplayProps> = (props) => {
+  const { property, record, resource, isEmbedded } = props;
   const [previewFetchResponse, setPreviewFetchResponse] = useState({
     isSuccess: false,
     urlOrMessage: "Fetching preview URL...",
   });
+  const { translateProperty } = useTranslation();
+
   const propertyName = property.name.substring(1);
+  const originalProperty = resource.properties[propertyName] as
+    | BasePropertyJSON
+    | undefined;
 
-  let photoKey: string | undefined;
-
-  if (record?.params[propertyName] === undefined) {
+  if (originalProperty === undefined) {
     throw new Error(
-      `Invalid dropbox configuration. ${property.name} photoKey does not exist in record params.`,
+      `Invalid dropbox configuration. Original property '${propertyName}' for dropbox '${property.name}' is not defined.`,
     );
-  } else if (record.params[propertyName] !== null) {
-    photoKey = record.params[propertyName] as string;
   }
 
   useEffect(() => {
-    if (photoKey === undefined) {
+    const photoKey = (record?.params[propertyName] ?? null) as string | null;
+    if (photoKey === null) {
       setPreviewFetchResponse({
         isSuccess: false,
         urlOrMessage: "No photo uploaded yet.",
@@ -72,38 +77,31 @@ const PhotoDisplay: FC<BasePropertyProps> = (props) => {
     }
   };
 
-  return (
-    <Box
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: "16px",
-        marginBottom: "16px",
-      }}
-    >
-      <span>Current photo for {propertyName}:</span>
-      {previewFetchResponse.isSuccess && (
-        <div style={{ gap: "16px", display: "flex", flexDirection: "column" }}>
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <img
-              src={previewFetchResponse.urlOrMessage}
-              alt="Current photo"
-              style={{ maxHeight: "400px", maxWidth: "100%" }}
-            />
-          </div>
-        </div>
-      )}
-      {!previewFetchResponse.isSuccess && (
-        <span>{previewFetchResponse.urlOrMessage}</span>
-      )}
-    </Box>
+  const internalElement = previewFetchResponse.isSuccess ? (
+    <img
+      src={previewFetchResponse.urlOrMessage}
+      alt={`Current ${propertyName} image`}
+      style={{ maxHeight: "400px", maxWidth: "100%" }}
+    />
+  ) : (
+    <span>{previewFetchResponse.urlOrMessage}</span>
   );
+
+  if (isEmbedded ?? false) {
+    return internalElement;
+  } else {
+    return (
+      // minor code borrowing from adminjs (show components for standard values)
+      <ValueGroup
+        label={translateProperty(
+          originalProperty.label,
+          originalProperty.resourceId,
+        )}
+      >
+        {internalElement}
+      </ValueGroup>
+    );
+  }
 };
 
 export default PhotoDisplay;
