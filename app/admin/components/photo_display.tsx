@@ -67,6 +67,7 @@ const PhotoDisplay: FC<BasePropertyProps> = (props) => {
         urlOrMessage: `Error fetching preview URL: ${response.statusText} -> ${await response.text()}`,
       };
     } catch (error) {
+      console.error(`Error fetching preview URL for file ${key}`, error);
       return {
         isSuccess: false,
         urlOrMessage: `Error fetching preview URL: ${error}`,
