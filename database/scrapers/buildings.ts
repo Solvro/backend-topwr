@@ -95,7 +95,7 @@ export default class BuildingsScraper extends BaseScraperModule {
             this.uploadCoverAndGetKey(data),
           ),
           externalDigitalGuideMode: data.externalDigitalGuideMode,
-          externalDigitalGuideIdOrURL: data.externalDigitalGuideIdOrURL,
+          externalDigitalGuideIdOrUrl: data.externalDigitalGuideIdOrURL,
           createdAt: resolveDate(data.createdAt),
           updatedAt: resolveDate(data.updatedAt),
         };

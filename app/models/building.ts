@@ -28,7 +28,7 @@ import Library from "./library.js";
   haveFood: "boolean",
   cover: "string",
   externalDigitalGuideMode: "string",
-  externalDigitalGuideIdOrURL: "string",
+  externalDigitalGuideIdOrUrl: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })
@@ -70,7 +70,7 @@ export default class Building extends BaseModel {
   declare externalDigitalGuideMode: string | null;
 
   @column()
-  declare externalDigitalGuideIdOrURL: string | null;
+  declare externalDigitalGuideIdOrUrl: string | null;
 
   @belongsTo(() => Campus)
   declare campus: BelongsTo<typeof Campus>;
