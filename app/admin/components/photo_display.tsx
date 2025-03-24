@@ -7,7 +7,7 @@ interface FetchResponse {
   urlOrMessage: string;
 }
 
-const FILE_ENDPOINT = "http://localhost:3333/api/v1/files/";
+const FILE_META_ENDPOINT = "/api/v1/files";
 
 const PhotoDisplay: FC<BasePropertyProps> = (props) => {
   const { property, record } = props;
@@ -44,7 +44,8 @@ const PhotoDisplay: FC<BasePropertyProps> = (props) => {
 
   const getPreviewUrl = async (key: string): Promise<FetchResponse> => {
     try {
-      const response = await fetch(FILE_ENDPOINT + key, {
+      // fun fact: fetch() resolves URLs relative to the current url
+      const response = await fetch(`${FILE_META_ENDPOINT}/${key}`, {
         method: "GET",
       });
       if (response.ok) {
