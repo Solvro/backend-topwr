@@ -45,6 +45,7 @@ const linkPatterns: [string, RegExp | undefined, LinkType][] = [
   ["tiktok.com", undefined, LinkType.TikTok],
   ["twitch.tv", undefined, LinkType.Twitch],
   ["topwr.solvro.pl", /^\/buildings\/\d+$/i, LinkType.TopwrBuildings],
+  ["pwr.edu.pl", undefined, LinkType.Default],
 ];
 
 /**
