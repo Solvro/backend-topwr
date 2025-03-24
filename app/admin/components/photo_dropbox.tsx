@@ -1,5 +1,5 @@
 import { Box, CheckBox, DropZone } from "@adminjs/design-system";
-import { BasePropertyProps } from "adminjs";
+import { BasePropertyJSON, BasePropertyProps } from "adminjs";
 import React, { FC, useState } from "react";
 
 import PhotoDisplay from "./photo_display.js";
@@ -10,20 +10,21 @@ const MAX_FILE_SIZE = 1024 * 1024 * 5;
 const ALLOWED_FILE_TYPES = ["image/png", "image/jpeg", "image/webp"];
 
 const PhotoDropbox: FC<BasePropertyProps> = (props) => {
-  const { property, onChange } = props;
+  const { property, onChange, resource } = props;
   const [isHidden, setIsHidden] = useState(false);
 
   const isOnEdit: boolean = props.where === "edit";
 
   const propertyName = property.name.substring(1);
+  const originalProperty = resource.properties[propertyName] as
+    | BasePropertyJSON
+    | undefined;
 
-  const isRemovableKey = `${propertyName}_isRemovable`;
-  if (property.custom[isRemovableKey] === undefined) {
+  if (originalProperty === undefined) {
     throw new Error(
-      `Invalid dropbox configuration. ${property.name} isRemovable is not defined.`,
+      `Invalid dropbox configuration. Original property '${propertyName}' for dropbox '${property.name}' is not defined.`,
     );
   }
-  const isRemovable: boolean = property.custom[isRemovableKey] === "true";
 
   if (onChange === undefined) {
     throw new Error("Invalid dropbox configuration. onChange is not defined.");
@@ -62,7 +63,7 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
       {isOnEdit && (
         <Box>
           <PhotoDisplay {...props} />
-          {isRemovable && (
+          {!originalProperty.isRequired && (
             <div
               style={{
                 marginTop: "16px",

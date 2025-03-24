@@ -174,10 +174,8 @@ export class ResourceFactory {
       const afterDeleteHooksToChain: AfterHookLink[] = [];
       resourceInfo.addImageHandlingForProperties.forEach((propertyInfo) => {
         const uploadPropertyName = `_${propertyInfo.property}`;
-        const customProperties: Record<string, string> = {};
 
         if (propertyInfo.allowRemoval) {
-          customProperties[`${propertyInfo.property}_isRemovable`] = "true";
           beforeEditHooksToChain.push(
             ResourceFactory.createBeforeEditUploadHookLink(
               propertyInfo.property,
@@ -191,7 +189,6 @@ export class ResourceFactory {
             ),
           );
         } else {
-          customProperties[`${propertyInfo.property}_isRemovable`] = "false";
           beforeEditHooksToChain.push(
             ResourceFactory.createBeforeEditUploadHookLink(
               propertyInfo.property,
@@ -206,7 +203,6 @@ export class ResourceFactory {
             edit: "PhotoDropbox",
             show: "PhotoDisplay",
           },
-          custom: customProperties,
         };
         newResource.options.properties[propertyInfo.property] = {
           isVisible: hideOnEdit,
