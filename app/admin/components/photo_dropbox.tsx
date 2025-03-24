@@ -13,9 +13,7 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
   const { property, onChange } = props;
   const [isHidden, setIsHidden] = useState(false);
 
-  // @ts-expect-error DOM is not present in compiler options.
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call,@typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-unsafe-assignment
-  const isOnEdit: boolean = window.location.href.endsWith("/edit");
+  const isOnEdit: boolean = props.where === "edit";
 
   const propertyName = property.name.substring(1);
 
