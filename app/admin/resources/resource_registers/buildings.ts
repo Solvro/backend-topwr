@@ -20,15 +20,11 @@ export const BuildingsBuilder: ResourceBuilder = {
     {
       forModel: Building,
       additionalProperties: { iconType: buildingIconEnumsValues },
-      addImageHandlingForProperties: [
-        { property: "cover", allowRemoval: true },
-      ],
+      addImageHandlingForProperties: ["cover"],
     },
     {
       forModel: Campus,
-      addImageHandlingForProperties: [
-        { property: "cover", allowRemoval: true },
-      ],
+      addImageHandlingForProperties: ["cover"],
     },
     { forModel: Aed },
     { forModel: BicycleShower },

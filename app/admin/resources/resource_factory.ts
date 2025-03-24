@@ -63,12 +63,7 @@ export interface ResourceInfo {
   additionalProperties?: Record<string, PropertyOptions>;
   additionalActions?: ActionMap;
   additionalOptions?: ResourceOptions;
-  addImageHandlingForProperties?: ImageHandlingForProperty[];
-}
-
-export interface ImageHandlingForProperty {
-  property: string;
-  allowRemoval: boolean;
+  addImageHandlingForProperties?: string[];
 }
 
 const hideOnEdit = {
@@ -172,30 +167,9 @@ export class ResourceFactory {
       const afterEditHooksToChain: AfterHookLink[] = [];
       const beforeNewHooksToChain: BeforeHookLink[] = [];
       const afterDeleteHooksToChain: AfterHookLink[] = [];
-      resourceInfo.addImageHandlingForProperties.forEach((propertyInfo) => {
-        const uploadPropertyName = `_${propertyInfo.property}`;
+      resourceInfo.addImageHandlingForProperties.forEach((propertyName) => {
+        const uploadPropertyName = `_${propertyName}`;
 
-        if (propertyInfo.allowRemoval) {
-          beforeEditHooksToChain.push(
-            ResourceFactory.createBeforeEditUploadHookLink(
-              propertyInfo.property,
-              uploadPropertyName,
-            ),
-          );
-          beforeNewHooksToChain.push(
-            ResourceFactory.createBeforeNewUploadHookLink(
-              propertyInfo.property,
-              uploadPropertyName,
-            ),
-          );
-        } else {
-          beforeEditHooksToChain.push(
-            ResourceFactory.createBeforeEditUploadHookLink(
-              propertyInfo.property,
-              uploadPropertyName,
-            ),
-          );
-        }
         newResource.options.properties[uploadPropertyName] = {
           type: "mixed",
           isVisible: photoHandlerVisibility,
@@ -204,22 +178,26 @@ export class ResourceFactory {
             show: "PhotoDisplay",
           },
         };
-        newResource.options.properties[propertyInfo.property] = {
+        newResource.options.properties[propertyName] = {
           isVisible: hideOnEdit,
         };
+        beforeEditHooksToChain.push(
+          ResourceFactory.createBeforeEditUploadHookLink(
+            propertyName,
+            uploadPropertyName,
+          ),
+        );
         afterEditHooksToChain.push(
-          ResourceFactory.createAfterEditUploadHookLink(propertyInfo.property),
+          ResourceFactory.createAfterEditUploadHookLink(propertyName),
         );
         beforeNewHooksToChain.push(
           ResourceFactory.createBeforeNewUploadHookLink(
-            propertyInfo.property,
+            propertyName,
             uploadPropertyName,
           ),
         );
         afterDeleteHooksToChain.push(
-          ResourceFactory.createAfterDeleteUploadHookLink(
-            propertyInfo.property,
-          ),
+          ResourceFactory.createAfterDeleteUploadHookLink(propertyName),
         );
       });
       newResource.options.actions = {

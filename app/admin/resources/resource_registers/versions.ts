@@ -26,18 +26,14 @@ export const VersionsBuilder: ResourceBuilder = {
     { forModel: ChangeScreenshot },
     {
       forModel: Contributor,
-      addImageHandlingForProperties: [
-        { property: "photoKey", allowRemoval: true },
-      ],
+      addImageHandlingForProperties: ["photoKey"],
     },
     { forModel: Milestone },
     { forModel: Role },
     { forModel: Version },
     {
       forModel: VersionScreenshot,
-      addImageHandlingForProperties: [
-        { property: "imageKey", allowRemoval: false },
-      ],
+      addImageHandlingForProperties: ["imageKey"],
     },
   ],
   navigation,

@@ -19,9 +19,7 @@ export const AboutUsBuilder: ResourceBuilder = {
     },
     {
       forModel: AboutUsGeneral,
-      addImageHandlingForProperties: [
-        { property: "coverPhotoKey", allowRemoval: true },
-      ],
+      addImageHandlingForProperties: ["coverPhotoKey"],
       additionalProperties: {
         id: {
           isVisible: false,

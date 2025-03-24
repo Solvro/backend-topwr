@@ -23,10 +23,7 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
         organizationType: organizationTypeEnumsValues,
         source: organizationSourceEnumsValues,
       },
-      addImageHandlingForProperties: [
-        { property: "cover", allowRemoval: true },
-        { property: "logo", allowRemoval: true },
-      ],
+      addImageHandlingForProperties: ["cover", "logo"],
     },
     {
       forModel: StudentOrganizationLink,
