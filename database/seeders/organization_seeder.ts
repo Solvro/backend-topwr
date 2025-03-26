@@ -56,11 +56,11 @@ export default class extends BaseSeeder {
     await org1.related("links").createMany([
       {
         link: "https://example.com",
-        type: LinkType.LinkedIn,
+        linkType: LinkType.LinkedIn,
       },
       {
         link: "https://example.com",
-        type: LinkType.Default,
+        linkType: LinkType.Default,
       },
     ]);
     await org1.related("tags").createMany([

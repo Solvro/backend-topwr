@@ -23,7 +23,7 @@ export default class extends BaseSchema {
       table.increments("id");
       table.integer("student_organization_id").unsigned().notNullable();
       table
-        .enum("type", this.linkTypes, {
+        .enum("link_type", this.linkTypes, {
           useNative: true,
           enumName: "link_type",
           existingType: true,

@@ -1,6 +1,6 @@
 import { HrefContext } from "adminjs";
 
-import { linkTypeEnumsAvailableValuesMap } from "#enums/link_type";
+import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";
 
@@ -15,7 +15,7 @@ export const AboutUsBuilder: ResourceBuilder = {
   builders: [
     {
       forModel: AboutUsGeneralLink,
-      additionalProperties: { linkType: linkTypeEnumsAvailableValuesMap },
+      ...linkTypeAutodetectSetUp,
     },
     {
       forModel: AboutUsGeneral,
