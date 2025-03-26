@@ -4,6 +4,7 @@ import { BaseModel, column, hasMany, manyToMany } from "@adonisjs/lucid/orm";
 import type { HasMany, ManyToMany } from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
+import { applyLinkTypeSorting } from "#enums/link_type";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -35,7 +36,11 @@ export default class Contributor extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  @hasMany(() => ContributorSocialLink)
+  @hasMany(() => ContributorSocialLink, {
+    onQuery: (query) => {
+      return query.orderByRaw(applyLinkTypeSorting);
+    },
+  })
   declare socialLinks: HasMany<typeof ContributorSocialLink>;
 
   @manyToMany(() => Role, {

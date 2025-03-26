@@ -6,6 +6,7 @@ export enum LinkType {
   TopwrBuildings = "topwr:buildings",
   Phone = "tel",
   Mail = "mailto:",
+  Default = "default",
   Facebook = "facebook",
   Instagram = "instagram",
   Discord = "discord",
@@ -15,8 +16,45 @@ export enum LinkType {
   YouTube = "youtu",
   TikTok = "tiktok",
   Twitch = "twitch",
-  Default = "default",
 }
+
+export const linkTypeOrder: LinkType[] = [
+  LinkType.TopwrBuildings, // 1
+  LinkType.Phone, // 2
+  LinkType.Mail, // 3
+  LinkType.Default, // 4
+  LinkType.Facebook, // 5
+  LinkType.Instagram, // 6
+  LinkType.Discord, // 7
+  LinkType.LinkedIn, // 8
+  LinkType.GitHub, // 9
+  LinkType.X, // 10
+  LinkType.YouTube, // 11
+  LinkType.TikTok, // 12
+  LinkType.Twitch, // 13
+];
+
+export function compareLinkTypes(typeA: LinkType, typeB: LinkType): number {
+  return linkTypeOrder.indexOf(typeA) - linkTypeOrder.indexOf(typeB);
+}
+
+export const applyLinkTypeSorting = `
+        CASE link_type
+          WHEN 'topwr:buildings' THEN 1
+          WHEN 'tel' THEN 2
+          WHEN 'mailto:' THEN 3
+          WHEN 'default' THEN 4
+          WHEN 'facebook' THEN 5
+          WHEN 'instagram' THEN 6
+          WHEN 'discord' THEN 7
+          WHEN 'linkedin' THEN 8
+          WHEN 'github' THEN 9
+          WHEN 'https://x.com' THEN 10
+          WHEN 'youtu' THEN 11
+          WHEN 'tiktok' THEN 12
+          WHEN 'twitch' THEN 13
+        END
+      `;
 
 export const linkTypeEnumsValues = [
   { value: LinkType.TopwrBuildings, label: "TopwrBuildings" },
