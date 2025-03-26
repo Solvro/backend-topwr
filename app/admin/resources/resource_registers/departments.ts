@@ -1,4 +1,4 @@
-import { linkTypeEnumsValues } from "#enums/link_type";
+import { linkTypeEnumsAvailableValuesMap } from "#enums/link_type";
 import Department from "#models/department";
 import DepartmentsLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
@@ -15,7 +15,7 @@ export const DepartmentsBuilder: ResourceBuilder = {
     { forModel: FieldsOfStudy },
     {
       forModel: DepartmentsLink,
-      additionalProperties: { linkType: linkTypeEnumsValues },
+      additionalProperties: { linkType: linkTypeEnumsAvailableValuesMap },
     },
     {
       forModel: Department,

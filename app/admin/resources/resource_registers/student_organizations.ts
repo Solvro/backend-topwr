@@ -1,4 +1,10 @@
-import { linkTypeEnumsValues } from "#enums/link_type";
+import { ActionRequest } from "adminjs";
+
+import {
+  DetectionResult,
+  detectLinkType,
+  linkTypeEnumsValues,
+} from "#enums/link_type";
 import { organizationSourceEnumsValues } from "#enums/organization_source";
 import { organizationTypeEnumsValues } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
@@ -27,7 +33,25 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
     },
     {
       forModel: StudentOrganizationLink,
-      additionalProperties: { type: linkTypeEnumsValues },
+      additionalProperties: {
+        type: {
+          availableValues: linkTypeEnumsValues,
+          isVisible: {
+            list: true,
+            show: true,
+            filter: true,
+            edit: false,
+          },
+        },
+      },
+      additionalActions: {
+        new: {
+          before: autoReplaceLinkType,
+        },
+        edit: {
+          before: autoReplaceLinkType,
+        },
+      },
     },
     {
       forModel: StudentOrganizationTag,
@@ -36,3 +60,23 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
   ],
   navigation,
 };
+
+async function autoReplaceLinkType(
+  request: ActionRequest,
+): Promise<ActionRequest> {
+  if (request.payload !== undefined) {
+    if (request.payload.link !== undefined) {
+      if (typeof request.payload.link !== "string") {
+        throw new Error("Link must be a string");
+      }
+      const detectedType: DetectionResult = detectLinkType(
+        request.payload.link,
+      );
+      if (detectedType.warning !== undefined) {
+        throw new Error(detectedType.warning);
+      }
+      request.payload.type = detectedType.type;
+    }
+  }
+  return request;
+}
