@@ -2,6 +2,7 @@ import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import { OrganizationSource } from "#enums/organization_source";
+import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
@@ -22,7 +23,7 @@ interface DirectusLink {
   id: number;
   name: string;
   link: string;
-  scientific_circle_id: number | null;
+  scientific_club_id: number | null;
 }
 
 interface DirectusOrganization {
@@ -49,7 +50,7 @@ interface FileMetaResponse {
 
 interface DirectusTagPivot {
   id: number;
-  Scientific_Circles_id: number | null;
+  Scientific_Clubs_id: number | null;
   Tags_id: number | null;
 }
 
@@ -112,6 +113,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
         coverPreview: org.useCoverAsPreviewPhoto,
         source: this.convertSource(org.source),
         organizationType: this.convertType(org.type),
+        organizationStatus: OrganizationStatus.Unknown,
       });
       const undefinedTags = [];
       const tagNames = [];
@@ -138,7 +140,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
     task.update("Creating links...");
     await StudentOrganizationLink.createMany(
       links.data
-        .filter((link) => link.scientific_circle_id !== null)
+        .filter((link) => link.scientific_club_id !== null)
         .map((link) => {
           const url = link.link.includes(":")
             ? link.link
@@ -146,8 +148,8 @@ export default class OrganizationsScraper extends BaseScraperModule {
           return {
             id: link.id,
             link: url,
-            type: this.detectLinkType(url),
-            studentOrganizationId: link.scientific_circle_id,
+            linkType: this.detectLinkType(url),
+            studentOrganizationId: link.scientific_club_id,
           } as StudentOrganizationLink;
         }),
     );
@@ -172,8 +174,8 @@ export default class OrganizationsScraper extends BaseScraperModule {
 
   private convertType(type: string): OrganizationType {
     switch (type) {
-      case "scientific_cirlce": //XDDDDDD
-        return OrganizationType.ScientificCircle;
+      case "scientific_club":
+        return OrganizationType.ScientificClub;
       case "student_organization":
         return OrganizationType.StudentOrganization;
       case "student_media":
