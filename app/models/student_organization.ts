@@ -36,6 +36,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
   coverPreview: "boolean",
   source: OrganizationSource,
   organizationType: OrganizationType,
+  organizationStatus: OrganizationStatus,
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })

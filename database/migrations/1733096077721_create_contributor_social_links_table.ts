@@ -1,10 +1,22 @@
 import { BaseSchema } from "@adonisjs/lucid/schema";
 
-import { linkTypeOrder } from "#enums/link_type";
-
 export default class extends BaseSchema {
   protected tableName = "contributor_social_links";
-  protected linkTypes = linkTypeOrder.map((linkType) => linkType.valueOf());
+  protected linkTypes = [
+    "topwr:buildings",
+    "tel",
+    "mailto:",
+    "default",
+    "facebook",
+    "instagram",
+    "discord",
+    "linkedin",
+    "github",
+    "https://x.com",
+    "youtu",
+    "tiktok",
+    "twitch",
+  ];
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
