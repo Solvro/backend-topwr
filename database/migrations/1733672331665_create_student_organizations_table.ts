@@ -4,13 +4,12 @@ export default class extends BaseSchema {
   protected tableName = "student_organizations";
   protected sources = ["student_department", "manual", "pwr_active"];
   protected organizationType = [
-    "scientific_club",
+    "scientific_circle",
     "student_organization",
     "student_medium",
     "culture_agenda",
     "student_council",
   ];
-
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments("id");
