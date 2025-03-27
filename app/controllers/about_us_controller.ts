@@ -1,4 +1,4 @@
-import { compareLinkTypes } from "#enums/link_type";
+import { aboutUsLinkTypeOrder, compareLinkTypes } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";
 
@@ -15,7 +15,7 @@ export default class AboutUsController {
       data: {
         aboutUs,
         solvroSocialLinks: solvroSocialLinks.sort((a, b) =>
-          compareLinkTypes(a.linkType, b.linkType),
+          compareLinkTypes(a.linkType, b.linkType, aboutUsLinkTypeOrder),
         ),
       },
     };

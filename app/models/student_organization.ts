@@ -16,6 +16,7 @@ import type {
 import { typedModel } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
+import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
 import StudentOrganizationLink from "#models/student_organization_link";
@@ -68,6 +69,9 @@ export default class StudentOrganization extends BaseModel {
 
   @column()
   declare organizationType: OrganizationType;
+
+  @column()
+  declare organizationStatus: OrganizationStatus;
 
   @hasMany(() => StudentOrganizationLink, {
     onQuery: (query) => {

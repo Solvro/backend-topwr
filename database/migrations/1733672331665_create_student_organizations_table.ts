@@ -10,6 +10,8 @@ export default class extends BaseSchema {
     "culture_agenda",
     "student_council",
   ];
+  protected organizationStatus = ["active", "inactive", "dissolved", "unknown"];
+
   async up() {
     this.schema.createTable(this.tableName, (table) => {
       table.increments("id");
@@ -31,6 +33,13 @@ export default class extends BaseSchema {
         .enum("organization_type", this.organizationType, {
           useNative: true,
           enumName: "organization_type",
+          existingType: false,
+        })
+        .notNullable();
+      table
+        .enum("organization_status", this.organizationStatus, {
+          useNative: true,
+          enumName: "organization_status",
           existingType: false,
         })
         .notNullable();
