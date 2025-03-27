@@ -3,18 +3,18 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
 export default class extends BaseSchema {
   protected tableName = "contributor_social_links";
   protected linkTypes = [
-    "topwr:buildings",
-    "tel",
-    "mailto:",
     "default",
     "facebook",
     "instagram",
-    "discord",
     "linkedin",
-    "github",
-    "https://x.com",
+    "mailto:",
     "youtu",
+    "github",
+    "topwr:buildings",
+    "tel",
+    "https://x.com",
     "tiktok",
+    "discord",
     "twitch",
   ];
 

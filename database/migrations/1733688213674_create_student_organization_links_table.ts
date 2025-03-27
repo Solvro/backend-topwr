@@ -3,18 +3,18 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
 export default class extends BaseSchema {
   protected tableName = "student_organization_links";
   protected linkTypes = [
-    "topwr:buildings",
-    "tel",
-    "mailto:",
     "default",
     "facebook",
     "instagram",
-    "discord",
     "linkedin",
-    "github",
-    "https://x.com",
+    "mailto:",
     "youtu",
+    "github",
+    "topwr:buildings",
+    "tel",
+    "https://x.com",
     "tiktok",
+    "discord",
     "twitch",
   ];
 
@@ -23,7 +23,7 @@ export default class extends BaseSchema {
       table.increments("id");
       table.integer("student_organization_id").unsigned().notNullable();
       table
-        .enum("link_type", this.linkTypes, {
+        .enum("type", this.linkTypes, {
           useNative: true,
           enumName: "link_type",
           existingType: true,
