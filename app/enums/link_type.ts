@@ -1,36 +1,96 @@
+import { ActionRequest } from "adminjs";
+
+import logger from "@adonisjs/core/services/logger";
+
 export enum LinkType {
+  TopwrBuildings = "topwr:buildings",
+  Phone = "tel",
+  Mail = "mailto:",
   Default = "default",
   Facebook = "facebook",
   Instagram = "instagram",
-  LinkedIn = "linkedin",
-  Mail = "mailto:",
-  YouTube = "youtu",
-  GitHub = "github",
-  TopwrBuildings = "topwr:buildings",
-  Phone = "tel",
-  X = "https://x.com",
-  TikTok = "tiktok",
   Discord = "discord",
+  LinkedIn = "linkedin",
+  GitHub = "github",
+  X = "https://x.com",
+  YouTube = "youtu",
+  TikTok = "tiktok",
   Twitch = "twitch",
 }
 
-export const linkTypeEnumsValues = {
-  availableValues: [
-    { value: LinkType.Default, label: "Default" },
-    { value: LinkType.Facebook, label: "Facebook" },
-    { value: LinkType.Instagram, label: "Instagram" },
-    { value: LinkType.LinkedIn, label: "LinkedIn" },
-    { value: LinkType.Mail, label: "Email" },
-    { value: LinkType.YouTube, label: "YouTube" },
-    { value: LinkType.GitHub, label: "GitHub" },
-    { value: LinkType.TopwrBuildings, label: "TopwrBuildings" },
-    { value: LinkType.Phone, label: "Phone" },
-    { value: LinkType.X, label: "X" },
-    { value: LinkType.TikTok, label: "TikTok" },
-    { value: LinkType.Discord, label: "Discord" },
-    { value: LinkType.Twitch, label: "Twitch" },
-  ],
-};
+export const linkTypeOrder: LinkType[] = [
+  LinkType.TopwrBuildings, // 1
+  LinkType.Phone, // 2
+  LinkType.Default, // 3
+  LinkType.Mail, // 4
+  LinkType.Facebook, // 5
+  LinkType.Instagram, // 6
+  LinkType.Discord, // 7
+  LinkType.LinkedIn, // 8
+  LinkType.GitHub, // 9
+  LinkType.X, // 10
+  LinkType.YouTube, // 11
+  LinkType.TikTok, // 12
+  LinkType.Twitch, // 13
+];
+
+export const aboutUsLinkTypeOrder: LinkType[] = [
+  LinkType.TopwrBuildings, // 1
+  LinkType.Phone, // 2
+  LinkType.Mail, // 3
+  LinkType.Default, // 4
+  LinkType.GitHub, // 5
+  LinkType.LinkedIn, // 6
+  LinkType.Facebook, // 7
+  LinkType.Instagram, // 8
+  LinkType.Discord, // 9
+  LinkType.X, // 10
+  LinkType.YouTube, // 11
+  LinkType.TikTok, // 12
+  LinkType.Twitch, // 13
+];
+
+export function compareLinkTypes(
+  typeA: LinkType,
+  typeB: LinkType,
+  order: LinkType[],
+): number {
+  return order.indexOf(typeA) - order.indexOf(typeB);
+}
+
+export const applyLinkTypeSorting = `
+        CASE link_type
+          WHEN 'topwr:buildings' THEN 1
+          WHEN 'tel' THEN 2
+          WHEN 'default' THEN 3
+          WHEN 'mailto:' THEN 4
+          WHEN 'facebook' THEN 5
+          WHEN 'instagram' THEN 6
+          WHEN 'discord' THEN 7
+          WHEN 'linkedin' THEN 8
+          WHEN 'github' THEN 9
+          WHEN 'https://x.com' THEN 10
+          WHEN 'youtu' THEN 11
+          WHEN 'tiktok' THEN 12
+          WHEN 'twitch' THEN 13
+        END
+      `;
+
+export const linkTypeEnumsValues = [
+  { value: LinkType.TopwrBuildings, label: "TopwrBuildings" },
+  { value: LinkType.Phone, label: "Phone" },
+  { value: LinkType.Mail, label: "Email" },
+  { value: LinkType.Facebook, label: "Facebook" },
+  { value: LinkType.Instagram, label: "Instagram" },
+  { value: LinkType.Discord, label: "Discord" },
+  { value: LinkType.LinkedIn, label: "LinkedIn" },
+  { value: LinkType.GitHub, label: "GitHub" },
+  { value: LinkType.X, label: "X" },
+  { value: LinkType.YouTube, label: "YouTube" },
+  { value: LinkType.TikTok, label: "TikTok" },
+  { value: LinkType.Twitch, label: "Twitch" },
+  { value: LinkType.Default, label: "Default" },
+];
 
 const linkPatterns: [string, RegExp | undefined, LinkType][] = [
   ["facebook.com", undefined, LinkType.Facebook],
@@ -49,17 +109,72 @@ const linkPatterns: [string, RegExp | undefined, LinkType][] = [
 ];
 
 /**
+ * Spread this in a model with 'link' and 'linkType' properties for automatic link detection configuration.
+ * Remember to add new properties instead of overriding existing ones.
+ */
+export const linkTypeAutodetectSetUp = {
+  additionalProperties: {
+    linkType: {
+      availableValues: linkTypeEnumsValues,
+      isVisible: {
+        list: true,
+        show: true,
+        filter: true,
+        edit: false,
+      },
+    },
+  },
+  additionalActions: {
+    new: {
+      before: autoReplaceLinkType,
+    },
+    edit: {
+      before: autoReplaceLinkType,
+    },
+  },
+};
+
+export interface DetectionResult {
+  type: LinkType;
+  warning?: string;
+}
+
+/**
+ *  Function to add a hook on an Admin Panel field with a link.
+ *  It will automatically set the 'linkType' property of a model with a link field.
+ *  This hook will override any user-chosen link type value and, as such,
+ *  it is advised to set 'type' property visibility to false on new and edit views.
+ *  Use the 'linkTypeAutodetectSetUp' instead of directly using this function if possible.
+ */
+export async function autoReplaceLinkType(
+  request: ActionRequest,
+): Promise<ActionRequest> {
+  if (request.payload !== undefined) {
+    if (request.payload.link !== undefined) {
+      if (typeof request.payload.link !== "string") {
+        throw new Error("Link must be a string");
+      }
+      const detectedType: DetectionResult = detectLinkType(
+        request.payload.link,
+      );
+      if (detectedType.warning !== undefined) {
+        logger.info(`Admin panel: ${detectedType.warning}`);
+      }
+      request.payload.linkType = detectedType.type;
+    }
+  }
+  return request;
+}
+
+/**
  * Detects the link type of the given URL.
  *
- * This should never throw or return null/undefined - instead it may include the `warning` field in the result if any issues are encountered.
+ * This should never throw or return null/undefined – instead it may include the `warning` field in the result if any issues are encountered.
  * Make sure to check if this field is not undefined and handle the warning appropriately (such as by logging it)
  * @param link - the URL to examine
  * @returns an object with the detected link type and an optional warning
  */
-export function detectLinkType(link: string): {
-  type: LinkType;
-  warning?: string;
-} {
+export function detectLinkType(link: string): DetectionResult {
   let url;
   try {
     url = new URL(link);

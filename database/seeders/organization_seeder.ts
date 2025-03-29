@@ -2,6 +2,7 @@ import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
 import { LinkType } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
+import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
 import StudentOrganization from "#models/student_organization";
@@ -25,6 +26,7 @@ export default class extends BaseSeeder {
         coverPreview: true,
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
+        organizationStatus: OrganizationStatus.Active,
       },
       {
         name: "Student Organization 2",
@@ -35,7 +37,8 @@ export default class extends BaseSeeder {
         shortDescription: "Short Description",
         coverPreview: true,
         source: OrganizationSource.Manual,
-        organizationType: OrganizationType.StudentOrganization,
+        organizationType: OrganizationType.ScientificClub,
+        organizationStatus: OrganizationStatus.Inactive,
       },
       {
         name: "Student Organization 3",
@@ -46,7 +49,8 @@ export default class extends BaseSeeder {
         shortDescription: "Short Description",
         coverPreview: true,
         source: OrganizationSource.Manual,
-        organizationType: OrganizationType.StudentOrganization,
+        organizationType: OrganizationType.StudentCouncil,
+        organizationStatus: OrganizationStatus.Dissolved,
       },
     ]);
     const org1 = await StudentOrganization.first();
@@ -56,11 +60,11 @@ export default class extends BaseSeeder {
     await org1.related("links").createMany([
       {
         link: "https://example.com",
-        type: LinkType.LinkedIn,
+        linkType: LinkType.LinkedIn,
       },
       {
         link: "https://example.com",
-        type: LinkType.Default,
+        linkType: LinkType.Default,
       },
     ]);
     await org1.related("tags").createMany([

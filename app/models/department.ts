@@ -4,6 +4,7 @@ import { BaseModel, column, hasMany } from "@adonisjs/lucid/orm";
 import type { HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
+import { applyLinkTypeSorting } from "#enums/link_type";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -65,7 +66,11 @@ export default class Department extends BaseModel {
   @hasMany(() => FieldOfStudy)
   declare fieldOfStudy: HasMany<typeof FieldOfStudy>;
 
-  @hasMany(() => DepartmentLink)
+  @hasMany(() => DepartmentLink, {
+    onQuery: (query) => {
+      return query.orderByRaw(applyLinkTypeSorting);
+    },
+  })
   declare departmentLink: HasMany<typeof DepartmentLink>;
 
   static preloadRelations = preloadRelations(Department);

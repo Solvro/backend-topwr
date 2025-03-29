@@ -1,5 +1,6 @@
-import { linkTypeEnumsValues } from "#enums/link_type";
+import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import { organizationSourceEnumsValues } from "#enums/organization_source";
+import { organizationStatusEnumsValues } from "#enums/organization_status";
 import { organizationTypeEnumsValues } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
@@ -22,12 +23,13 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
         },
         organizationType: organizationTypeEnumsValues,
         source: organizationSourceEnumsValues,
+        organizationStatus: organizationStatusEnumsValues,
       },
       addImageHandlingForProperties: ["cover", "logo"],
     },
     {
       forModel: StudentOrganizationLink,
-      additionalProperties: { type: linkTypeEnumsValues },
+      ...linkTypeAutodetectSetUp,
     },
     {
       forModel: StudentOrganizationTag,
