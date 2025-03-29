@@ -158,7 +158,7 @@ export async function autoReplaceLinkType(
         request.payload.link,
       );
       if (detectedType.warning !== undefined) {
-        logger.info(detectedType.warning);
+        logger.info(`Admin panel: ${detectedType.warning}`);
       }
       request.payload.linkType = detectedType.type;
     }

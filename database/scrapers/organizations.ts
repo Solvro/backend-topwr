@@ -23,7 +23,7 @@ interface DirectusLink {
   id: number;
   name: string;
   link: string;
-  scientific_club_id: number | null;
+  scientific_circle_id: number | null;
 }
 
 interface DirectusOrganization {
@@ -50,7 +50,7 @@ interface FileMetaResponse {
 
 interface DirectusTagPivot {
   id: number;
-  Scientific_Clubs_id: number | null;
+  Scientific_Circles_id: number | null;
   Tags_id: number | null;
 }
 
@@ -140,7 +140,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
     task.update("Creating links...");
     await StudentOrganizationLink.createMany(
       links.data
-        .filter((link) => link.scientific_club_id !== null)
+        .filter((link) => link.scientific_circle_id !== null)
         .map((link) => {
           const url = link.link.includes(":")
             ? link.link
@@ -149,7 +149,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
             id: link.id,
             link: url,
             linkType: this.detectLinkType(url),
-            studentOrganizationId: link.scientific_club_id,
+            studentOrganizationId: link.scientific_circle_id,
           } as StudentOrganizationLink;
         }),
     );
@@ -174,7 +174,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
 
   private convertType(type: string): OrganizationType {
     switch (type) {
-      case "scientific_club":
+      case "scientific_cirlce": //XDDDDDD
         return OrganizationType.ScientificClub;
       case "student_organization":
         return OrganizationType.StudentOrganization;

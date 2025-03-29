@@ -37,7 +37,7 @@ export default class extends BaseSeeder {
         shortDescription: "Short Description",
         coverPreview: true,
         source: OrganizationSource.Manual,
-        organizationType: OrganizationType.StudentOrganization,
+        organizationType: OrganizationType.ScientificClub,
         organizationStatus: OrganizationStatus.Inactive,
       },
       {
@@ -49,7 +49,7 @@ export default class extends BaseSeeder {
         shortDescription: "Short Description",
         coverPreview: true,
         source: OrganizationSource.Manual,
-        organizationType: OrganizationType.StudentOrganization,
+        organizationType: OrganizationType.StudentCouncil,
         organizationStatus: OrganizationStatus.Dissolved,
       },
     ]);
