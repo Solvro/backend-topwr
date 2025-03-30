@@ -40,7 +40,7 @@ export default class BuildingSeeder extends BaseSeeder {
         haveFood: true,
         cover: "https://example.com/covers/building1.jpg",
         externalDigitalGuideMode: "web_url",
-        externalDigitalGuideIdOrURL:
+        externalDigitalGuideIdOrUrl:
           "https://dostepnosc.pwr.edu.pl/dostepnosc-architektoniczna/deklaracje-dostepnosci-budynkow/budynki-a/a2",
       },
       {
@@ -54,7 +54,7 @@ export default class BuildingSeeder extends BaseSeeder {
         haveFood: false,
         cover: "https://example.com/covers/building2.jpg",
         externalDigitalGuideMode: "id",
-        externalDigitalGuideIdOrURL: "5",
+        externalDigitalGuideIdOrUrl: "5",
       },
       {
         identifier: "B003",
