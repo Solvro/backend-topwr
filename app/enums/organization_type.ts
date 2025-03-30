@@ -10,7 +10,7 @@ export const organizationTypeEnumsValues = {
   availableValues: [
     {
       value: OrganizationType.ScientificClub,
-      label: "Scientific club",
+      label: "Scientific Club",
     },
     {
       value: OrganizationType.StudentOrganization,

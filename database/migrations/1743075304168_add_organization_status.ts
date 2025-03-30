@@ -3,7 +3,7 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
 export default class extends BaseSchema {
   protected tableName = "student_organizations";
   protected organizationStatus = ["active", "inactive", "dissolved", "unknown"];
-  protected organizationStatusDefault = this.organizationStatus[3];
+  protected organizationStatusDefault = "unknown";
 
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
@@ -15,12 +15,6 @@ export default class extends BaseSchema {
         })
         .defaultTo(this.organizationStatusDefault)
         .notNullable();
-    });
-    this.defer(async (db) => {
-      await db
-        .from(this.tableName)
-        .update({ organization_status: this.organizationStatusDefault })
-        .whereNull("organization_status");
     });
   }
 
