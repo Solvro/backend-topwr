@@ -1,5 +1,9 @@
 import { scope } from "@adonisjs/lucid/orm";
-import { LucidModel } from "@adonisjs/lucid/types/model";
+import {
+  LucidModel,
+  ModelQueryBuilderContract,
+  QueryScope,
+} from "@adonisjs/lucid/types/model";
 
 import { BadRequestException } from "#exceptions/http_exceptions";
 
@@ -22,8 +26,10 @@ import { BadRequestException } from "#exceptions/http_exceptions";
  * @param model - The Lucid model instance.
  * @returns scope that takes unknown sort param and tries to parse it using regex rule
  */
-export const handleSortQuery = <T extends LucidModel>(model: T) =>
-  scope((query, sort: unknown) => {
+export function handleSortQuery<T extends LucidModel>(
+  model: T,
+): QueryScope<T, (query: ModelQueryBuilderContract<T>, sort: unknown) => void> {
+  return scope((query, sort) => {
     if (typeof sort !== "string") {
       // means no value provided
       return;
@@ -43,3 +49,4 @@ export const handleSortQuery = <T extends LucidModel>(model: T) =>
     query = query.orderBy(column, prefix === "-" ? "desc" : "asc");
     return query;
   });
+}

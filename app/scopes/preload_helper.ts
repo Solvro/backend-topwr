@@ -2,8 +2,8 @@ import logger from "@adonisjs/core/services/logger";
 import { scope } from "@adonisjs/lucid/orm";
 import {
   LucidModel,
-  LucidRow,
   ModelQueryBuilderContract,
+  QueryScope,
 } from "@adonisjs/lucid/types/model";
 import { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
 
@@ -24,20 +24,23 @@ import { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
  *    scopes.preloadRelations(request.only(["campus"]));
  *  });
  */
-export const preloadRelations = <T extends LucidModel>(model: T) =>
-  scope(
-    (
-      query: ModelQueryBuilderContract<LucidModel, LucidRow>,
-      relations: Partial<Record<string, string>>,
-    ) => {
-      for (const [relation, value] of Object.entries(relations)) {
-        if (value === "1" || value === "true") {
-          query = preloadSinglePath(query, model, relation.split("."));
-        }
+export function preloadRelations<T extends LucidModel>(
+  model: T,
+): QueryScope<
+  T,
+  (
+    query: ModelQueryBuilderContract<T>,
+    relations: Partial<Record<string, boolean>>,
+  ) => void
+> {
+  return scope((query, relations) => {
+    for (const [relation, value] of Object.entries(relations)) {
+      if (value === true) {
+        query = preloadSinglePath(query, model, relation.split("."));
       }
-      return query;
-    },
-  );
+    }
+  });
+}
 
 /**
  * Helper function to work with recursively loaded chained relations

@@ -4,10 +4,10 @@ import logger from "@adonisjs/core/services/logger";
 import { scope } from "@adonisjs/lucid/orm";
 import {
   LucidModel,
-  LucidRow,
   ModelAttributes,
   ModelColumnOptions,
   ModelQueryBuilderContract,
+  QueryScope,
 } from "@adonisjs/lucid/types/model";
 
 import { BadRequestException } from "#exceptions/http_exceptions";
@@ -90,38 +90,42 @@ export type QueryValues =
  * **NOTE**
  *  - Consider using **@TypedModel** decorator on model to inject type property into every column easily
  */
-export const handleSearchQuery = <T extends LucidModel>(model: T) =>
-  scope(
-    (
-      query,
-      qs: Record<string, string | string[] | FromTo | undefined>,
-      ...excluded: Partial<keyof ModelAttributes<InstanceType<T>>>[]
-    ) => {
-      for (const [queryParam, queryValue] of Object.entries(qs)) {
-        const entry = extractEntry(
-          queryParam,
-          queryValue,
-          excluded as string[],
-          model,
-        );
-        if (entry === undefined) {
-          continue;
-        }
-
-        const [column, value] = entry;
-        if (Array.isArray(value)) {
-          query = handleArray(query, column, value);
-        } else if (typeof value === "object") {
-          query = handleFromTo(query, column, value);
-        } else {
-          query = handleDirectValue(query, column, value);
-        }
+export function handleSearchQuery<T extends LucidModel>(
+  model: T,
+): QueryScope<
+  T,
+  (
+    query: ModelQueryBuilderContract<T>,
+    qs: Record<string, string | string[] | FromTo | undefined>,
+    ...excluded: Partial<keyof ModelAttributes<InstanceType<T>>>[]
+  ) => void
+> {
+  return scope((query, qs, ...excluded) => {
+    for (const [queryParam, queryValue] of Object.entries(qs)) {
+      const entry = extractEntry(
+        queryParam,
+        queryValue,
+        excluded as string[],
+        model,
+      );
+      if (entry === undefined) {
+        continue;
       }
-    },
-  );
 
-function handleArray(
-  query: ModelQueryBuilderContract<LucidModel, LucidRow>,
+      const [column, value] = entry;
+      if (Array.isArray(value)) {
+        query = handleArray(query, column, value);
+      } else if (typeof value === "object") {
+        query = handleFromTo(query, column, value);
+      } else {
+        query = handleDirectValue(query, column, value);
+      }
+    }
+  });
+}
+
+function handleArray<T extends LucidModel>(
+  query: ModelQueryBuilderContract<T>,
   column: ColumnDefExplicit,
   values: string[],
 ) {
@@ -142,8 +146,8 @@ function handleArray(
   return query;
 }
 
-function handleFromTo(
-  query: ModelQueryBuilderContract<LucidModel, LucidRow>,
+function handleFromTo<T extends LucidModel>(
+  query: ModelQueryBuilderContract<T>,
   column: ColumnDefExplicit,
   value: FromTo,
 ) {
@@ -197,8 +201,8 @@ function handleFromTo(
   return query;
 }
 
-function handleDirectValue(
-  query: ModelQueryBuilderContract<LucidModel, LucidRow>,
+function handleDirectValue<T extends LucidModel>(
+  query: ModelQueryBuilderContract<T>,
   column: ColumnDefExplicit,
   value: string,
 ) {
