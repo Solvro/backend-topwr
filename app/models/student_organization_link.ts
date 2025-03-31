@@ -14,7 +14,7 @@ export default class StudentOrganizationLink extends BaseModel {
   declare link: string;
 
   @column()
-  declare type: LinkType;
+  declare linkType: LinkType;
 
   @column()
   declare studentOrganizationId: number;

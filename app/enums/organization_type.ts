@@ -1,5 +1,5 @@
 export enum OrganizationType {
-  ScientificCircle = "scientific_circle",
+  ScientificClub = "scientific_club",
   StudentOrganization = "student_organization",
   StudentMedium = "student_medium",
   CultureAgenda = "culture_agenda",
@@ -9,8 +9,8 @@ export enum OrganizationType {
 export const organizationTypeEnumsValues = {
   availableValues: [
     {
-      value: OrganizationType.ScientificCircle,
-      label: "Scientific Circle",
+      value: OrganizationType.ScientificClub,
+      label: "Scientific Club",
     },
     {
       value: OrganizationType.StudentOrganization,

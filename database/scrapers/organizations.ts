@@ -2,6 +2,7 @@ import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import { OrganizationSource } from "#enums/organization_source";
+import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
@@ -112,6 +113,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
         coverPreview: org.useCoverAsPreviewPhoto,
         source: this.convertSource(org.source),
         organizationType: this.convertType(org.type),
+        organizationStatus: OrganizationStatus.Unknown,
       });
       const undefinedTags = [];
       const tagNames = [];
@@ -146,7 +148,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
           return {
             id: link.id,
             link: url,
-            type: this.detectLinkType(url),
+            linkType: this.detectLinkType(url),
             studentOrganizationId: link.scientific_circle_id,
           } as StudentOrganizationLink;
         }),
@@ -173,7 +175,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
   private convertType(type: string): OrganizationType {
     switch (type) {
       case "scientific_cirlce": //XDDDDDD
-        return OrganizationType.ScientificCircle;
+        return OrganizationType.ScientificClub;
       case "student_organization":
         return OrganizationType.StudentOrganization;
       case "student_media":

@@ -14,7 +14,9 @@ import type {
 } from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
+import { applyLinkTypeSorting } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
+import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
 import Department from "#models/department";
 import StudentOrganizationLink from "#models/student_organization_link";
@@ -34,6 +36,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
   coverPreview: "boolean",
   source: OrganizationSource,
   organizationType: OrganizationType,
+  organizationStatus: OrganizationStatus,
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })
@@ -68,7 +71,14 @@ export default class StudentOrganization extends BaseModel {
   @column()
   declare organizationType: OrganizationType;
 
-  @hasMany(() => StudentOrganizationLink)
+  @column()
+  declare organizationStatus: OrganizationStatus;
+
+  @hasMany(() => StudentOrganizationLink, {
+    onQuery: (query) => {
+      return query.orderByRaw(applyLinkTypeSorting);
+    },
+  })
   declare links: HasMany<typeof StudentOrganizationLink>;
 
   @manyToMany(() => StudentOrganizationTag, {

@@ -1,5 +1,5 @@
 import { changeTypeEnumsValues } from "#enums/change_type";
-import { linkTypeEnumsValues } from "#enums/link_type";
+import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import Change from "#models/change";
 import ChangeScreenshot from "#models/change_screenshot";
 import Contributor from "#models/contributor";
@@ -21,7 +21,7 @@ export const VersionsBuilder: ResourceBuilder = {
     { forModel: Change, additionalProperties: { type: changeTypeEnumsValues } },
     {
       forModel: ContributorSocialLink,
-      additionalProperties: { linkType: linkTypeEnumsValues },
+      ...linkTypeAutodetectSetUp,
     },
     { forModel: ChangeScreenshot },
     {
