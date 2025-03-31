@@ -22,8 +22,9 @@ interface Scopes<T extends LucidModel> {
 }
 
 // Utility type that removes the first parameter from a function type
+// (skips the query parameter in scopes, replicating adonis magic)
 type ScopeMethod<F, M extends LucidModel> = F extends (
-  arg1: ModelQueryBuilderContract<M>,
+  query: ModelQueryBuilderContract<M>,
   ...args: infer P
 ) => infer R
   ? (...args: P) => R
