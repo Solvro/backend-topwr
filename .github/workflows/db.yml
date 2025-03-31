@@ -1,4 +1,4 @@
-name: Migration check
+name: Migrations
 
 on:
   pull_request:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   fresh-db:
+    name: Fresh database
     runs-on: ubuntu-latest
     env:
       DB_HOST: 127.0.0.1
