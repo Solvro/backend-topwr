@@ -28,13 +28,19 @@ export default class AcademicCalendar extends BaseModel {
   @column()
   declare name: string;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare semesterStartDate: DateTime;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare examSessionStartDate: DateTime;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare examSessionLastDate: DateTime;
 
   @column()
