@@ -27,7 +27,9 @@ export default class DaySwap extends BaseModel {
   @column()
   declare academicCalendarId: number;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare date: DateTime;
 
   @column()

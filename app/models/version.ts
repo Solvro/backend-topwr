@@ -31,7 +31,9 @@ export default class Version extends BaseModel {
   @column()
   declare name: string;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare releaseDate: DateTime | null;
 
   @column()

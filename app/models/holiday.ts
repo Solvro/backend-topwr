@@ -26,10 +26,14 @@ export default class Holiday extends BaseModel {
   @column()
   declare academicCalendarId: number;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare startDate: DateTime;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare lastDate: DateTime;
 
   @column()

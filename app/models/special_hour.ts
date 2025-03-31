@@ -9,7 +9,9 @@ export default class SpecialHour extends BaseModel {
   @column({ isPrimary: true })
   declare id: number;
 
-  @column.date()
+  @column.date({
+    prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
+  })
   declare specialDate: DateTime;
 
   @column()
