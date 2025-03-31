@@ -30,12 +30,12 @@ export function preloadRelations<T extends LucidModel>(
   T,
   (
     query: ModelQueryBuilderContract<T>,
-    relations: Partial<Record<string, string>>,
+    relations: Partial<Record<string, boolean>>,
   ) => void
 > {
   return scope((query, relations) => {
     for (const [relation, value] of Object.entries(relations)) {
-      if (value === "1" || value === "true") {
+      if (value === true) {
         query = preloadSinglePath(query, model, relation.split("."));
       }
     }

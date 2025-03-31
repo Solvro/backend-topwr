@@ -1,3 +1,6 @@
+import vine, { VineBoolean, VineObject, VineValidator } from "@vinejs/vine";
+import { OptionalModifier } from "@vinejs/vine/schema/base/literal";
+
 import type { HttpContext } from "@adonisjs/core/http";
 import {
   ExtractScopes,
@@ -30,11 +33,46 @@ type ScopesWithoutFirstArg<T extends LucidModel> = {
   [K in keyof Scopes<T>]: ScopeMethod<Scopes<T>[K], T>;
 };
 
-const validationCache = new Map<LucidModel, Map<string, BaseError | null>>();
+type RelationValidator = VineValidator<
+  VineObject<
+    Record<string, OptionalModifier<VineBoolean>>,
+    Record<string, string | number | boolean | null | undefined>,
+    Record<string, boolean | undefined>,
+    Record<string, boolean | undefined>
+  >,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- that's how it is in the actual type, unknown just breaks things here :(
+  undefined | Record<string, any>
+>;
+
+const selfValidationCache = new Map<
+  LucidModel,
+  Map<string, BaseError | null>
+>();
+const relationValidatorCache = new Map<string, RelationValidator>();
 
 export default abstract class BaseController<T extends LucidModel & Scopes<T>> {
   protected abstract readonly relations: string[];
   protected abstract readonly model: T;
+
+  protected get relationValidator(): RelationValidator {
+    // check cache
+    const cacheKey = JSON.stringify(this.relations);
+    const cachedEntry = relationValidatorCache.get(cacheKey);
+    if (cachedEntry !== undefined) {
+      return cachedEntry;
+    }
+
+    // construct validator
+    const validator = vine.compile(
+      vine.object(
+        Object.fromEntries(
+          this.relations.map((rel) => [rel, vine.boolean().optional()]),
+        ),
+      ),
+    );
+    relationValidatorCache.set(cacheKey, validator);
+    return validator;
+  }
 
   /**
    * Verify that this controller was implemented correctly
@@ -43,10 +81,10 @@ export default abstract class BaseController<T extends LucidModel & Scopes<T>> {
    */
   protected async selfValidate() {
     // cache
-    let modelValidationCache = validationCache.get(this.model);
+    let modelValidationCache = selfValidationCache.get(this.model);
     if (modelValidationCache === undefined) {
       modelValidationCache = new Map();
-      validationCache.set(this.model, modelValidationCache);
+      selfValidationCache.set(this.model, modelValidationCache);
     }
     const cacheKey = JSON.stringify(this.relations);
     const cachedEntry = modelValidationCache.get(cacheKey);
@@ -130,11 +168,12 @@ export default abstract class BaseController<T extends LucidModel & Scopes<T>> {
   async index({ request }: HttpContext): Promise<unknown> {
     await this.selfValidate();
     const { page, limit } = await request.validateUsing(paginationValidator);
+    const relations = await request.validateUsing(this.relationValidator);
     const baseQuery = this.model
       .query()
       .withScopes((scopes: ExtractScopes<T> & ScopesWithoutFirstArg<T>) => {
         scopes.handleSearchQuery(request.qs());
-        scopes.preloadRelations(request.only(this.relations));
+        scopes.preloadRelations(relations);
         scopes.handleSortQuery(request.input("sort"));
       });
     if (page === undefined) {
