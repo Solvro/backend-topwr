@@ -31,10 +31,9 @@ export default class HttpExceptionHandler extends ExceptionHandler {
       error: {
         message: report.message,
         code: report.code,
-        validationIssues:
-          report.code === "E_VALIDATION_ERROR"
-            ? (report.validationIssues ?? [])
-            : undefined,
+        validationIssues: report.code.includes("VALIDATION_ERROR")
+          ? (report.validationIssues ?? [])
+          : undefined,
         causeStack: report.sensitive ? undefined : report.causeStack,
         rootStackTrace: this.debug ? report.rootStackTrace : undefined,
       },
