@@ -1,4 +1,4 @@
-name: Migration check
+name: Migrations
 
 on:
   pull_request:
@@ -7,7 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  migration-check:
+  fresh-db:
+    name: Fresh database
     runs-on: ubuntu-latest
     env:
       DB_HOST: 127.0.0.1
@@ -43,6 +44,9 @@ jobs:
 
       - name: Run AdonisJS migrations
         run: node ace migration:run
+
+      - name: Run seeders
+        run: node ace db:seed
 
       - name: Rollback and rerun AdonisJS migrations
         run: node ace migration:refresh

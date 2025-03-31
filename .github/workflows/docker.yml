@@ -1,4 +1,4 @@
-name: Docker images
+name: Docker
 
 on:
   push:
@@ -6,7 +6,8 @@ on:
   pull_request:
 
 jobs:
-  lint:
+  build-image:
+    name: Build image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

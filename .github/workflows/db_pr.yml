@@ -1,0 +1,258 @@
+name: Migrations(PR)
+
+on:
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  upgrade-then-seed:
+    # this job verifies that the migrations behave correctly on an existing but empty database
+    name: Upgrade then seed
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: postgres
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Check out the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Run existing AdonisJS migrations
+        run: node ace migration:run
+
+      - name: Check out the PR branch
+        uses: actions/checkout@v4
+
+      - name: Reinstall dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment (again)
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Run new AdonisJS migrations
+        run: node ace migration:run
+
+      - name: Seed the database
+        run: node ace db:seed
+
+      - name: Tear down the database
+        run: node ace migration:rollback --batch=0
+
+  seed-then-upgrade:
+    # this job verifies that the migrations behave correctly on an existing database populated with some data
+    name: Upgrade a seeded database
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: postgres
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Check out the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Run existing AdonisJS migrations
+        run: node ace migration:run
+
+      - name: Seed the database
+        run: node ace db:seed
+
+      - name: Check out the PR branch
+        uses: actions/checkout@v4
+
+      - name: Reinstall dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment (again)
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Run new AdonisJS migrations
+        run: node ace migration:run
+
+      - name: Tear down the database
+        run: node ace migration:rollback --batch=0
+
+  new-migration-ordering:
+    # this job verifies that new migrations are ordered after existing ones
+    name: Verify ordering
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need full history for diffing
+
+      - name: Fetch the base commit
+        run: git fetch origin $REF_TO_FETCH:base-branch
+        env:
+          REF_TO_FETCH: ${{ github.base_ref }}
+
+      - name: Verify new migration order
+        run: |
+          DIFFED=`git diff --name-only --diff-filter=A --relative=database/migrations base-branch..HEAD database/migrations | sort`
+          EXPECTED=$(ls -1 database/migrations | sort | tail -n -`echo "$DIFFED" | wc -l`)
+          [[ -z "$DIFFED" ]] && echo "No migrations added" && exit 0 || true
+          if ! [[ "$DIFFED" == "$EXPECTED" ]];
+          then
+            echo "Detected migrations inserted in between existing ones! Please verify that all new migrations sort AFTER all the existing migrations!"
+            for file in $DIFFED;
+            do
+              if ! echo "$EXPECTED" | grep "$file" > /dev/null;
+              then
+                echo "::error file=database/migrations/$file,line=1::Incorrectly ordered migration file - Rename this file so that it sorts after all existing migrations!";
+              fi
+            done
+            exit 1
+          fi
+
+  existing-migration-consistency:
+    # this job verifies that existing migrations' behaviour did not change
+    name: Verify existing migrations
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: postgres
+      PGPASSWORD: postgres
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Create additional databases
+        run: |
+          psql postgresql://postgres@localhost <<EOF
+          CREATE DATABASE topwr1;
+          CREATE DATABASE topwr2;
+          EOF
+
+      - name: Check out the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Run existing AdonisJS migrations
+        run: node ace migration:run
+        env:
+          DB_DATABASE: topwr1
+
+      - name: Check out the PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need full history for diffing
+
+      - name: Fetch the base commit
+        run: git fetch origin $REF_TO_FETCH:base-branch
+        env:
+          REF_TO_FETCH: ${{ github.base_ref }}
+
+      - name: Delete new migrations
+        run: |
+          rm -v `git diff --name-only --diff-filter=A base-branch..HEAD database/migrations` || true
+
+      - name: Reinstall dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment (again)
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Run new AdonisJS migrations
+        run: node ace migration:run
+        env:
+          DB_DATABASE: topwr2
+
+      - name: Drop adonis-internal tables and diff the schema
+        run: |
+          psql postgresql://postgres@localhost <<EOF
+          \c topwr1
+          DROP TABLE adonis_schema;
+          DROP TABLE adonis_schema_versions;
+          \c topwr2
+          DROP TABLE adonis_schema;
+          DROP TABLE adonis_schema_versions;
+          EOF
+          PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump --schema-only postgresql://postgres@localhost/topwr1 > topwr1.sql
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump --schema-only postgresql://postgres@localhost/topwr2 > topwr2.sql
+          echo "Diffing schemas - any output below means failure!"
+          STOP_MARKER=`uuidgen`
+          echo "::stop-commands::$STOP_MARKER"
+          diff topwr1.sql topwr2.sql || (echo "Detected behaviour changes in existing migrations!" && exit 1)
+          echo "::$STOP_MARKER::"
