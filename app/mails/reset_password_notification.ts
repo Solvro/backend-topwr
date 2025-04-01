@@ -18,13 +18,17 @@ export default class ResetPasswordNotification extends BaseMail {
    * the email is sent or queued.
    */
   prepare() {
+    // NOTE: the link works using postman or other API testing tool.
+    // It needs a json type body of
+    // {
+    // "password": "actualpassword"
+    // }
     this.message.html(`
       <html>
         <body style="font-family: sans-serif;">
-          <p>We received a request to reset your password for your account.</p>
-          <p>Click the link below to reset your password:</p>
+          <p>THIS IS AN EMAIL MOCK !!!</>
+          <p>The link below is a PUT endpoint. Form page not implemented</p>
           <p><a href="${this.url}">Reset Password</a></p>
-          <p>If you did not request this, please ignore this email.</p>
         </body>
       </html>
       `);
