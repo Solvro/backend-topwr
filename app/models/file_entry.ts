@@ -2,7 +2,14 @@ import { DateTime } from "luxon";
 import { randomUUID } from "node:crypto";
 import type { UUID } from "node:crypto";
 
-import { BaseModel, column } from "@adonisjs/lucid/orm";
+import drive from "@adonisjs/drive/services/main";
+import {
+  BaseModel,
+  afterFetch,
+  afterFind,
+  column,
+  computed,
+} from "@adonisjs/lucid/orm";
 
 export default class FileEntry extends BaseModel {
   @column({ isPrimary: true })
@@ -17,8 +24,25 @@ export default class FileEntry extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
+  @computed()
+  url: string | undefined;
+
   get keyWithExtension() {
     return `${this.id}.${this.fileExtension}`;
+  }
+
+  async computeExtraProps() {
+    this.url = await drive.use().getUrl(this.keyWithExtension);
+  }
+
+  @afterFetch()
+  static async afterFetch(files: FileEntry[]) {
+    await Promise.all(files.map((f) => f.computeExtraProps()));
+  }
+
+  @afterFind()
+  static async afterFind(file: FileEntry) {
+    await file.computeExtraProps();
   }
 
   public static createNew(extname: string | undefined): FileEntry {
