@@ -20,6 +20,7 @@ export const DepartmentsBuilder: ResourceBuilder = {
     {
       forModel: Department,
       additionalProperties: { description: { type: "richtext" } },
+      addImageHandlingForProperties: ["logoKey"],
     },
   ],
   navigation,

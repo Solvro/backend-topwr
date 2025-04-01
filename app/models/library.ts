@@ -22,7 +22,7 @@ import SpecialHour from "./special_hour.js";
   email: "string",
   latitude: "number",
   longitude: "number",
-  photoUrl: "string",
+  photoKey: "string",
   buildingId: "number",
   createdAt: "DateTime",
   updatedAt: "DateTime",
@@ -56,7 +56,7 @@ export default class Library extends BaseModel {
   declare longitude: number;
 
   @column()
-  declare photoUrl: string | null;
+  declare photoKey: string | null;
 
   @column()
   declare buildingId: number | null;

@@ -25,7 +25,7 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
         source: organizationSourceEnumsValues,
         organizationStatus: organizationStatusEnumsValues,
       },
-      addImageHandlingForProperties: ["cover", "logo"],
+      addImageHandlingForProperties: ["coverKey", "logoKey"],
     },
     {
       forModel: StudentOrganizationLink,

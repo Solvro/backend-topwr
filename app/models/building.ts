@@ -26,7 +26,7 @@ import Library from "./library.js";
   latitude: "number",
   longitude: "number",
   haveFood: "boolean",
-  cover: "string",
+  coverKey: "string",
   externalDigitalGuideMode: "string",
   externalDigitalGuideIdOrUrl: "string",
   createdAt: "DateTime",
@@ -64,7 +64,7 @@ export default class Building extends BaseModel {
   declare haveFood: boolean;
 
   @column()
-  declare cover: string | null;
+  declare coverKey: string | null;
 
   @column()
   declare externalDigitalGuideMode: string | null;

@@ -15,7 +15,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
   title: "string",
   shortDesc: "string",
   description: "string",
-  imagePath: "string",
+  imageKey: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })
@@ -33,7 +33,7 @@ export default class GuideArticle extends BaseModel {
   declare description: string;
 
   @column()
-  declare imagePath: string;
+  declare imageKey: string;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

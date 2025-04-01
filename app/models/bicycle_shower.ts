@@ -28,7 +28,7 @@ export default class BicycleShower extends BaseModel {
   declare addressLine2: string | null;
 
   @column()
-  declare photoUrl: string | null;
+  declare photoKey: string | null;
 
   @column()
   declare buildingId: number | null;

@@ -19,7 +19,7 @@ import FieldOfStudy from "./field_of_study.js";
   addressLine2: "string",
   code: "string",
   betterCode: "string",
-  logo: "string",
+  logoKey: "string",
   description: "string",
   gradientStart: "string",
   gradientStop: "string",
@@ -46,7 +46,7 @@ export default class Department extends BaseModel {
   declare betterCode: string;
 
   @column()
-  declare logo: string | null;
+  declare logoKey: string | null;
 
   @column()
   declare description: string | null;

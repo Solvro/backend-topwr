@@ -25,7 +25,7 @@ export default class FoodSpot extends BaseModel {
   declare longitude: number;
 
   @column()
-  declare photoUrl: string | null;
+  declare photoKey: string | null;
 
   @column()
   declare buildingId: number | null;

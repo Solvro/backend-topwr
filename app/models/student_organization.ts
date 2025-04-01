@@ -29,8 +29,8 @@ import { handleSortQuery } from "#scopes/sort_helper";
   id: "number",
   name: "string",
   departmentId: "number",
-  logo: "string",
-  cover: "string",
+  logoKey: "string",
+  coverKey: "string",
   description: "string",
   shortDescription: "string",
   coverPreview: "boolean",
@@ -51,10 +51,10 @@ export default class StudentOrganization extends BaseModel {
   declare departmentId: number | null;
 
   @column()
-  declare logo: string | null;
+  declare logoKey: string | null;
 
   @column()
-  declare cover: string | null;
+  declare coverKey: string | null;
 
   @column()
   declare description: string | null;

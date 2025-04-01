@@ -13,7 +13,7 @@ import Building from "./building.js";
 @typedModel({
   id: "number",
   name: "string",
-  cover: "string",
+  coverKey: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })
@@ -25,7 +25,7 @@ export default class Campus extends BaseModel {
   declare name: string;
 
   @column()
-  declare cover: string | null;
+  declare coverKey: string | null;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
