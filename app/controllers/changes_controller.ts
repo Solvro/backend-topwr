@@ -7,6 +7,7 @@ export default class ChangesController extends BaseController<typeof Change> {
   protected readonly relations = [
     "version",
     "screenshots",
+    "screenshots.image",
     "version.milestone",
   ];
   protected readonly model = Change;

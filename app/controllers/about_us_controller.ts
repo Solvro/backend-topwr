@@ -9,6 +9,7 @@ export default class AboutUsController {
   async index() {
     const aboutUs = await AboutUsGeneral.query()
       .orderBy("created_at", "asc")
+      .preload("coverPhoto")
       .first();
     const solvroSocialLinks = await AboutUsGeneralLink.all();
     return {

@@ -25,6 +25,8 @@ import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
+import FileEntry from "./file_entry.js";
+
 @typedModel({
   id: "number",
   name: "string",
@@ -93,6 +95,18 @@ export default class StudentOrganization extends BaseModel {
 
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "logoKey",
+  })
+  declare logo: BelongsTo<typeof FileEntry>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "coverKey",
+  })
+  declare cover: BelongsTo<typeof FileEntry>;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

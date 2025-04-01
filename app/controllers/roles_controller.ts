@@ -8,6 +8,7 @@ export default class RolesController extends BaseController<typeof Role> {
     "contributors",
     "contributors.socialLinks",
     "contributors.milestones",
+    "contributors.photo",
   ];
   protected readonly model = Role;
 }

@@ -4,6 +4,7 @@ import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import Building from "./building.js";
+import FileEntry from "./file_entry.js";
 
 export default class FoodSpot extends BaseModel {
   @column({ isPrimary: true })
@@ -38,4 +39,10 @@ export default class FoodSpot extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "photoKey",
+  })
+  declare photo: BelongsTo<typeof FileEntry>;
 }

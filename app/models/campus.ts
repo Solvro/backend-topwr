@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column, hasMany } from "@adonisjs/lucid/orm";
-import type { HasMany } from "@adonisjs/lucid/types/relations";
+import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
+import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
@@ -9,6 +9,7 @@ import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
 import Building from "./building.js";
+import FileEntry from "./file_entry.js";
 
 @typedModel({
   id: "number",
@@ -35,6 +36,12 @@ export default class Campus extends BaseModel {
 
   @hasMany(() => Building)
   declare buildings: HasMany<typeof Building>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "coverKey",
+  })
+  declare cover: BelongsTo<typeof FileEntry>;
 
   static preloadRelations = preloadRelations(Campus);
 

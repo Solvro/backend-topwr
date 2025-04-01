@@ -9,6 +9,7 @@ import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
 import Building from "./building.js";
+import FileEntry from "./file_entry.js";
 import RegularHour from "./regular_hour.js";
 import SpecialHour from "./special_hour.js";
 
@@ -75,6 +76,12 @@ export default class Library extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "photoKey",
+  })
+  declare photo: BelongsTo<typeof FileEntry>;
 
   static preloadRelations = preloadRelations(Library);
   static handleSearchQuery = handleSearchQuery(Library);
