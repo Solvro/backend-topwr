@@ -42,8 +42,8 @@ export class NotImplementedException extends BaseError {
 
 export class TooManyRequestsException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
-    super(message ?? "To many requests", {
-      code: "E_TO_MANY_REQUESTS",
+    super(message ?? "Too many requests", {
+      code: "E_TOO_MANY_REQUESTS",
       ...options,
       status: 429,
     });
