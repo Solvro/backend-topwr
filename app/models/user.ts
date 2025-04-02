@@ -1,5 +1,4 @@
 import { DateTime } from "luxon";
-import crypto from "node:crypto";
 
 import { withAuthFinder } from "@adonisjs/auth/mixins/lucid";
 import { compose } from "@adonisjs/core/helpers";
@@ -50,10 +49,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   }
 
   static compareTokens = scope((query, token: string) => {
-    void query.where(
-      "reset_password_token",
-      crypto.createHash("sha256").update(token, "utf-8").digest("hex"),
-    );
+    void query.where("reset_password_token", sha256(token));
   });
 
   hasValidResetToken() {
