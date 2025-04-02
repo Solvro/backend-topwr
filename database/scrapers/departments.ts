@@ -97,7 +97,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             `Response body is null for department ${departmentEntry.id} with asset id ${departmentEntry.logo}`,
           );
         }
-        const name = await FilesService.uploadStream(
+        const logoFile = await FilesService.uploadStream(
           Readable.fromWeb(fileResponse.body),
           extension,
         );
@@ -117,7 +117,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             addressLine2,
             code: departmentEntry.code,
             betterCode: departmentEntry.betterCode,
-            logo: name,
+            logoKey: logoFile.id,
             description: departmentEntry.description,
             gradientStart: departmentEntry.gradient_start,
             gradientStop: departmentEntry.gradient_end,

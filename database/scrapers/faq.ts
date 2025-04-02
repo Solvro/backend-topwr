@@ -53,7 +53,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
     "Articles, questions, answers, and authors of the FAQ section";
   static taskTitle = "Scrape the faq section";
 
-  async uploadImage(imageUrl: string) {
+  async uploadImage(imageUrl: string): Promise<string> {
     const [fetchedImage, fetchedImageMetadata] = await Promise.all([
       fetch(`https://admin.topwr.solvro.pl/assets/${imageUrl}`),
       fetch(`https://admin.topwr.solvro.pl/files/${imageUrl}`),
@@ -97,7 +97,8 @@ export default class FaqSectionScrapper extends BaseScraperModule {
 
     const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
 
-    return await FilesService.uploadStream(stream, extension);
+    const file = await FilesService.uploadStream(stream, extension);
+    return file.id;
   }
 
   async run(task: TaskHandle) {
@@ -163,9 +164,9 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         }
       }
 
-      let imagePath = "";
+      let imageKey = "";
       try {
-        imagePath = await this.uploadImage(article.cover);
+        imageKey = await this.uploadImage(article.cover);
       } catch (error) {
         this.logger.error(
           `Failed to upload article cover image for article: ${article.id}: ${error}`,
@@ -177,7 +178,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         title: article.name,
         shortDesc: article.short_description,
         description: article.description ?? "",
-        imagePath,
+        imageKey,
         createdAt,
         updatedAt,
       });

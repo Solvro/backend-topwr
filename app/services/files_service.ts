@@ -9,9 +9,10 @@ import {
   FileServiceFileDiskDeleteError,
   FileServiceFileMetadataDeleteError,
   FileServiceFilePersistError,
-  FileServiceFileReadError,
   FileServiceFileUploadError,
 } from "#exceptions/file_service_errors";
+import FileEntry from "#models/file_entry";
+
 // Notes on the file storage system:
 // - files are currently saved on disk, under the `storage/` directory
 //   - this may be changed to use some external file storage service in the future
@@ -21,18 +22,16 @@ import {
 //   - making files mutable would increase complexity related to caching
 //   - the mobile client currently caches files by URL/key for 1 month
 
-import FileEntry from "#models/file_entry";
-
 export default class FilesService {
   /**
    * Uploads a multipart file to storage.
    *
    * Use this if you're handling an API request and received a `MultipartFile` from adonis
    * @param file - The file to upload
-   * @returns Key of the newly uploaded file
+   * @returns File entry representing the uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
-  static async uploadMultipartFile(file: MultipartFile): Promise<string> {
+  static async uploadMultipartFile(file: MultipartFile): Promise<FileEntry> {
     const fileEntry = FileEntry.createNew(file.extname);
     return await db.transaction(async (trx) => {
       try {
@@ -42,7 +41,7 @@ export default class FilesService {
       }
       try {
         await file.moveToDisk(fileEntry.keyWithExtension);
-        return fileEntry.keyWithExtension;
+        return fileEntry;
       } catch (error) {
         throw new FileServiceFileUploadError(error as Error);
       }
@@ -56,13 +55,13 @@ export default class FilesService {
    * Calling this function with a stream probably will be more efficient than reading the stream and using `uploadFromMemory()`.
    * @param stream - Stream with file contents to upload
    * @param extname - File's extension. Defaults to `.bin`.
-   * @returns Key of the newly uploaded file
+   * @returns File entry representing the uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
   static async uploadStream(
     stream: Readable,
     extname: string | undefined = undefined,
-  ): Promise<string> {
+  ): Promise<FileEntry> {
     const fileEntry = FileEntry.createNew(extname);
     return await db.transaction(async (trx) => {
       try {
@@ -72,7 +71,7 @@ export default class FilesService {
       }
       try {
         await drive.use().putStream(fileEntry.keyWithExtension, stream);
-        return fileEntry.keyWithExtension;
+        return fileEntry;
       } catch (error) {
         throw new FileServiceFileUploadError(error as Error);
       }
@@ -85,13 +84,13 @@ export default class FilesService {
    * Use this function only if you cannot easily use other `upload*` functions.
    * @param data - File contents
    * @param extname - File's extension. Defaults to `.bin`.
-   * @returns Key of the newly uploaded file
+   * @returns File entry representing the uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
   static async uploadFromMemory(
     data: string | Uint8Array,
     extname: string | undefined = undefined,
-  ): Promise<string> {
+  ): Promise<FileEntry> {
     const fileEntry = FileEntry.createNew(extname);
     return await db.transaction(async (trx) => {
       try {
@@ -101,7 +100,7 @@ export default class FilesService {
       }
       try {
         await drive.use().put(fileEntry.keyWithExtension, data);
-        return fileEntry.keyWithExtension;
+        return fileEntry;
       } catch (error) {
         throw new FileServiceFileUploadError(error as Error);
       }
@@ -113,13 +112,13 @@ export default class FilesService {
    *
    * @param path - Path to file. Relative paths are resolved relative to `$PWD` (usually the project root)
    * @param removeSourceFile - Whether the file should be removed after upload.
-   * @returns Key of the newly uploaded file
+   * @returns File entry representing the uploaded file
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
   static async uploadLocalFile(
     path: string,
     removeSourceFile = false,
-  ): Promise<string> {
+  ): Promise<FileEntry> {
     path = nodePath.resolve(path);
     const fileEntry = FileEntry.createNew(nodePath.extname(path).substring(1));
     return await db.transaction(async (trx) => {
@@ -135,31 +134,11 @@ export default class FilesService {
         } else {
           await drive.use().copyFromFs(path, key);
         }
-        return key;
+        return fileEntry;
       } catch (error) {
         throw new FileServiceFileUploadError(error as Error);
       }
     });
-  }
-
-  /**
-   * Constructs a full file URL from its key
-   *
-   * @param key - File's key, preferably without extension
-   * @returns The full URL to the file
-   * @throws {FileServiceFileReadError} There was an issue constructing the URL. Check the cause prop for details.
-   */
-  static async getFileUrl(key: string): Promise<string | null> {
-    key = this.trimKey(key);
-    try {
-      const keyWithExtension = await FileEntry.fetchKeyWithExtension(key);
-      if (keyWithExtension !== null) {
-        return await drive.use().getUrl(keyWithExtension);
-      }
-      return null;
-    } catch (error) {
-      throw new FileServiceFileReadError(error as Error);
-    }
   }
 
   /**

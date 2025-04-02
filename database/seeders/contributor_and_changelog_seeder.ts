@@ -42,7 +42,7 @@ export default class ContributorAndChangelogSeeder extends BaseSeeder {
       },
       {
         name: "Bbbbb Bbbbbb",
-        photoKey: "some key i guess",
+        photoKey: null,
       },
       {
         name: "Aaaaa Bbbbb",
@@ -90,14 +90,14 @@ export default class ContributorAndChangelogSeeder extends BaseSeeder {
           description: "some description",
         },
         screenshots: [
-          {
-            imageKey: "image1",
-            subtitle: "an image",
-          },
-          {
-            imageKey: "image2",
-            subtitle: null,
-          },
+          // {
+          //   imageKey: "image1",
+          //   subtitle: "an image",
+          // },
+          // {
+          //   imageKey: "image2",
+          //   subtitle: null,
+          // },
         ],
         changes: [
           {
@@ -107,14 +107,14 @@ export default class ContributorAndChangelogSeeder extends BaseSeeder {
               description: null,
             },
             screenshots: [
-              {
-                imageKey: "image3",
-                subtitle: "another image",
-              },
-              {
-                imageKey: "image4",
-                subtitle: null,
-              },
+              // {
+              //   imageKey: "image3",
+              //   subtitle: "another image",
+              // },
+              // {
+              //   imageKey: "image4",
+              //   subtitle: null,
+              // },
             ],
           },
           {
@@ -124,10 +124,10 @@ export default class ContributorAndChangelogSeeder extends BaseSeeder {
               description: "an epic feature numero one",
             },
             screenshots: [
-              {
-                imageKey: "image5",
-                subtitle: "epic feature image",
-              },
+              // {
+              //   imageKey: "image5",
+              //   subtitle: "epic feature image",
+              // },
             ],
           },
         ],
@@ -140,10 +140,10 @@ export default class ContributorAndChangelogSeeder extends BaseSeeder {
           description: null,
         },
         screenshots: [
-          {
-            imageKey: "image6",
-            subtitle: "yet another image",
-          },
+          // {
+          //   imageKey: "image6",
+          //   subtitle: "yet another image",
+          // },
         ],
         changes: [
           {

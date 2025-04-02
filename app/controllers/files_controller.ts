@@ -32,9 +32,9 @@ export default class FilesController {
       throw new BadRequestException("No file provided");
     }
 
-    const key = await FilesService.uploadMultipartFile(file);
+    const entry = await FilesService.uploadMultipartFile(file);
 
-    return response.status(201).send({ key });
+    return response.status(201).send({ key: entry.keyWithExtension });
   }
 
   async get({ request }: HttpContext) {

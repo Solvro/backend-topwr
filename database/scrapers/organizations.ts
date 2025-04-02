@@ -100,14 +100,15 @@ export default class OrganizationsScraper extends BaseScraperModule {
     ]);
     task.update("Creating organizations...");
     for (const org of orgs.data) {
-      const logo = org.logo !== null ? await this.newAsset(org.logo) : null;
-      const cover = org.cover !== null ? await this.newAsset(org.cover) : null;
+      const logoKey = org.logo !== null ? await this.newAsset(org.logo) : null;
+      const coverKey =
+        org.cover !== null ? await this.newAsset(org.cover) : null;
       const orgModel = await StudentOrganization.create({
         id: org.id,
         name: org.name,
         departmentId: org.department,
-        logo,
-        cover,
+        logoKey,
+        coverKey,
         description: org.description,
         shortDescription: org.shortDescription,
         coverPreview: org.useCoverAsPreviewPhoto,
@@ -212,6 +213,10 @@ export default class OrganizationsScraper extends BaseScraperModule {
     if (imageStream === null) {
       throw new Error(`Failed to get image stream for asset ${directusId}`);
     }
-    return FilesService.uploadStream(Readable.fromWeb(imageStream), extension);
+    const file = await FilesService.uploadStream(
+      Readable.fromWeb(imageStream),
+      extension,
+    );
+    return file.id;
   }
 }

@@ -32,12 +32,6 @@ export class FileServiceFilePersistError extends FileServiceDBError {
   }
 }
 
-export class FileServiceFileReadError extends FileServiceFSError {
-  constructor(cause: Error) {
-    super("Could't read the file", cause);
-  }
-}
-
 export class FileServiceFileDiskDeleteError extends FileServiceFSError {
   constructor(cause: Error) {
     super("Couldn't delete the file from disk", cause);

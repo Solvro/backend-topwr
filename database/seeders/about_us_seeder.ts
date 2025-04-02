@@ -25,7 +25,7 @@ export default class extends BaseSeeder {
       "./assets/topwr_cover.png",
     );
 
-    const coverPhotoKey = result;
+    const coverPhotoKey = result.id;
 
     await AboutUsGeneral.create({
       description,
