@@ -38,7 +38,7 @@ const isValidToken = vine.createRule(
       user,
       isValid: true,
     };
-    if (user.hasValidResetToken()) {
+    if (user.hasValidResetToken) {
       output.isValid = false;
     }
     field.mutate(output, field);

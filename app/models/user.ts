@@ -53,7 +53,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
     void query.where("reset_password_token", sha256(token));
   });
 
-  hasValidResetToken() {
+  get hasValidResetToken() {
     return (
       this.resetPasswordTokenExpiration !== null &&
       this.resetPasswordTokenExpiration >= DateTime.now()
