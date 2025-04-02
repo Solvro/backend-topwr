@@ -32,10 +32,7 @@ export default class UsersController {
    * Handle form submission to update (reset) the user's password. (new credentials stage)
    */
   @inject()
-  async updatePassword(
-    { request, response }: HttpContext,
-    resetPasswordService: ResetPasswordService,
-  ) {
+  async updatePassword({ request, response }: HttpContext) {
     const { limiter, errorMessage } = updatePasswordLimiter;
     const limiterKey = `update_password_${request.ip()}`;
 
@@ -54,12 +51,12 @@ export default class UsersController {
     const token = result.params.token;
 
     if (!token.isValid) {
-      await resetPasswordService.destroyToken(token.user);
+      await token.user.destroyToken();
       throw new UnathorizedException("Token expired");
     }
 
     const { password } = await request.validateUsing(passwordValidator);
-    await resetPasswordService.resetPassword(token.user, password);
+    await token.user.resetPassword(password);
 
     return response.ok({ message: "Password updated successfully" });
   }
