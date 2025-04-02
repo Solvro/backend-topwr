@@ -29,7 +29,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column({ serializeAs: null })
   declare resetPasswordToken: string | null;
 
-  @column({ serializeAs: null })
+  @column.dateTime({ serializeAs: null })
   declare resetPasswordTokenExpiration: DateTime | null;
 
   @column.dateTime({ autoCreate: true })
@@ -56,7 +56,7 @@ export default class User extends compose(BaseModel, AuthFinder) {
   get hasValidResetToken() {
     return (
       this.resetPasswordTokenExpiration !== null &&
-      this.resetPasswordTokenExpiration >= DateTime.now()
+      this.resetPasswordTokenExpiration.diffNow().milliseconds > 0
     );
   }
 
