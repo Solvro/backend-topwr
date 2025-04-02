@@ -10,6 +10,7 @@ import router from "@adonisjs/core/services/router";
 
 import env from "#start/env";
 
+import { middleware } from "./kernel.js";
 import { resetPasswordThrottle } from "./limiter.js";
 
 const FilesController = () => import("#controllers/files_controller");
@@ -52,6 +53,7 @@ router
       .use(resetPasswordThrottle);
     router.put("/:token", [ResetPasswordsController, "updatePassword"]);
   })
+  .use(middleware.sensitive())
   .prefix("admin/resetpassword"); //reset_password_service dependency
 
 router
