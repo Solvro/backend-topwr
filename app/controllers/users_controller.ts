@@ -1,6 +1,10 @@
 import { inject } from "@adonisjs/core";
 import type { HttpContext } from "@adonisjs/core/http";
 
+import {
+  TooManyRequestsException,
+  UnathorizedException,
+} from "#exceptions/http_exceptions";
 import ResetPasswordService from "#services/reset_password_service";
 import { updatePasswordLimiter } from "#start/limiter";
 import { emailValidator } from "#validators/email";
@@ -33,19 +37,18 @@ export default class UsersController {
     resetPasswordService: ResetPasswordService,
   ) {
     const { limiter, errorMessage } = updatePasswordLimiter;
-    const key = `update_password_${request.ip()}`;
+    const limiterKey = `update_password_${request.ip()}`;
 
     // Error raised on limiter exhaust. Only failed attempts count.
     // Fail on `.validateUsing()` will proceed with response immediately
-    const [error, result] = await limiter.penalize(key, async () => {
+    const [error, result] = await limiter.penalize(limiterKey, async () => {
       return await request.validateUsing(resetPasswordTokenValidator);
     });
 
     if (error !== null) {
-      return response.tooManyRequests({
-        message: errorMessage,
-        retryAfter: error.response.availableIn,
-      });
+      throw new TooManyRequestsException(
+        `${errorMessage}, retry after: ${error.response.availableIn}`,
+      );
     }
 
     const {
@@ -56,9 +59,7 @@ export default class UsersController {
 
     if (!token.isValid) {
       await resetPasswordService.destroyToken(user);
-      return response.unauthorized({
-        message: "Token expired",
-      });
+      throw new UnathorizedException("Token expired");
     }
 
     const { password } = await request.validateUsing(passwordValidator);
