@@ -42,22 +42,20 @@ export class NotImplementedException extends BaseError {
 
 export class TooManyRequestsException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
-    super(message ?? "To many requests"),
-      {
-        code: "E_TO_MANY_REQUESTS",
-        ...options,
-        status: 429,
-      };
+    super(message ?? "To many requests", {
+      code: "E_TO_MANY_REQUESTS",
+      ...options,
+      status: 429,
+    });
   }
 }
 
 export class UnathorizedException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
-    super(message ?? "Unathorized access"),
-      {
-        code: "E_UNATHORIZED",
-        ...options,
-        status: 401,
-      };
+    super(message ?? "Unathorized access", {
+      code: "E_UNATHORIZED",
+      ...options,
+      status: 401,
+    });
   }
 }
