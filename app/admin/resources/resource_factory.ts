@@ -310,9 +310,10 @@ export class ResourceFactory {
           request.payload[uploadProperty] !== undefined &&
           request.payload[uploadProperty] !== null
         ) {
-          request.payload[property] = await FilesService.uploadMultipartFile(
+          const file = await FilesService.uploadMultipartFile(
             request.payload[uploadProperty] as MultipartFile,
           );
+          request.payload[property] = file.id;
           delete request.payload[uploadProperty];
         }
       }
@@ -342,14 +343,16 @@ export class ResourceFactory {
         //replace current
         if (typeof request.payload[property] === "string") {
           context[this.getOldPropertyKey(property)] = request.payload[property];
-          request.payload[property] = await FilesService.uploadMultipartFile(
+          const file = await FilesService.uploadMultipartFile(
             request.payload[uploadProperty] as MultipartFile,
           );
+          request.payload[property] = file.id;
         } else {
           //upload new
-          request.payload[property] = await FilesService.uploadMultipartFile(
+          const file = await FilesService.uploadMultipartFile(
             request.payload[uploadProperty] as MultipartFile,
           );
+          request.payload[property] = file.id;
         }
       }
       delete request.payload[uploadProperty];

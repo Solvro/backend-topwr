@@ -16,15 +16,15 @@ export default class BuildingSeeder extends BaseSeeder {
     const capmuses = await Campus.createMany([
       {
         name: "taki",
-        cover: "http://example.com",
+        coverKey: null,
       },
       {
         name: "siaki",
-        cover: "http://example.com",
+        coverKey: null,
       },
       {
         name: "i owaki",
-        cover: "http://example.com",
+        coverKey: null,
       },
     ]);
 
@@ -38,7 +38,7 @@ export default class BuildingSeeder extends BaseSeeder {
         latitude: 40.7128,
         longitude: -74.006,
         haveFood: true,
-        cover: "https://example.com/covers/building1.jpg",
+        coverKey: null,
         externalDigitalGuideMode: "web_url",
         externalDigitalGuideIdOrUrl:
           "https://dostepnosc.pwr.edu.pl/dostepnosc-architektoniczna/deklaracje-dostepnosci-budynkow/budynki-a/a2",
@@ -52,7 +52,7 @@ export default class BuildingSeeder extends BaseSeeder {
         latitude: 40.7129,
         longitude: -74.0061,
         haveFood: false,
-        cover: "https://example.com/covers/building2.jpg",
+        coverKey: null,
         externalDigitalGuideMode: "id",
         externalDigitalGuideIdOrUrl: "5",
       },
@@ -65,7 +65,7 @@ export default class BuildingSeeder extends BaseSeeder {
         latitude: 37.7749,
         longitude: -122.4194,
         haveFood: true,
-        cover: "https://example.com/covers/building3.jpg",
+        coverKey: null,
       },
     ];
 
@@ -86,7 +86,7 @@ export default class BuildingSeeder extends BaseSeeder {
         email: "old.lib@mail.com",
         latitude: 40.7128,
         longitude: -74.006,
-        photoUrl: "https://photo1.com",
+        photoKey: null,
       },
       {
         title: "New library",
@@ -97,7 +97,7 @@ export default class BuildingSeeder extends BaseSeeder {
         email: "new.lib@mail.com",
         latitude: 48.1683,
         longitude: -217.072,
-        photoUrl: "https://photo2.com",
+        photoKey: null,
       },
       {
         title: "Sun library",
@@ -108,7 +108,7 @@ export default class BuildingSeeder extends BaseSeeder {
         email: "sun.lib@mail.com",
         latitude: 37.7749,
         longitude: -122.4194,
-        photoUrl: "https://photo3.com",
+        photoKey: null,
       },
     ]);
 
@@ -180,21 +180,21 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.826,
         addressLine1: "123 University Ave",
         addressLine2: "Building A",
-        photoUrl: "https://ex_photo.jpg",
+        photoKey: null,
       },
       {
         latitude: 40.7824,
         longitude: -74.2841,
         addressLine1: "124 University Ave",
         addressLine2: "Building B",
-        photoUrl: "https://fejiax_photo.jpg",
+        photoKey: null,
       },
       {
         latitude: 37.7292,
         longitude: -122.2924,
         addressLine1: "500 Science Park",
         addressLine2: "Tower",
-        photoUrl: "https://skjkfj_photo.jpg",
+        photoKey: null,
       },
     ];
 
@@ -206,7 +206,7 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.826,
         addressLine1: "123 University Ave",
         addressLine2: "Building A",
-        photoUrl: "https://yhads782jf_photo.jpg",
+        photoKey: null,
       },
       {
         room: "219",
@@ -215,7 +215,7 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.2841,
         addressLine1: "124 University Ave",
         addressLine2: "Building B",
-        photoUrl: "https://agjhsf_photo.jpg",
+        photoKey: null,
       },
     ];
 
@@ -225,7 +225,7 @@ export default class BuildingSeeder extends BaseSeeder {
       longitude: -74.826,
       addressLine1: "123 University Ave",
       addressLine2: "Building A",
-      photoUrl: "https://food_spot_photo1.jpg",
+      photoKey: null,
     };
 
     await updatedBuildings[0]

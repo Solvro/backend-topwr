@@ -6,6 +6,11 @@ const { default: BaseController } = await (() =>
 export default class ContributorsController extends BaseController<
   typeof Contributor
 > {
-  protected readonly relations = ["roles", "milestones", "socialLinks"];
+  protected readonly relations = [
+    "roles",
+    "milestones",
+    "socialLinks",
+    "photo",
+  ];
   protected readonly model = Contributor;
 }

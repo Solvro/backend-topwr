@@ -11,8 +11,10 @@ export default class MilestonesController extends BaseController<
     "contributors.socialLinks",
     "versions",
     "versions.screenshots",
+    "versions.screenshots.image",
     "versions.changes",
     "versions.changes.screenshots",
+    "versions.changes.screenshots.image",
   ];
   protected readonly model = Milestone;
 }

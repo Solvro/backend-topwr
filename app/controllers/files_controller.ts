@@ -6,8 +6,8 @@ import app from "@adonisjs/core/services/app";
 import {
   BadRequestException,
   ForbiddenException,
-  NotFoundException,
 } from "#exceptions/http_exceptions";
+import FileEntry from "#models/file_entry";
 import FilesService from "#services/files_service";
 
 const getValidator = vine.compile(
@@ -32,28 +32,18 @@ export default class FilesController {
       throw new BadRequestException("No file provided");
     }
 
-    const key = await FilesService.uploadMultipartFile(file);
+    const entry = await FilesService.uploadMultipartFile(file);
 
-    return response.status(201).send({ key });
+    return response.status(201).send({ key: entry.keyWithExtension });
   }
 
-  async get({ request, response }: HttpContext) {
+  async get({ request }: HttpContext) {
     const {
       params: { key },
     } = await request.validateUsing(getValidator);
-    if (
-      typeof key !== "string" ||
-      key.length <= 38 ||
-      !/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(
-        key.substring(0, 36),
-      )
-    ) {
-      return response.badRequest("Invalid key. Expected a valid UUID.");
-    }
-    const url = await FilesService.getFileUrl(key);
-    if (url === null) {
-      throw new NotFoundException(`No file found with key ${key}`);
-    }
-    return response.status(200).send({ url });
+    const file = await FileEntry.findOrFail(
+      FilesService.trimKey(key),
+    ).addErrorContext(() => `File with key '${key}' does not exist`);
+    return file;
   }
 }

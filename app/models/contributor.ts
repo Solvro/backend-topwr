@@ -1,7 +1,17 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column, hasMany, manyToMany } from "@adonisjs/lucid/orm";
-import type { HasMany, ManyToMany } from "@adonisjs/lucid/types/relations";
+import {
+  BaseModel,
+  belongsTo,
+  column,
+  hasMany,
+  manyToMany,
+} from "@adonisjs/lucid/orm";
+import type {
+  BelongsTo,
+  HasMany,
+  ManyToMany,
+} from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
@@ -10,6 +20,7 @@ import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
 import ContributorSocialLink from "./contributor_social_link.js";
+import FileEntry from "./file_entry.js";
 import Milestone from "./milestone.js";
 import Role from "./role.js";
 
@@ -56,6 +67,12 @@ export default class Contributor extends BaseModel {
     pivotTimestamps: true,
   })
   declare milestones: ManyToMany<typeof Milestone>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "photoKey",
+  })
+  declare photo: BelongsTo<typeof FileEntry>;
 
   static preloadRelations = preloadRelations(Contributor);
   static handleSearchQuery = handleSearchQuery(Contributor);

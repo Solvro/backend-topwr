@@ -1,8 +1,11 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
+import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
+
+import FileEntry from "./file_entry.js";
 
 @typedModel({
   id: "number",
@@ -28,4 +31,10 @@ export default class AboutUsGeneral extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "coverPhotoKey",
+  })
+  declare coverPhoto: BelongsTo<typeof FileEntry>;
 }

@@ -19,8 +19,8 @@ export default class extends BaseSeeder {
       {
         name: "Student Organization 1",
         departmentId: depId,
-        logo: "https://via.placeholder.com/150",
-        cover: "https://via.placeholder.com/150",
+        logoKey: null,
+        coverKey: null,
         description: "Description",
         shortDescription: "Short Description",
         coverPreview: true,
@@ -31,8 +31,8 @@ export default class extends BaseSeeder {
       {
         name: "Student Organization 2",
         departmentId: depId,
-        logo: "https://via.placeholder.com/150",
-        cover: "https://via.placeholder.com/150",
+        logoKey: null,
+        coverKey: null,
         description: "Description",
         shortDescription: "Short Description",
         coverPreview: true,
@@ -43,8 +43,8 @@ export default class extends BaseSeeder {
       {
         name: "Student Organization 3",
         departmentId: depId,
-        logo: "https://via.placeholder.com/150",
-        cover: "https://via.placeholder.com/150",
+        logoKey: null,
+        coverKey: null,
         description: "Description",
         shortDescription: "Short Description",
         coverPreview: true,

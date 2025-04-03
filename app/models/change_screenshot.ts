@@ -4,6 +4,7 @@ import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import Change from "./change.js";
+import FileEntry from "./file_entry.js";
 
 export default class ChangeScreenshot extends BaseModel {
   @column({ isPrimary: true })
@@ -26,4 +27,10 @@ export default class ChangeScreenshot extends BaseModel {
 
   @belongsTo(() => Change)
   declare change: BelongsTo<typeof Change>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "imageKey",
+  })
+  declare image: BelongsTo<typeof FileEntry>;
 }

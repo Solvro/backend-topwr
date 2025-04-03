@@ -152,19 +152,11 @@ export default class ContributorsScraper extends BaseScraperModule {
             if (fileResponse.body === null) {
               throw new Error(`Response for file ${id} has no body, wtf`);
             }
-            try {
-              return [
-                id,
-                await FilesService.uploadStream(
-                  Readable.fromWeb(fileResponse.body),
-                  extension,
-                ),
-              ] as [string, string];
-            } catch (e) {
-              throw new Error(`Failed to upload file ${id} to storage`, {
-                cause: e,
-              });
-            }
+            const file = await FilesService.uploadStream(
+              Readable.fromWeb(fileResponse.body),
+              extension,
+            ).addErrorContext(() => `Failed to upload file ${id} to storage`);
+            return [id, file.id] as [string, string];
           }),
         ),
       ),

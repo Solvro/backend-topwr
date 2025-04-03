@@ -9,6 +9,7 @@ import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
 import Building from "./building.js";
+import FileEntry from "./file_entry.js";
 import RegularHour from "./regular_hour.js";
 import SpecialHour from "./special_hour.js";
 
@@ -22,7 +23,7 @@ import SpecialHour from "./special_hour.js";
   email: "string",
   latitude: "number",
   longitude: "number",
-  photoUrl: "string",
+  photoKey: "string",
   buildingId: "number",
   createdAt: "DateTime",
   updatedAt: "DateTime",
@@ -56,7 +57,7 @@ export default class Library extends BaseModel {
   declare longitude: number;
 
   @column()
-  declare photoUrl: string | null;
+  declare photoKey: string | null;
 
   @column()
   declare buildingId: number | null;
@@ -75,6 +76,12 @@ export default class Library extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "photoKey",
+  })
+  declare photo: BelongsTo<typeof FileEntry>;
 
   static preloadRelations = preloadRelations(Library);
   static handleSearchQuery = handleSearchQuery(Library);

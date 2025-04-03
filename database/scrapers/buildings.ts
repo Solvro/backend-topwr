@@ -91,7 +91,7 @@ export default class BuildingsScraper extends BaseScraperModule {
           latitude: data.latitude,
           longitude: data.longitude,
           haveFood: data.food ?? false,
-          cover: await this.semaphore.runTask(() =>
+          coverKey: await this.semaphore.runTask(() =>
             this.uploadCoverAndGetKey(data),
           ),
           externalDigitalGuideMode: data.externalDigitalGuideMode,
@@ -113,10 +113,10 @@ export default class BuildingsScraper extends BaseScraperModule {
         }
         // swap campus cover placeholder (building identifier) for real cover key
         if (
-          buildingEntry.cover !== null &&
-          campus.cover === buildingEntry.identifier
+          buildingEntry.coverKey !== null &&
+          campus.coverKey === buildingEntry.identifier
         ) {
-          campus.cover = buildingEntry.cover;
+          campus.coverKey = buildingEntry.coverKey;
           updatedCampuses.push(campus);
         }
         return {
@@ -152,16 +152,11 @@ export default class BuildingsScraper extends BaseScraperModule {
       ${assetsPath}${imageKey}`,
       );
     }
-    try {
-      return await FilesService.uploadStream(
-        Readable.fromWeb(imageStream),
-        extension,
-      );
-    } catch (err) {
-      throw new Error(`failed to upload the file: ${imageKey}`, {
-        cause: err,
-      });
-    }
+    const file = await FilesService.uploadStream(
+      Readable.fromWeb(imageStream),
+      extension,
+    ).addErrorContext(() => `Failed to upload file with key '${imageKey}'`);
+    return file.id;
   }
 
   private async findFileExtension(file: string): Promise<string | undefined> {

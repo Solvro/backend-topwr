@@ -1,7 +1,17 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column, hasMany, manyToMany } from "@adonisjs/lucid/orm";
-import * as relations from "@adonisjs/lucid/types/relations";
+import {
+  BaseModel,
+  belongsTo,
+  column,
+  hasMany,
+  manyToMany,
+} from "@adonisjs/lucid/orm";
+import type {
+  BelongsTo,
+  HasMany,
+  ManyToMany,
+} from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
 import GuideAuthor from "#models/guide_author";
@@ -10,12 +20,14 @@ import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
+import FileEntry from "./file_entry.js";
+
 @typedModel({
   id: "number",
   title: "string",
   shortDesc: "string",
   description: "string",
-  imagePath: "string",
+  imageKey: "string",
   createdAt: "DateTime",
   updatedAt: "DateTime",
 })
@@ -33,7 +45,7 @@ export default class GuideArticle extends BaseModel {
   declare description: string;
 
   @column()
-  declare imagePath: string;
+  declare imageKey: string;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
@@ -49,12 +61,18 @@ export default class GuideArticle extends BaseModel {
     relatedKey: "id",
     pivotTimestamps: true,
   })
-  declare guideAuthors: relations.ManyToMany<typeof GuideAuthor>;
+  declare guideAuthors: ManyToMany<typeof GuideAuthor>;
 
   @hasMany(() => GuideQuestion, {
     foreignKey: "articleId",
   })
-  declare guideQuestions: relations.HasMany<typeof GuideQuestion>;
+  declare guideQuestions: HasMany<typeof GuideQuestion>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "imageKey",
+  })
+  declare image: BelongsTo<typeof FileEntry>;
 
   static preloadRelations = preloadRelations(GuideArticle);
   static handleSearchQuery = handleSearchQuery(GuideArticle);

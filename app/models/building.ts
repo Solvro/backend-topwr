@@ -12,6 +12,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
 import Aed from "./aed.js";
 import BicycleShower from "./bicycle_shower.js";
 import Campus from "./campus.js";
+import FileEntry from "./file_entry.js";
 import FoodSpot from "./food_spot.js";
 import Library from "./library.js";
 
@@ -26,7 +27,7 @@ import Library from "./library.js";
   latitude: "number",
   longitude: "number",
   haveFood: "boolean",
-  cover: "string",
+  coverKey: "string",
   externalDigitalGuideMode: "string",
   externalDigitalGuideIdOrUrl: "string",
   createdAt: "DateTime",
@@ -64,7 +65,7 @@ export default class Building extends BaseModel {
   declare haveFood: boolean;
 
   @column()
-  declare cover: string | null;
+  declare coverKey: string | null;
 
   @column()
   declare externalDigitalGuideMode: string | null;
@@ -86,6 +87,12 @@ export default class Building extends BaseModel {
 
   @hasMany(() => Library)
   declare libraries: HasMany<typeof Library>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "coverKey",
+  })
+  declare cover: BelongsTo<typeof FileEntry>;
 
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

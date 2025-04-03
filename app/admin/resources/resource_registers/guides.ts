@@ -19,7 +19,7 @@ export const GuidesBuilder: ResourceBuilder = {
     {
       forModel: GuideArticle,
       additionalProperties: { description: { type: "richtext" } },
-      addImageHandlingForProperties: ["imagePath"],
+      addImageHandlingForProperties: ["imageKey"],
     },
   ],
   navigation,

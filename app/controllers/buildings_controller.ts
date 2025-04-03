@@ -7,11 +7,17 @@ export default class BuildingsController extends BaseController<
   typeof Building
 > {
   protected readonly relations = [
+    "cover",
     "campus",
+    "campus.cover",
     "aeds",
+    "aeds.photo",
     "bicycleShowers",
+    "bicycleShowers.photo",
     "foodSpots",
+    "foodSpots.photo",
     "libraries",
+    "libraries.photo",
     "libraries.regularHours",
     "libraries.specialHours",
   ];

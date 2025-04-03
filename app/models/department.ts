@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column, hasMany } from "@adonisjs/lucid/orm";
-import type { HasMany } from "@adonisjs/lucid/types/relations";
+import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
+import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedModel } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
@@ -11,6 +11,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
 
 import DepartmentLink from "./department_link.js";
 import FieldOfStudy from "./field_of_study.js";
+import FileEntry from "./file_entry.js";
 
 @typedModel({
   id: "number",
@@ -19,7 +20,7 @@ import FieldOfStudy from "./field_of_study.js";
   addressLine2: "string",
   code: "string",
   betterCode: "string",
-  logo: "string",
+  logoKey: "string",
   description: "string",
   gradientStart: "string",
   gradientStop: "string",
@@ -46,7 +47,7 @@ export default class Department extends BaseModel {
   declare betterCode: string;
 
   @column()
-  declare logo: string | null;
+  declare logoKey: string | null;
 
   @column()
   declare description: string | null;
@@ -72,6 +73,12 @@ export default class Department extends BaseModel {
     },
   })
   declare departmentLink: HasMany<typeof DepartmentLink>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "logoKey",
+  })
+  declare logo: BelongsTo<typeof FileEntry>;
 
   static preloadRelations = preloadRelations(Department);
 
