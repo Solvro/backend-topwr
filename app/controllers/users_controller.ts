@@ -43,9 +43,9 @@ export default class UsersController {
     });
 
     if (error !== null) {
-      throw new TooManyRequestsException(
-        `${errorMessage}, retry after: ${error.response.availableIn}`,
-      );
+      throw new TooManyRequestsException(errorMessage, {
+        extraResponseFields: { retryAfter: error.response.availableIn },
+      });
     }
 
     const token = result.params.token;

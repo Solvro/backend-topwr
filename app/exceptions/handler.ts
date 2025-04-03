@@ -48,6 +48,7 @@ export default class HttpExceptionHandler extends ExceptionHandler {
         causeStack: sensitive ? undefined : report.causeStack,
         rootStackTrace: this.debug ? report.rootStackTrace : undefined,
       },
+      ...report.extraResponseFields,
     };
     ctx.response.status(report.status).send(response);
   }
