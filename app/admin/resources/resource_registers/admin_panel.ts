@@ -8,6 +8,18 @@ const navigation = {
 };
 
 export const AdminPanelBuilder: ResourceBuilder = {
-  builders: [{ forModel: User }],
+  builders: [
+    {
+      forModel: User,
+      additionalProperties: {
+        resetPasswordToken: {
+          isVisible: false,
+        },
+        resetPasswordTokenExpiration: {
+          isVisible: false,
+        },
+      },
+    },
+  ],
   navigation,
 };

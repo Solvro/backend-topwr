@@ -1,0 +1,32 @@
+import { defineConfig, stores } from "@adonisjs/limiter";
+
+import env from "#start/env";
+
+const limiterConfig = defineConfig({
+  default: env.get("LIMITER_STORE"),
+  stores: {
+    /**
+     * Database store to save rate limiting data inside a
+     * MYSQL or PostgreSQL database.
+     */
+    database: stores.database({
+      tableName: "rate_limits",
+      schemaName: "public",
+      clearExpiredByTimeout: true,
+
+      // execEvenly: true, // ADD TO THE MIDDLEWARE FOR PASSWORDS
+    }),
+
+    /**
+     * Memory store could be used during
+     * testing
+     */
+    memory: stores.memory({}),
+  },
+});
+
+export default limiterConfig;
+
+declare module "@adonisjs/limiter/types" {
+  export interface LimitersList extends InferLimiters<typeof limiterConfig> {}
+}

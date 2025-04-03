@@ -39,3 +39,23 @@ export class NotImplementedException extends BaseError {
     });
   }
 }
+
+export class TooManyRequestsException extends BaseError {
+  constructor(message?: string, options?: BaseErrorOptions) {
+    super(message ?? "Too many requests", {
+      code: "E_TOO_MANY_REQUESTS",
+      ...options,
+      status: 429,
+    });
+  }
+}
+
+export class UnathorizedException extends BaseError {
+  constructor(message?: string, options?: BaseErrorOptions) {
+    super(message ?? "Unathorized access", {
+      code: "E_UNAUTHORIZED",
+      ...options,
+      status: 401,
+    });
+  }
+}

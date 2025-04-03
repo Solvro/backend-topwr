@@ -1,3 +1,18 @@
+// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- doesnt work lol
+interface JsonObject {
+  [k: string]: JsonEncodable;
+}
+
+type JsonEncodable =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonObject
+  | JsonEncodable[];
+
+type ExtraResponseFields = Record<Exclude<string, "error">, JsonEncodable>;
+
 /**
  * The expected structure for thrown errors
  */
@@ -54,6 +69,14 @@ export interface IBaseError {
    * stopping when the first error with `silent` or `status` defined is found.
    */
   silent?: boolean;
+  /**
+   * Fields to be added to the response.
+   *
+   * The final extra response fields will be calculated by collecting the fields set by each error layer.
+   * If two layers define the same field, the value set by the top-most error will be used.
+   * Object and array values will not be merged.
+   */
+  extraResponseFields?: ExtraResponseFields;
 }
 
 export interface ValidationIssue {
@@ -90,7 +113,13 @@ export function shallowIsIBaseError(error: unknown): boolean {
     // silent
     (!("silent" in error) ||
       error.silent === undefined ||
-      typeof error.silent === "boolean")
+      typeof error.silent === "boolean") &&
+    // extraResponseFields
+    (!("extraResponseFields" in error) ||
+      error.extraResponseFields === undefined ||
+      (typeof error.extraResponseFields === "object" &&
+        error.extraResponseFields !== null &&
+        !("error" in error.extraResponseFields)))
   );
 }
 
@@ -158,6 +187,20 @@ export function toIBaseError(error: unknown): IBaseError {
     if ("cause" in error && error.cause !== undefined && error.cause !== null) {
       reconstructed.cause = toIBaseError(error.cause);
     }
+    if (
+      "extraResponseFields" in error &&
+      error.extraResponseFields !== undefined &&
+      error.extraResponseFields !== null &&
+      typeof error.extraResponseFields === "object"
+    ) {
+      reconstructed.extraResponseFields = error.extraResponseFields as Record<
+        string,
+        JsonEncodable
+      >;
+      if ("error" in reconstructed.extraResponseFields) {
+        delete reconstructed.extraResponseFields.error;
+      }
+    }
     return reconstructed;
   }
   // everything's good on this level, check below and cast
@@ -178,6 +221,7 @@ export type BaseErrorOptions = Partial<{
   cause: unknown;
   sensitive: boolean;
   silent: boolean;
+  extraResponseFields: ExtraResponseFields;
 }>;
 
 /**
@@ -192,10 +236,19 @@ export class BaseError extends Error implements IBaseError {
   messages?: ValidationIssue[];
   sensitive?: boolean;
   silent?: boolean;
+  extraResponseFields?: ExtraResponseFields;
 
   constructor(
     message: string,
-    { code, status, messages, cause, sensitive, silent }: BaseErrorOptions = {},
+    {
+      code,
+      status,
+      messages,
+      cause,
+      sensitive,
+      silent,
+      extraResponseFields,
+    }: BaseErrorOptions = {},
   ) {
     super(message);
     this.code = code;
@@ -206,6 +259,7 @@ export class BaseError extends Error implements IBaseError {
     this.cause = cause === undefined ? undefined : toIBaseError(cause);
     this.sensitive = sensitive;
     this.silent = silent;
+    this.extraResponseFields = extraResponseFields;
   }
 }
 
@@ -249,13 +303,21 @@ export interface ErrorReport {
    * Most recently set value of the silent property
    */
   silent: boolean;
+  /**
+   * Final extra response field set
+   */
+  extraResponseFields: ExtraResponseFields;
 }
 
 export function analyzeErrorStack(topError: IBaseError): ErrorReport {
   let currentError: IBaseError = topError;
   let lastStack: string | undefined;
-  const result: Partial<ErrorReport> & { causeStack: string[] } = {
+  const result: Partial<ErrorReport> & {
+    causeStack: string[];
+    extraResponseFields: Record<string, JsonEncodable>;
+  } = {
     causeStack: [],
+    extraResponseFields: {},
   };
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- so what, i can't even have an infinite loop now? literally 1984
   while (true) {
@@ -270,6 +332,15 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
         ? currentError.status < 500
         : undefined);
     lastStack = currentError.stack ?? lastStack;
+    if (currentError.extraResponseFields !== undefined) {
+      for (const [key, value] of Object.entries(
+        currentError.extraResponseFields,
+      )) {
+        if (key !== "error" && !(key in result.extraResponseFields)) {
+          result.extraResponseFields[key] = value;
+        }
+      }
+    }
     if (currentError.cause === undefined) {
       break;
     }
@@ -291,6 +362,7 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
         }
         return line.replace(/^at\s+/, "");
       }) ?? [],
+    extraResponseFields: result.extraResponseFields,
   };
 }
 
