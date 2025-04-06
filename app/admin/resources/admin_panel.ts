@@ -24,6 +24,10 @@ const userResource = {
         before: async (request: ActionRequest) =>
           await validateResource(userValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(userValidator, request),
+      },
     },
   },
 };
