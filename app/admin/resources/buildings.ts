@@ -42,6 +42,10 @@ const buildingResource = {
         before: async (request: ActionRequest) =>
           await validateResource(buildingValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(buildingValidator, request),
+      },
     },
   },
 };
@@ -55,6 +59,10 @@ const campusResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(campusValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(campusValidator, request),
       },
@@ -74,6 +82,10 @@ const aedResource = {
         before: async (request: ActionRequest) =>
           await validateResource(aedValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(aedValidator, request),
+      },
     },
   },
 };
@@ -87,6 +99,10 @@ const bicycleShowerResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(bicycleShowerValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(bicycleShowerValidator, request),
       },
@@ -106,6 +122,10 @@ const foodSpotResource = {
         before: async (request: ActionRequest) =>
           await validateResource(foodSpotValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(foodSpotValidator, request),
+      },
     },
   },
 };
@@ -119,6 +139,10 @@ const libraryResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(libraryValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(libraryValidator, request),
       },
@@ -138,6 +162,10 @@ const regularHourResource = {
         before: async (request: ActionRequest) =>
           await validateResource(regularHourValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(regularHourValidator, request),
+      },
     },
   },
 };
@@ -151,6 +179,10 @@ const specialHourResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(specialHourValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(specialHourValidator, request),
       },
