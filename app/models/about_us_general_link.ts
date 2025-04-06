@@ -1,30 +1,23 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column } from "@adonisjs/lucid/orm";
+import { BaseModel } from "@adonisjs/lucid/orm";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { LinkType } from "#enums/link_type";
 
-@typedModel({
-  id: "number",
-  linkType: LinkType,
-  link: "string",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class AboutUsGeneralLink extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: LinkType })
   declare linkType: LinkType;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare link: string;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 }

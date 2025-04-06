@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -13,55 +13,41 @@ import DepartmentLink from "./department_link.js";
 import FieldOfStudy from "./field_of_study.js";
 import FileEntry from "./file_entry.js";
 
-@typedModel({
-  id: "number",
-  name: "string",
-  addressLine1: "string",
-  addressLine2: "string",
-  code: "string",
-  betterCode: "string",
-  logoKey: "string",
-  description: "string",
-  gradientStart: "string",
-  gradientStop: "string",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class Department extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare name: string;
 
-  @column({ columnName: "address_line1" })
+  @typedColumn({ type: "string", columnName: "address_line1" })
   declare addressLine1: string;
 
-  @column({ columnName: "address_line2" })
+  @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare code: string;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare betterCode: string;
 
-  @column()
+  @typedColumn({ type: "uuid", optional: true })
   declare logoKey: string | null;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare description: string | null;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare gradientStart: string;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare gradientStop: string;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @hasMany(() => FieldOfStudy)

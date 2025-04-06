@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column, hasMany } from "@adonisjs/lucid/orm";
+import { BaseModel, hasMany } from "@adonisjs/lucid/orm";
 import type { HasMany } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -11,45 +11,35 @@ import { handleSortQuery } from "#scopes/sort_helper";
 import DaySwap from "./day_swap.js";
 import Holiday from "./holiday.js";
 
-@typedModel({
-  id: "number",
-  name: "string",
-  semesterStartDate: "DateTime",
-  examSessionStartDate: "DateTime",
-  examSessionLastDate: "DateTime",
-  isFirstWeekEven: "boolean",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class AcademicCalendar extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare name: string;
 
-  @column.date({
+  @typedColumn.date({
     prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
   })
   declare semesterStartDate: DateTime;
 
-  @column.date({
+  @typedColumn.date({
     prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
   })
   declare examSessionStartDate: DateTime;
 
-  @column.date({
+  @typedColumn.date({
     prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
   })
   declare examSessionLastDate: DateTime;
 
-  @column()
+  @typedColumn({ type: "boolean" })
   declare isFirstWeekEven: boolean;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @hasMany(() => DaySwap)

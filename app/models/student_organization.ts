@@ -1,19 +1,13 @@
 import { DateTime } from "luxon";
 
-import {
-  BaseModel,
-  belongsTo,
-  column,
-  hasMany,
-  manyToMany,
-} from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany, manyToMany } from "@adonisjs/lucid/orm";
 import type {
   BelongsTo,
   HasMany,
   ManyToMany,
 } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
@@ -27,53 +21,38 @@ import { handleSortQuery } from "#scopes/sort_helper";
 
 import FileEntry from "./file_entry.js";
 
-@typedModel({
-  id: "number",
-  name: "string",
-  departmentId: "number",
-  logoKey: "string",
-  coverKey: "string",
-  description: "string",
-  shortDescription: "string",
-  coverPreview: "boolean",
-  source: OrganizationSource,
-  organizationType: OrganizationType,
-  organizationStatus: OrganizationStatus,
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class StudentOrganization extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare name: string;
 
-  @column()
+  @typedColumn({ type: "integer", optional: true })
   declare departmentId: number | null;
 
-  @column()
+  @typedColumn({ type: "uuid", optional: true })
   declare logoKey: string | null;
 
-  @column()
+  @typedColumn({ type: "uuid", optional: true })
   declare coverKey: string | null;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare description: string | null;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare shortDescription: string | null;
 
-  @column()
+  @typedColumn({ type: "boolean" })
   declare coverPreview: boolean;
 
-  @column()
+  @typedColumn({ type: OrganizationSource })
   declare source: OrganizationSource;
 
-  @column()
+  @typedColumn({ type: OrganizationType })
   declare organizationType: OrganizationType;
 
-  @column()
+  @typedColumn({ type: OrganizationStatus })
   declare organizationStatus: OrganizationStatus;
 
   @hasMany(() => StudentOrganizationLink, {
@@ -108,10 +87,10 @@ export default class StudentOrganization extends BaseModel {
   })
   declare cover: BelongsTo<typeof FileEntry>;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   static handleSearchQuery = handleSearchQuery(StudentOrganization);
