@@ -18,12 +18,18 @@ const navigation = {
 
 export const VersionsBuilder: ResourceBuilder = {
   builders: [
-    { forModel: Change, additionalProperties: { type: changeTypeEnumsValues } },
+    {
+      forModel: Change,
+      additionalProperties: { type: changeTypeEnumsValues },
+    },
     {
       forModel: ContributorSocialLink,
       ...linkTypeAutodetectSetUp,
     },
-    { forModel: ChangeScreenshot },
+    {
+      forModel: ChangeScreenshot,
+      addImageHandlingForProperties: ["imageKey"],
+    },
     {
       forModel: Contributor,
       addImageHandlingForProperties: ["photoKey"],

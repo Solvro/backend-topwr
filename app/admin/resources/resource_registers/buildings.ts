@@ -26,10 +26,22 @@ export const BuildingsBuilder: ResourceBuilder = {
       forModel: Campus,
       addImageHandlingForProperties: ["coverKey"],
     },
-    { forModel: Aed },
-    { forModel: BicycleShower },
-    { forModel: FoodSpot },
-    { forModel: Library },
+    {
+      forModel: Aed,
+      addImageHandlingForProperties: ["photoKey"],
+    },
+    {
+      forModel: BicycleShower,
+      addImageHandlingForProperties: ["photoKey"],
+    },
+    {
+      forModel: FoodSpot,
+      addImageHandlingForProperties: ["photoKey"],
+    },
+    {
+      forModel: Library,
+      addImageHandlingForProperties: ["photoKey"],
+    },
     { forModel: RegularHour },
     { forModel: SpecialHour },
   ],
