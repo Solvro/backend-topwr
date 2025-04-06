@@ -49,7 +49,7 @@
   "dependencies": {
     "@adminjs/adonis": "^1.1.0",
     "@adminjs/passwords": "^4.0.0",
-    "@adonisjs/auth": "^9.2.3",
+    "@adonisjs/auth": "^9.4.0",
     "@adonisjs/core": "^6.14.1",
     "@adonisjs/cors": "^2.2.1",
     "@adonisjs/drive": "^3.2.0",
