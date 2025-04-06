@@ -40,6 +40,10 @@ const aboutUsResource: ResourceWithOptions = {
         before: async (request: ActionRequest) =>
           await validateResource(aboutUsGeneralValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(aboutUsGeneralValidator, request),
+      },
       delete: {
         isAccessible: false,
         isVisible: false,
