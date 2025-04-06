@@ -34,6 +34,10 @@ const departmentResource = {
         before: async (request: ActionRequest) =>
           await validateResource(departmentValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(departmentValidator, request),
+      },
     },
   },
 };
@@ -51,6 +55,10 @@ const departmentsLinkResource = {
         before: async (request: ActionRequest) =>
           await validateResource(departmentLinkValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(departmentLinkValidator, request),
+      },
     },
   },
 };
@@ -64,6 +72,10 @@ const fieldsOfStudyResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(fieldsOfStudyValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(fieldsOfStudyValidator, request),
       },
