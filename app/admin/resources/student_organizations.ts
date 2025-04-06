@@ -38,6 +38,10 @@ const studentOrganizationResource = {
         before: async (request: ActionRequest) =>
           await validateResource(studentOrganizationValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(studentOrganizationValidator, request),
+      },
     },
   },
 };
@@ -55,6 +59,10 @@ const studentOrganizationLinkResource = {
         before: async (request: ActionRequest) =>
           await validateResource(studentOrganizationLinkValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(studentOrganizationLinkValidator, request),
+      },
     },
   },
 };
@@ -68,6 +76,10 @@ const studentOrganizationTagResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(studentOrganizationTagValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(studentOrganizationTagValidator, request),
       },
