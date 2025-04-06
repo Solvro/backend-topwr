@@ -4,7 +4,7 @@ import { Weekday } from "#enums/weekday";
 
 export const academicCalendarValidator = vine.compile(
   vine.object({
-    name: vine.string().minLength(1).trim(),
+    name: vine.string().trim().minLength(1),
     semesterStartDate: vine.date(),
     examSessionStartDate: vine.date(),
     examSessionLastDate: vine.date(),
@@ -26,6 +26,6 @@ export const holidayValidator = vine.compile(
     academicCalendarId: vine.number().min(0).withoutDecimals(),
     startDate: vine.date(),
     lastDate: vine.date(),
-    description: vine.string().minLength(1).trim(),
+    description: vine.string().trim().minLength(1),
   }),
 );
