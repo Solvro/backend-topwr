@@ -43,6 +43,10 @@ const changeResource = {
         before: async (request: ActionRequest) =>
           await validateResource(changesValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(changesValidator, request),
+      },
     },
   },
 };
@@ -59,6 +63,10 @@ const changeScreenshotResource = {
         before: async (request: ActionRequest) =>
           await validateResource(changeScreenshotValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(changeScreenshotValidator, request),
+      },
     },
   },
 };
@@ -72,6 +80,10 @@ const contributorResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(contributorValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(contributorValidator, request),
       },
@@ -92,6 +104,10 @@ const contributorSocialLinksResource = {
         before: async (request: ActionRequest) =>
           await validateResource(contributorSocialLinksValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(contributorSocialLinksValidator, request),
+      },
     },
   },
 };
@@ -105,6 +121,10 @@ const milestoneResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(milestoneValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(milestoneValidator, request),
       },
@@ -124,6 +144,10 @@ const roleResource = {
         before: async (request: ActionRequest) =>
           await validateResource(roleValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(roleValidator, request),
+      },
     },
   },
 };
@@ -140,6 +164,10 @@ const versionResource = {
         before: async (request: ActionRequest) =>
           await validateResource(versionValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(versionValidator, request),
+      },
     },
   },
 };
@@ -153,6 +181,10 @@ const versionScreenshotResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(versionScreenshotValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(versionScreenshotValidator, request),
       },
