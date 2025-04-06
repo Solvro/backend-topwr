@@ -33,6 +33,10 @@ const guideArticleResource = {
         before: async (request: ActionRequest) =>
           await validateResource(guideArticleValidator, request),
       },
+      edit: {
+        before: async (request: ActionRequest) =>
+          await validateResource(guideArticleValidator, request),
+      },
     },
   },
 };
@@ -46,6 +50,10 @@ const guideAuthorResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(guideAuthorValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(guideAuthorValidator, request),
       },
@@ -65,6 +73,10 @@ const guideQuestionResource = {
     },
     actions: {
       new: {
+        before: async (request: ActionRequest) =>
+          await validateResource(guideQuestionValidator, request),
+      },
+      edit: {
         before: async (request: ActionRequest) =>
           await validateResource(guideQuestionValidator, request),
       },
