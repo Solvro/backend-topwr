@@ -1,19 +1,13 @@
 import { DateTime } from "luxon";
 
-import {
-  BaseModel,
-  belongsTo,
-  column,
-  hasMany,
-  manyToMany,
-} from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany, manyToMany } from "@adonisjs/lucid/orm";
 import type {
   BelongsTo,
   HasMany,
   ManyToMany,
 } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import GuideAuthor from "#models/guide_author";
 import GuideQuestion from "#models/guide_question";
 import { preloadRelations } from "#scopes/preload_helper";
@@ -22,35 +16,26 @@ import { handleSortQuery } from "#scopes/sort_helper";
 
 import FileEntry from "./file_entry.js";
 
-@typedModel({
-  id: "number",
-  title: "string",
-  shortDesc: "string",
-  description: "string",
-  imageKey: "string",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class GuideArticle extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare title: string;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare shortDesc: string;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare description: string;
 
-  @column()
+  @typedColumn({ type: "uuid" })
   declare imageKey: string;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @manyToMany(() => GuideAuthor, {

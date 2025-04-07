@@ -1,19 +1,13 @@
 import { DateTime } from "luxon";
 
-import {
-  BaseModel,
-  belongsTo,
-  column,
-  hasMany,
-  manyToMany,
-} from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany, manyToMany } from "@adonisjs/lucid/orm";
 import type {
   BelongsTo,
   HasMany,
   ManyToMany,
 } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -24,27 +18,20 @@ import FileEntry from "./file_entry.js";
 import Milestone from "./milestone.js";
 import Role from "./role.js";
 
-@typedModel({
-  id: "number",
-  name: "string",
-  photoKey: "string",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class Contributor extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare name: string;
 
-  @column()
+  @typedColumn({ type: "uuid", optional: true })
   declare photoKey: string | null;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @hasMany(() => ContributorSocialLink, {

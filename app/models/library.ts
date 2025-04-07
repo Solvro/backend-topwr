@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -13,53 +13,38 @@ import FileEntry from "./file_entry.js";
 import RegularHour from "./regular_hour.js";
 import SpecialHour from "./special_hour.js";
 
-@typedModel({
-  id: "number",
-  title: "string",
-  room: "string",
-  addressLine1: "string",
-  addressLine2: "string",
-  phone: "string",
-  email: "string",
-  latitude: "number",
-  longitude: "number",
-  photoKey: "string",
-  buildingId: "number",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class Library extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare title: string;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare room: string | null;
 
-  @column({ columnName: "address_line1" })
+  @typedColumn({ type: "string", optional: true, columnName: "address_line1" })
   declare addressLine1: string | null;
 
-  @column({ columnName: "address_line2" })
+  @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare phone: string | null;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare email: string | null;
 
-  @column()
+  @typedColumn({ type: "number" })
   declare latitude: number;
 
-  @column()
+  @typedColumn({ type: "number" })
   declare longitude: number;
 
-  @column()
+  @typedColumn({ type: "uuid", optional: true })
   declare photoKey: string | null;
 
-  @column()
+  @typedColumn({ type: "integer", optional: true })
   declare buildingId: number | null;
 
   @belongsTo(() => Building)
@@ -71,10 +56,10 @@ export default class Library extends BaseModel {
   @hasMany(() => SpecialHour)
   declare specialHours: HasMany<typeof SpecialHour>;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @belongsTo(() => FileEntry, {

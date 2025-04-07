@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { Weekday } from "#enums/weekday";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -11,37 +11,28 @@ import { handleSortQuery } from "#scopes/sort_helper";
 
 import AcademicCalendar from "./academic_calendar.js";
 
-@typedModel({
-  id: "number",
-  academicCalendarId: "number",
-  date: "DateTime",
-  changedWeekday: Weekday,
-  changedDayIsEven: "boolean",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class DaySwap extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "integer" })
   declare academicCalendarId: number;
 
-  @column.date({
+  @typedColumn.date({
     prepare: (v: unknown) => (v instanceof Date ? v.toISOString() : v),
   })
   declare date: DateTime;
 
-  @column()
+  @typedColumn({ type: Weekday })
   declare changedWeekday: Weekday;
 
-  @column()
+  @typedColumn({ type: "boolean" })
   declare changedDayIsEven: boolean;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @belongsTo(() => AcademicCalendar)

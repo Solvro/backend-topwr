@@ -1,28 +1,29 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
+import { typedColumn } from "#decorators/typed_model";
 import { LinkType } from "#enums/link_type";
 import StudentOrganization from "#models/student_organization";
 
 export default class StudentOrganizationLink extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare link: string;
 
-  @column()
+  @typedColumn({ type: LinkType })
   declare linkType: LinkType;
 
-  @column()
+  @typedColumn({ type: "integer" })
   declare studentOrganizationId: number;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @belongsTo(() => StudentOrganization)

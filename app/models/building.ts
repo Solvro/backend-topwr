@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column, hasMany } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { BuildingIcon } from "#enums/building_icon";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -16,61 +16,44 @@ import FileEntry from "./file_entry.js";
 import FoodSpot from "./food_spot.js";
 import Library from "./library.js";
 
-@typedModel({
-  id: "number",
-  identifier: "string",
-  specialName: "string",
-  iconType: BuildingIcon,
-  campusId: "number",
-  addressLine1: "string",
-  addressLine2: "string",
-  latitude: "number",
-  longitude: "number",
-  haveFood: "boolean",
-  coverKey: "string",
-  externalDigitalGuideMode: "string",
-  externalDigitalGuideIdOrUrl: "string",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class Building extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare identifier: string;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare specialName: string | null;
 
-  @column()
+  @typedColumn({ type: BuildingIcon })
   declare iconType: BuildingIcon;
 
-  @column()
+  @typedColumn({ type: "integer" })
   declare campusId: number;
 
-  @column({ columnName: "address_line1" })
+  @typedColumn({ type: "string", columnName: "address_line1" })
   declare addressLine1: string;
 
-  @column({ columnName: "address_line2" })
+  @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @column()
+  @typedColumn({ type: "number" })
   declare latitude: number;
 
-  @column()
+  @typedColumn({ type: "number" })
   declare longitude: number;
 
-  @column()
+  @typedColumn({ type: "boolean" })
   declare haveFood: boolean;
 
-  @column()
+  @typedColumn({ type: "uuid", optional: true })
   declare coverKey: string | null;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare externalDigitalGuideMode: string | null;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare externalDigitalGuideIdOrUrl: string | null;
 
   @belongsTo(() => Campus)
@@ -94,10 +77,10 @@ export default class Building extends BaseModel {
   })
   declare cover: BelongsTo<typeof FileEntry>;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   static preloadRelations = preloadRelations(Building);

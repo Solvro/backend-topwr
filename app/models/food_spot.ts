@@ -1,43 +1,45 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
+
+import { typedColumn } from "#decorators/typed_model";
 
 import Building from "./building.js";
 import FileEntry from "./file_entry.js";
 
 export default class FoodSpot extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare name: string;
 
-  @column({ columnName: "address_line1" })
+  @typedColumn({ type: "string", optional: true, columnName: "address_line1" })
   declare addressLine1: string | null;
 
-  @column({ columnName: "address_line2" })
+  @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @column()
+  @typedColumn({ type: "number" })
   declare latitude: number;
 
-  @column()
+  @typedColumn({ type: "number" })
   declare longitude: number;
 
-  @column()
+  @typedColumn({ type: "uuid", optional: true })
   declare photoKey: string | null;
 
-  @column()
+  @typedColumn({ type: "integer", optional: true })
   declare buildingId: number | null;
 
   @belongsTo(() => Building)
   declare building: BelongsTo<typeof Building>;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @belongsTo(() => FileEntry, {

@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column, hasMany, manyToMany } from "@adonisjs/lucid/orm";
+import { BaseModel, hasMany, manyToMany } from "@adonisjs/lucid/orm";
 import type { HasMany, ManyToMany } from "@adonisjs/lucid/types/relations";
 
-import { typedModel } from "#decorators/typed_model";
+import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -11,23 +11,17 @@ import { handleSortQuery } from "#scopes/sort_helper";
 import Contributor from "./contributor.js";
 import Version from "./version.js";
 
-@typedModel({
-  id: "number",
-  name: "string",
-  createdAt: "DateTime",
-  updatedAt: "DateTime",
-})
 export default class Milestone extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "string" })
   declare name: string;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @manyToMany(() => Contributor, {

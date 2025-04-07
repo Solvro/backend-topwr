@@ -1,28 +1,30 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, column } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
+
+import { typedColumn } from "#decorators/typed_model";
 
 import Change from "./change.js";
 import FileEntry from "./file_entry.js";
 
 export default class ChangeScreenshot extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @column()
+  @typedColumn({ type: "integer" })
   declare changeId: number;
 
-  @column()
+  @typedColumn({ type: "uuid" })
   declare imageKey: string;
 
-  @column()
+  @typedColumn({ type: "string", optional: true })
   declare subtitle: string | null;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @belongsTo(() => Change)
