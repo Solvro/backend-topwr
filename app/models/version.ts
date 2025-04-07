@@ -27,7 +27,7 @@ export default class Version extends BaseModel {
   })
   declare releaseDate: DateTime | null;
 
-  @typedColumn({ type: "string", optional: false })
+  @typedColumn({ type: "string", optional: true })
   declare description: string | null;
 
   @typedColumn.dateTime({ autoCreate: true })
