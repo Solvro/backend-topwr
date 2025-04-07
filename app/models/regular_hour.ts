@@ -21,7 +21,7 @@ export default class RegularHour extends BaseModel {
   @typedColumn({ type: "string" })
   declare closeTime: string;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "integer" })
   declare libraryId: number;
 
   @belongsTo(() => Library)
