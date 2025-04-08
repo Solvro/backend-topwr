@@ -26,7 +26,7 @@ const adminjsConfig: AdminJSProviderConfig = {
       component: Components.Dashboard,
     },
     settings: {
-      defaultPerPage: 10,
+      defaultPerPage: 50,
     },
   },
   auth: {
