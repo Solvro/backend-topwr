@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
+import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { Weekday } from "#enums/weekday";
 import Building from "#models/building";
 import Campus from "#models/campus";
@@ -39,7 +40,7 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.006,
         haveFood: true,
         coverKey: null,
-        externalDigitalGuideMode: "web_url",
+        externalDigitalGuideMode: ExternalDigitalGuideMode.WebUrl,
         externalDigitalGuideIdOrUrl:
           "https://dostepnosc.pwr.edu.pl/dostepnosc-architektoniczna/deklaracje-dostepnosci-budynkow/budynki-a/a2",
       },
@@ -53,7 +54,7 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.0061,
         haveFood: false,
         coverKey: null,
-        externalDigitalGuideMode: "id",
+        externalDigitalGuideMode: ExternalDigitalGuideMode.DigitalGuideBuilding,
         externalDigitalGuideIdOrUrl: "5",
       },
       {
