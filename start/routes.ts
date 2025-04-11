@@ -13,6 +13,7 @@ import env from "#start/env";
 import { middleware } from "./kernel.js";
 import { resetPasswordThrottle } from "./limiter.js";
 
+const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
 const BuildingsController = () => import("#controllers/buildings_controller");
 const CampusesController = () => import("#controllers/campuses_controller");
@@ -60,8 +61,19 @@ router
   .group(() => {
     router
       .group(() => {
+        router.post("/login", [AuthController, "login"]);
+        router
+          .post("/logout", [AuthController, "logout"])
+          .use(middleware.auth());
+        router.get("/me", [AuthController, "me"]).use(middleware.auth());
+      })
+      .use(middleware.sensitive())
+      .prefix("/auth");
+
+    router
+      .group(() => {
         router.get("/:key", [FilesController, "get"]);
-        router.post("/", [FilesController, "post"]);
+        router.post("/", [FilesController, "post"]).use(middleware.auth());
       })
       .prefix("/files");
 

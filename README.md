@@ -9,6 +9,10 @@
 
 Documentation and API are in WiP stage
 
+Some endpoints require authentication.
+To authenticate, first generate a token using the `POST /api/v1/auth/login` endpoint.
+Then pass the received token via the `Authorization` header as a `Bearer` token. (`Authorization: Bearer <token>`)
+
 AI generated
 
 ### Endpoints

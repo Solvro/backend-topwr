@@ -22,6 +22,10 @@ export default class HttpExceptionHandler extends ExceptionHandler {
    */
   protected debug = !app.inProduction;
 
+  #isSensitiveCode(code: string): boolean {
+    return code.includes("UNAUTHORIZED_ACCESS");
+  }
+
   /**
    * The method is used for handling errors and returning
    * response to the client
@@ -37,7 +41,9 @@ export default class HttpExceptionHandler extends ExceptionHandler {
       );
       report.code = "E_UNEXPECTED_ERROR";
     }
-    const sensitive = ctx.extras?.sensitive ?? report.sensitive;
+    const sensitive =
+      ctx.extras?.sensitive ??
+      (report.sensitive || this.#isSensitiveCode(report.code));
     const response: ErrorResponse = {
       error: {
         message: report.message,
