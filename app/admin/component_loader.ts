@@ -12,4 +12,8 @@ export const Components = {
     "PhotoDisplay",
     "./components/photo_display",
   ),
+  TimezoneDatepicker: componentLoader.add(
+    "TimezoneDatepicker",
+    "./components/timezone_datepicker",
+  ),
 };
