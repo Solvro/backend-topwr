@@ -26,4 +26,9 @@ export default class AuthController {
   async me({ auth }: HttpContext) {
     return auth.getUserOrFail();
   }
+
+  async logout({ auth }: HttpContext) {
+    await auth.use().invalidateToken();
+    return { success: true, message: "Logged out" };
+  }
 }
