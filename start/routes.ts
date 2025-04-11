@@ -64,6 +64,7 @@ router
         router.post("/login", [AuthController, "login"]);
         router.get("/me", [AuthController, "me"]).use(middleware.auth());
       })
+      .use(middleware.sensitive())
       .prefix("/auth");
 
     router
