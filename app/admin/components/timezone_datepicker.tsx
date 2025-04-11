@@ -1,28 +1,26 @@
 import { DatePicker } from "@adminjs/design-system";
 import { BasePropertyProps, PropertyLabel } from "adminjs";
 import { DateTime } from "luxon";
-import { FC, useState } from "react";
-import React from "react";
+import React, { FC, useState } from "react";
 
 const TimezoneDatepicker: FC<BasePropertyProps> = (props) => {
   const { record, property, onChange } = props;
-  const recordValue: string | undefined = record?.params[property.path];
-
-  const [date, setDate] = useState<string | undefined>(recordValue);
   const propertyWithLabel = {
     ...property,
     label: property.label.substring(3),
   };
+  const [date, setDate] = useState<string | Date | undefined>(
+    record?.params[propertyWithLabel.label] as string | Date | undefined,
+  );
+
   const handleDateChange = (pickedDate: string | null) => {
     if (pickedDate !== null) {
       const localDate = DateTime.fromISO(pickedDate, { zone: "utc" })
         .setZone(DateTime.local().zoneName)
-        .toISO({ includeOffset: false });
-      if (localDate !== null) {
-        setDate(localDate);
-        if (onChange != null) {
-          onChange(property.path, localDate);
-        }
+        .toFormat("yyyy-MM-dd");
+      setDate(localDate);
+      if (onChange != null) {
+        onChange(property.path, localDate);
       }
     }
   };
@@ -37,7 +35,8 @@ const TimezoneDatepicker: FC<BasePropertyProps> = (props) => {
       <DatePicker
         value={date}
         onChange={handleDateChange}
-        showTimeInput={props.property.type === "datetime"}
+        showTimeInput={false}
+        propertyType={"date"}
       />
     </div>
   );

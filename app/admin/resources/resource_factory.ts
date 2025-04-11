@@ -212,7 +212,6 @@ export class ResourceFactory {
         afterDeleteHooksToChain,
       ),
     };
-    console.error(newResource);
     return newResource;
   }
 
@@ -496,8 +495,6 @@ export class ResourceFactory {
       request: ActionRequest,
       _: ActionContext,
     ): Promise<ActionRequest> => {
-      console.error("aaa");
-      console.error(request.payload);
       if (
         request.payload !== undefined &&
         request.payload[timezoneDatepickerProperty] !== undefined
@@ -505,7 +502,6 @@ export class ResourceFactory {
         request.payload[property] = request.payload[
           timezoneDatepickerProperty
         ] as string;
-        console.error(request.payload[property]);
         delete request.payload[timezoneDatepickerProperty];
       }
       return request;
