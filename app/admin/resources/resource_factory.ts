@@ -251,10 +251,8 @@ export class ResourceFactory {
     }
   }
 
-  private static getDateFields(
-    baseModel: LucidModel,
-  ): { name: string; isRequired: boolean }[] {
-    const dateFields: { name: string; isRequired: boolean }[] = [];
+  private static getDateFields(baseModel: LucidModel): string[] {
+    const dateFields: string[] = [];
     baseModel.$columnsDefinitions.forEach(
       (def: LucidColumnDefinition, name: string) => {
         if (
@@ -263,7 +261,7 @@ export class ResourceFactory {
           name !== "createdAt" &&
           name !== "updatedAt"
         ) {
-          dateFields.push({ name, isRequired: !def.meta.optional });
+          dateFields.push(name);
         }
       },
     );
@@ -276,8 +274,8 @@ export class ResourceFactory {
   ) {
     const dateFields = ResourceFactory.getDateFields(baseModel);
     dateFields.forEach((dateField) => {
-      resource.options.properties[dateField.name] = {
-        ...resource.options.properties[dateField.name],
+      resource.options.properties[dateField] = {
+        ...resource.options.properties[dateField],
         components: {
           edit: "TimezoneDatepicker",
         },
