@@ -80,13 +80,6 @@ const hideOnEdit = {
   edit: false,
 };
 
-const showOnEdit = {
-  list: false,
-  show: false,
-  filter: false,
-  edit: true,
-};
-
 const photoHandlerVisibility = {
   list: false,
   show: true,
@@ -183,8 +176,6 @@ export class ResourceFactory {
     ResourceFactory.addTimezoneDatetimepickers(
       newResource,
       resourceInfo.forModel,
-      beforeNewHooksToChain,
-      beforeEditHooksToChain,
     );
     ResourceFactory.addImageHandling(
       newResource,
@@ -282,30 +273,15 @@ export class ResourceFactory {
   private static addTimezoneDatetimepickers(
     resource: ResourceWithProperties,
     baseModel: LucidModel,
-    beforeNewHooksToChain: BeforeHookLink[],
-    beforeEditHooksToChain: BeforeHookLink[],
   ) {
     const dateFields = ResourceFactory.getDateFields(baseModel);
     dateFields.forEach((dateField) => {
       resource.options.properties[dateField.name] = {
         ...resource.options.properties[dateField.name],
-        isVisible: hideOnEdit,
-      };
-      const timezonePickerProperty = `tz_${dateField.name}`;
-      resource.options.properties[timezonePickerProperty] = {
-        type: "datetime",
-        isVisible: showOnEdit,
-        isRequired: dateField.isRequired,
         components: {
           edit: "TimezoneDatepicker",
         },
       };
-      const beforeHook = ResourceFactory.createBeforeHookForDatepicker(
-        dateField.name,
-        timezonePickerProperty,
-      );
-      beforeNewHooksToChain.push(beforeHook);
-      beforeEditHooksToChain.push(beforeHook);
     });
   }
 
@@ -485,26 +461,5 @@ export class ResourceFactory {
 
   private static getOldPropertyKey(property: string): string {
     return `old_${property}`;
-  }
-
-  private static createBeforeHookForDatepicker(
-    property: string,
-    timezoneDatepickerProperty: string,
-  ): BeforeHookLink {
-    return async (
-      request: ActionRequest,
-      _: ActionContext,
-    ): Promise<ActionRequest> => {
-      if (
-        request.payload !== undefined &&
-        request.payload[timezoneDatepickerProperty] !== undefined
-      ) {
-        request.payload[property] = request.payload[
-          timezoneDatepickerProperty
-        ] as string;
-        delete request.payload[timezoneDatepickerProperty];
-      }
-      return request;
-    };
   }
 }

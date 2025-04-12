@@ -5,12 +5,8 @@ import React, { FC, useState } from "react";
 
 const TimezoneDatepicker: FC<BasePropertyProps> = (props) => {
   const { record, property, onChange } = props;
-  const propertyWithLabel = {
-    ...property,
-    label: property.label.substring(3),
-  };
   const [date, setDate] = useState<string | Date | undefined>(
-    record?.params[propertyWithLabel.label] as string | Date | undefined,
+    record?.params[property.name] as string | Date | undefined,
   );
 
   const handleDateChange = (pickedDate: string | null) => {
@@ -31,7 +27,7 @@ const TimezoneDatepicker: FC<BasePropertyProps> = (props) => {
         marginBottom: "1em",
       }}
     >
-      <PropertyLabel property={propertyWithLabel}></PropertyLabel>
+      <PropertyLabel property={property}></PropertyLabel>
       <DatePicker
         value={date}
         onChange={handleDateChange}
