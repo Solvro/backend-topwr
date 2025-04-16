@@ -12,7 +12,7 @@ import SpecialHour from "#models/special_hour";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Buildings",
+  name: "buildingsNavigation",
   icon: "Home",
 };
 
