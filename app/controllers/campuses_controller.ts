@@ -4,7 +4,7 @@ const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
 export default class CampusesController extends BaseController<typeof Campus> {
-  protected readonly relations = [
+  protected readonly queryRelations = [
     "buildings",
     "buildings.cover",
     "buildings.aeds",
@@ -18,5 +18,6 @@ export default class CampusesController extends BaseController<typeof Campus> {
     "buildings.libraries.regularHours",
     "buildings.libraries.specialHours",
   ];
+  protected readonly crudRelations = ["buildings"];
   protected readonly model = Campus;
 }

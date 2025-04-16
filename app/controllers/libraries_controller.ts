@@ -6,12 +6,13 @@ const { default: BaseController } = await (() =>
 export default class LibrariesController extends BaseController<
   typeof Library
 > {
-  protected readonly relations = [
+  protected readonly queryRelations = [
     "regularHours",
     "specialHours",
     "building",
     "photo",
     "building.cover",
   ];
+  protected readonly crudRelations = ["regularHours", "specialHours"];
   protected readonly model = Library;
 }
