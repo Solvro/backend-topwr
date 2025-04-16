@@ -8,56 +8,58 @@ import {
   Text,
 } from "@adminjs/design-system";
 import { styled } from "@adminjs/design-system/styled-components";
+import { useTranslation } from "adminjs";
 import React from "react";
+
+// const { translateLabel } = useTranslation()
 
 const boxes = () => [
   {
     href: "/admin/resources/about_us_general/records/1/show",
     variant: "Moon",
-    title: "O nas",
-    subtitle: "Poznaj nasz projekt",
+    subtitle: "aboutUs.subtitle",
   },
   {
     href: "/admin/resources/academic_calendars",
     variant: "Calendar",
-    title: "Kalendarz akademicki",
-    subtitle: `Kalendarz akademicki dla studentów. Sesje, przerwy, zamiany.`,
+    title: "calendars.title",
+    subtitle: "calendars.subtitle",
   },
   {
     href: "/admin/resources/users",
     variant: "Clip",
-    title: "Panel admina",
-    subtitle: "Panel administracyjny do zarządzania użytkownikami",
+    title: "admin.title",
+    subtitle: "admin.subtitle",
   },
   {
     href: "/admin/resources/buildings",
     variant: "Launch",
-    title: "Budynki",
-    subtitle: "Budynki i wielowarstwowa mapa uczelni",
+    title: "buildings.title",
+    subtitle: "buildings.subtitle",
   },
   {
     href: "/admin/resources/departments",
     variant: "Astronaut",
-    title: "Wydziały",
-    subtitle: "Wydziały i kierunki studiów na uczelni",
+    title: "departments.title",
+    subtitle: "departments.subtitle",
   },
   {
     href: "/admin/resources/guide_articles",
     variant: "FlagInCog",
-    title: "Przewodniki",
-    subtitle: "Przewodniki dla studentów, pracowników i gości uczelni",
+    title: "guides.title",
+    subtitle: "guides.subtitle",
   },
   {
     href: "/admin/resources/student_organizations",
     variant: "Rocket",
-    title: "Organizacje studenckie",
-    subtitle: "Organizacje studenckie, koła naukowe, stowarzyszenia",
+    title: "organizations.title",
+    subtitle: "organizations.subtitle",
   },
   {
     href: "/admin/resources/versions",
     variant: "GithubLogo",
-    title: "Wersje",
-    subtitle: "Wersje aplikacji mobilnej i autorzy",
+    title: "versions.title",
+    subtitle: "versions.subtitle",
   },
 ];
 
@@ -80,6 +82,7 @@ const Card = styled(Box)`
 const defaultProps = { variant: "container", boxShadow: "card" };
 
 export const Dashboard: React.FC = () => {
+  const { translateComponent } = useTranslation();
   return (
     <Box
       mt={["xl", "xl"]}
@@ -101,8 +104,16 @@ export const Dashboard: React.FC = () => {
                 width={100}
                 height={70}
               />
-              <H5 mt="lg">{box.title}</H5>
-              <Text>{box.subtitle}</Text>
+              <H5 mt="lg">
+                {box.title
+                  ? translateComponent(`dashboard.${box.title}`)
+                  : null}
+              </H5>
+              <Text>
+                {box.subtitle
+                  ? translateComponent(`dashboard.${box.subtitle}`)
+                  : null}
+              </Text>
             </Text>
           </Card>
         </Box>

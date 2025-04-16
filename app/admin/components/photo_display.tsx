@@ -13,12 +13,12 @@ type DisplayProps = BasePropertyProps & {
 const FILE_META_ENDPOINT = "/api/v1/files";
 
 const PhotoDisplay: FC<DisplayProps> = (props) => {
+  const { translateComponent, translateProperty } = useTranslation();
   const { property, record, resource, isEmbedded } = props;
   const [previewFetchResponse, setPreviewFetchResponse] = useState({
     isSuccess: false,
-    urlOrMessage: "Fetching preview URL...",
+    urlOrMessage: translateComponent("photoDisplay.messages.fetching"),
   });
-  const { translateProperty } = useTranslation();
 
   const propertyName = property.name.substring(1);
   const originalProperty = resource.properties[propertyName] as
@@ -31,12 +31,17 @@ const PhotoDisplay: FC<DisplayProps> = (props) => {
     );
   }
 
+  const resourceId = originalProperty.resourceId;
+
   useEffect(() => {
     const photoKey = (record?.params[propertyName] ?? null) as string | null;
     if (photoKey === null) {
       setPreviewFetchResponse({
         isSuccess: false,
-        urlOrMessage: "No photo uploaded yet.",
+        urlOrMessage: translateComponent(
+          "photoDisplay.messages.noPhoto",
+          resourceId,
+        ),
       });
     } else {
       // errors handled internally inside
@@ -60,19 +65,33 @@ const PhotoDisplay: FC<DisplayProps> = (props) => {
       if (response.status === 404) {
         return {
           isSuccess: false,
-          urlOrMessage:
-            "Photo of given key does not exist on disk. Please re-upload or replace it.",
+          urlOrMessage: translateComponent(
+            "photoDisplay.messages.notExist",
+            resourceId,
+          ),
         };
       }
       return {
         isSuccess: false,
-        urlOrMessage: `Error fetching preview URL: ${response.statusText} -> ${await response.text()}`,
+        urlOrMessage: translateComponent(
+          "photoDisplay.messages.fetching.errorWithStatus",
+          resourceId,
+          {
+            status: response.statusText,
+            response: response.text(),
+          },
+        ),
       };
     } catch (error) {
       console.error(`Error fetching preview URL for file ${key}`, error);
       return {
         isSuccess: false,
-        urlOrMessage: `Error fetching preview URL: ${error}`,
+        urlOrMessage: translateComponent(
+          "photodisplay.messages.fetching.error",
+          resourceId,
+          //eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          { error },
+        ),
       };
     }
   };
@@ -80,7 +99,9 @@ const PhotoDisplay: FC<DisplayProps> = (props) => {
   const internalElement = previewFetchResponse.isSuccess ? (
     <img
       src={previewFetchResponse.urlOrMessage}
-      alt={`Current ${propertyName} image`}
+      alt={translateComponent("photoDisplay.messages.alt", {
+        property: translateProperty(propertyName, resourceId),
+      })}
       style={{ maxHeight: "400px", maxWidth: "100%" }}
     />
   ) : (
@@ -93,10 +114,7 @@ const PhotoDisplay: FC<DisplayProps> = (props) => {
     return (
       // minor code borrowing from adminjs (show components for standard values)
       <ValueGroup
-        label={translateProperty(
-          originalProperty.label,
-          originalProperty.resourceId,
-        )}
+        label={translateComponent("photoDisplay.labels.title", resourceId)}
       >
         {internalElement}
       </ValueGroup>

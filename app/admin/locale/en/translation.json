@@ -1,0 +1,384 @@
+{
+  "labels": {
+    "buildingsNavigation": "Buildings",
+    "adminNavigation": "Admin Panel",
+    "calendarsNavigation": "Calendars",
+    "guidesNavigation": "Guides",
+    "aboutUsNavigation": "About Us",
+    "departmentsNavigation": "Departments",
+    "organizationsNavigation": "Student Organizations",
+    "versionsNavigation": "Versions",
+    "dashboard": "Dashboard"
+  },
+  "properties": {
+    "id": "ID",
+    "name": "Name",
+    "date": "Date",
+    "addressLine1": "Address Line 1",
+    "addressLine2": "Address Line 2",
+    "latitude": "Latitude",
+    "longitude": "Longitude",
+    "photoKey": "Photo Key",
+    "coverKey": "Cover Key",
+    "imageKey": "Image Key",
+    "logoKey": "Logo Key",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "title": "Title",
+    "description": "Description",
+    "linkType": "Link Type",
+    "link": "Link"
+  },
+  "buttons": {
+    "save": "Save",
+    "upload": "Upload",
+    "restore": "Restore",
+    "delete": "Delete",
+    "Cancel": "Cancel"
+  },
+  "components": {
+    "dashboard": {
+      "aboutUs": {
+        "subtitle": "Get to know our project!"
+      },
+      "calendars": {
+        "title": "Academic Calendar",
+        "subtitle": "Academic calendar for students. Exam sessions, holidays, day swaps"
+      },
+      "admin": {
+        "title": "Admin Panel",
+        "subtitle": "Admin panel for managing users"
+      },
+      "buildings": {
+        "title": "Buildings",
+        "subtitle": "Buildings and multilayered map of university"
+      },
+      "departments": {
+        "title": "Departments",
+        "subtitle": "Departments and fields of studies on university"
+      },
+      "guides": {
+        "title": "Guides",
+        "subtitle": "Guides for students, employees and guests of university"
+      },
+      "organizations": {
+        "title": "Student Organizations",
+        "subtitle": "Student organizations, science clubs, communities"
+      },
+      "versions": {
+        "title": "Versions",
+        "subtitle": "Mobile app versions and authors"
+      }
+    },
+    "dropZone": {
+      "placeholder": "Drop your image here, or click to browse",
+      "acceptedSize": "Max size: {{maxSize}}",
+      "acceptedType": "Supports: {{mimeTypes}}",
+      "unsupportedSize": "File {{fileName}} is too big",
+      "unsupportedType": "File {{fileName}} has unsupported type: {{fileType}}"
+    },
+    "photoDisplay": {
+      "labels": {
+        "title": "Photo"
+      },
+      "messages": {
+        "fetching": "Fetching the preview...",
+        "noPhoto": "There is no photo uploaded yet",
+        "notExist": "Photo with given key does not exist on disk. Upload again or replace it",
+        "errorWithStatus": "There was an error fetching the preview: {{status}} -> {{response}}",
+        "error": "There was an error fetching the preview: {{error}}",
+        "alt": "current '{{property}}' image"
+      }
+    },
+    "photoDropbox": {
+      "labels": {
+        "title": "Photo"
+      },
+      "messages": {
+        "deleted": "Existing picture will be deleted",
+        "upload": "Upload new photo"
+      }
+    }
+  },
+  "resources": {
+    "buildings": {
+      "properties": {
+        "identifier": "Identifier",
+        "specialName": "Special Name",
+        "photoLabel": "Building Photo",
+        "iconType": "Icon Type",
+        "campusId": "Campus ID",
+        "haveFood": "Food Available",
+        "externalDigitalGuideMode": "Guide Type",
+        "externalDigitalGuideIdOrUrl": "Guide Link"
+      },
+      "labels": {
+        "buildings": "Buildings"
+      }
+    },
+    "campuses": {
+      "labels": {
+        "campuses": "Campuses"
+      }
+    },
+    "aeds": {
+      "properties": {
+        "buildingId": "Building ID"
+      },
+      "labels": {
+        "aeds": "Defibrillators"
+      }
+    },
+    "bicycle_showers": {
+      "properties": {
+        "room": "Room",
+        "instructions": "Instructions",
+        "buildingId": "Building ID"
+      },
+      "labels": {
+        "bicycle_showers": "Bicycle Showers"
+      }
+    },
+    "food_spots": {
+      "properties": {
+        "buildingId": "Building ID"
+      },
+      "labels": {
+        "food_spots": "Food Spots"
+      }
+    },
+    "libraries": {
+      "properties": {
+        "email": "Email",
+        "title": "Name",
+        "room": "Room",
+        "phone": "Contact Phone",
+        "buildingId": "Building ID"
+      },
+      "labels": {
+        "libraries": "Libraries"
+      }
+    },
+    "regular_hours": {
+      "properties": {
+        "weekDay": "Weekday",
+        "openTime": "Opening Time",
+        "closeTime": "Closing Time",
+        "libraryId": "Library ID"
+      },
+      "labels": {
+        "regular_hours": "Regular Hours"
+      }
+    },
+    "special_hours": {
+      "properties": {
+        "specialDate": "Special Date",
+        "openTime": "Opening Time",
+        "closeTime": "Closing Time",
+        "libraryId": "Library ID"
+      },
+      "labels": {
+        "special_hours": "Special Hours"
+      }
+    },
+    "users": {
+      "properties": {
+        "email": "Email",
+        "fullName": "Full Name"
+      },
+      "labels": {
+        "users": "Users"
+      }
+    },
+    "academic_calendars": {
+      "properties": {
+        "semesterStartDate": "Semester Start Date",
+        "examSessionStartDate": "Exam Session Start Date",
+        "examSessionLastDate": "Exam Session End Date",
+        "isFirstWeekEven": "First Week Is Even"
+      },
+      "labels": {
+        "academic_calendars": "Academic Calendars"
+      }
+    },
+    "day_swaps": {
+      "properties": {
+        "academicCalendarId": "Academic Calendar ID",
+        "changedWeekday": "Changed Weekday",
+        "changedDayIsEven": "Changed Day Is Even"
+      },
+      "labels": {
+        "day_swaps": "Day Swaps"
+      }
+    },
+    "holidays": {
+      "properties": {
+        "academicCalendarId": "Academic Calendar ID",
+        "startDate": "Start Date",
+        "lastDate": "End Date"
+      },
+      "labels": {
+        "holidays": "Holidays"
+      }
+    },
+    "guide_authors": {
+      "properties": {
+        "name": "Full Name"
+      },
+      "labels": {
+        "guide_authors": "Guide Authors"
+      }
+    },
+    "guide_questions": {
+      "properties": {
+        "answer": "Answer",
+        "articleId": "Article ID"
+      },
+      "labels": {
+        "guide_questions": "Guide Questions"
+      }
+    },
+    "guide_articles": {
+      "properties": {
+        "shortDesc": "Short Description"
+      },
+      "labels": {
+        "guide_articles": "Guide Articles"
+      }
+    },
+    "about_us_general_links": {
+      "properties": {},
+      "labels": {
+        "about_us_general_links": "About Us - Links"
+      }
+    },
+    "about_us_general": {
+      "labels": {
+        "about_us_general": "About Us"
+      }
+    },
+    "fields_of_studies": {
+      "properties": {
+        "departmentId": "Department ID",
+        "url": "URL",
+        "semesterCount": "Number of Semesters",
+        "isEnglish": "In English",
+        "is2ndDegree": "Second Degree",
+        "hasWeekendOption": "Weekend Study Option"
+      },
+      "labels": {
+        "fields_of_studies": "Fields of Study"
+      }
+    },
+    "departments_links": {
+      "properties": {
+        "departmentId": "Department ID"
+      },
+      "labels": {
+        "departments_links": "Department Links"
+      }
+    },
+    "departments": {
+      "properties": {
+        "code": "Code",
+        "betterCode": "Enhanced Code",
+        "gradientStart": "Gradient Start",
+        "gradientStop": "Gradient End"
+      },
+      "labels": {
+        "departments": "Departments"
+      }
+    },
+    "student_organizations": {
+      "properties": {
+        "departmentId": "Department ID",
+        "shortDescription": "Short Description",
+        "coverPreview": "Cover Preview",
+        "source": "Source",
+        "organizationType": "Organization Type",
+        "organizationStatus": "Organization Status"
+      },
+      "labels": {
+        "student_organizations": "Student Organizations"
+      }
+    },
+    "student_organization_links": {
+      "properties": {
+        "studentOrganizationId": "Student Organization ID"
+      },
+      "labels": {
+        "student_organization_links": "Student Organization Links"
+      }
+    },
+    "student_organization_tags": {
+      "properties": {
+        "tag": "Tag"
+      },
+      "labels": {
+        "student_organization_tags": "Student Organization Tags"
+      }
+    },
+    "changes": {
+      "properties": {
+        "versionId": "Version ID",
+        "type": "Change Type"
+      },
+      "labels": {
+        "changes": "Changes"
+      }
+    },
+    "contributor_social_links": {
+      "properties": {
+        "contributorId": "Contributor ID"
+      },
+      "labels": {
+        "contributor_social_links": "Contributor Social Links"
+      }
+    },
+    "change_screenshots": {
+      "properties": {
+        "changeId": "Change ID",
+        "subtitle": "Subtitle"
+      },
+      "labels": {
+        "change_screenshots": "Change Screenshots"
+      }
+    },
+    "contributors": {
+      "properties": {
+        "name": "Full Name"
+      },
+      "labels": {
+        "contributors": "Contributors"
+      }
+    },
+    "milestones": {
+      "labels": {
+        "milestones": "Milestones"
+      }
+    },
+    "roles": {
+      "labels": {
+        "roles": "Roles"
+      }
+    },
+    "versions": {
+      "properties": {
+        "milestoneId": "Milestone ID",
+        "releaseDate": "Release Date"
+      },
+      "labels": {
+        "versions": "Versions"
+      }
+    },
+    "version_screenshots": {
+      "properties": {
+        "versionId": "Version ID",
+        "subtitle": "Subtitle"
+      },
+      "labels": {
+        "version_screenshots": "Version Screenshots"
+      }
+    }
+  }
+}

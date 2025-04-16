@@ -5,7 +5,7 @@ import GuideQuestion from "#models/guide_question";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Guides",
+  name: "guidesNavigation",
   icon: "Paperclip",
 };
 

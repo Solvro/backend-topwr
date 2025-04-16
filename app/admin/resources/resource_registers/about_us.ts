@@ -7,7 +7,7 @@ import AboutUsGeneralLink from "#models/about_us_general_link";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "About Us",
+  name: "aboutUsNavigation",
   icon: "Users",
 };
 
