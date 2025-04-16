@@ -37,6 +37,10 @@
     "Cancel": "Cancel"
   },
   "components": {
+    "Login": {
+      "welcomeHeader": "Hello Jello!",
+      "welcomeMessage": "AdonisJS - best backend framework for Node.js applications"
+    },
     "dashboard": {
       "aboutUs": {
         "subtitle": "Get to know our project!"
