@@ -68,7 +68,7 @@ export default class Library extends BaseModel {
   })
   declare photo: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations(Library);
-  static handleSearchQuery = handleSearchQuery(Library);
-  static handleSortQuery = handleSortQuery(Library);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

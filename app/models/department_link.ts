@@ -5,6 +5,9 @@ import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
 import { LinkType } from "#enums/link_type";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
 
 import Department from "./department.js";
 
@@ -32,4 +35,8 @@ export default class DepartmentsLink extends BaseModel {
 
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
+
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

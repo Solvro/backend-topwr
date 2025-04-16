@@ -61,9 +61,9 @@ export default class Contributor extends BaseModel {
   })
   declare photo: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations(Contributor);
-  static handleSearchQuery = handleSearchQuery(Contributor);
-  static handleSortQuery = handleSortQuery(Contributor);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 
   serializeExtras = true;
 }

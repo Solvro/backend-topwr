@@ -52,7 +52,6 @@ export type QueryValues =
 /**
  * Based on object of params filter query including in, from, to, like options
  *
- * @param {T} model - The Lucid model instance.
  * @returns {LucidQueryScope<T>} - A Lucid query scope function.
  *
  * The returned scope function takes an object where:
@@ -90,9 +89,7 @@ export type QueryValues =
  * **NOTE**
  *  - Consider using **@TypedModel** decorator on model to inject type property into every column easily
  */
-export function handleSearchQuery<T extends LucidModel>(
-  model: T,
-): QueryScope<
+export function handleSearchQuery<T extends LucidModel>(): QueryScope<
   T,
   (
     query: ModelQueryBuilderContract<T>,
@@ -106,7 +103,7 @@ export function handleSearchQuery<T extends LucidModel>(
         queryParam,
         queryValue,
         excluded as string[],
-        model,
+        query.model,
       );
       if (entry === undefined) {
         continue;

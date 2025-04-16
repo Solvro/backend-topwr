@@ -66,9 +66,7 @@ export default class Department extends BaseModel {
   })
   declare logo: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations(Department);
-
-  static handleSearchQuery = handleSearchQuery(Department);
-
-  static handleSortQuery = handleSortQuery(Department);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

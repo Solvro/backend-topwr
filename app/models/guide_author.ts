@@ -33,9 +33,7 @@ export default class GuideAuthor extends BaseModel {
   })
   declare guideArticles: relations.ManyToMany<typeof GuideArticle>;
 
-  static preloadRelations = preloadRelations(GuideAuthor);
-
-  static handleSearchQuery = handleSearchQuery(GuideAuthor);
-
-  static handleSortQuery = handleSortQuery(GuideAuthor);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

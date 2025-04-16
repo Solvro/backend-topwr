@@ -39,7 +39,7 @@ export default class Holiday extends BaseModel {
   @belongsTo(() => AcademicCalendar)
   declare academicCalendar: BelongsTo<typeof AcademicCalendar>;
 
-  static preloadRelations = preloadRelations(Holiday);
-  static handleSearchQuery = handleSearchQuery(Holiday);
-  static handleSortQuery = handleSortQuery(Holiday);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

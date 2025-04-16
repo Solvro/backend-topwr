@@ -60,7 +60,7 @@ export default class GuideArticle extends BaseModel {
   })
   declare image: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations(GuideArticle);
-  static handleSearchQuery = handleSearchQuery(GuideArticle);
-  static handleSortQuery = handleSortQuery(GuideArticle);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

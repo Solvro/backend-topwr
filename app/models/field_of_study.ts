@@ -52,9 +52,7 @@ export default class FieldsOfStudy extends BaseModel {
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
 
-  static preloadRelations = preloadRelations(FieldsOfStudy);
-
-  static handleSearchQuery = handleSearchQuery(FieldsOfStudy);
-
-  static handleSortQuery = handleSortQuery(FieldsOfStudy);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

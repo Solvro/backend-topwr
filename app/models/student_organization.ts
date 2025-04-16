@@ -94,9 +94,7 @@ export default class StudentOrganization extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  static handleSearchQuery = handleSearchQuery(StudentOrganization);
-
-  static handleSortQuery = handleSortQuery(StudentOrganization);
-
-  static preloadRelations = preloadRelations(StudentOrganization);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

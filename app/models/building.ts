@@ -84,9 +84,7 @@ export default class Building extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  static preloadRelations = preloadRelations(Building);
-
-  static handleSearchQuery = handleSearchQuery(Building);
-
-  static handleSortQuery = handleSortQuery(Building);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

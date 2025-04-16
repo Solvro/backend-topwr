@@ -38,7 +38,7 @@ export default class DaySwap extends BaseModel {
   @belongsTo(() => AcademicCalendar)
   declare academicCalendar: BelongsTo<typeof AcademicCalendar>;
 
-  static preloadRelations = preloadRelations(DaySwap);
-  static handleSearchQuery = handleSearchQuery(DaySwap);
-  static handleSortQuery = handleSortQuery(DaySwap);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }
