@@ -1,13 +1,14 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, hasMany, manyToMany } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type {
   BelongsTo,
   HasMany,
   ManyToMany,
 } from "@adonisjs/lucid/types/relations";
 
-import { typedColumn } from "#decorators/typed_model";
+import { typedColumn, typedManyToMany } from "#decorators/typed_model";
+import { GuideAuthorRole } from "#enums/guide_author_role";
 import GuideAuthor from "#models/guide_author";
 import GuideQuestion from "#models/guide_question";
 import { preloadRelations } from "#scopes/preload_helper";
@@ -38,9 +39,9 @@ export default class GuideArticle extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  @manyToMany(() => GuideAuthor, {
+  @typedManyToMany(() => GuideAuthor, {
     pivotTable: "guide_article_authors",
-    pivotColumns: ["role"],
+    pivotColumns: { role: { type: GuideAuthorRole } },
     pivotForeignKey: "article_id",
     pivotRelatedForeignKey: "author_id",
     relatedKey: "id",

@@ -51,14 +51,14 @@ export default class Department extends BaseModel {
   declare updatedAt: DateTime;
 
   @hasMany(() => FieldOfStudy)
-  declare fieldOfStudy: HasMany<typeof FieldOfStudy>;
+  declare fieldsOfStudy: HasMany<typeof FieldOfStudy>;
 
   @hasMany(() => DepartmentLink, {
     onQuery: (query) => {
       return query.orderByRaw(applyLinkTypeSorting);
     },
   })
-  declare departmentLink: HasMany<typeof DepartmentLink>;
+  declare departmentLinks: HasMany<typeof DepartmentLink>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",

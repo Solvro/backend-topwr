@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, manyToMany } from "@adonisjs/lucid/orm";
+import { BaseModel } from "@adonisjs/lucid/orm";
 import type { ManyToMany } from "@adonisjs/lucid/types/relations";
 
-import { typedColumn } from "#decorators/typed_model";
+import { typedColumn, typedManyToMany } from "#decorators/typed_model";
 import StudentOrganization from "#models/student_organization";
 
 export default class StudentOrganizationTag extends BaseModel {
@@ -16,12 +16,13 @@ export default class StudentOrganizationTag extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  @manyToMany(() => StudentOrganization, {
+  @typedManyToMany(() => StudentOrganization, {
     pivotTable: "student_organizations_student_organization_tags",
     localKey: "tag",
     pivotForeignKey: "tag",
     pivotRelatedForeignKey: "student_organization_id",
     pivotTimestamps: true,
+    pivotColumns: {},
   })
   declare organizations: ManyToMany<typeof StudentOrganization>;
 }
