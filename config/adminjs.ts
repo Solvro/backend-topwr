@@ -3,7 +3,7 @@ import { AdminJSProviderConfig } from "@adminjs/adonis";
 import authProvider from "../app/admin/auth.js";
 import { branding } from "../app/admin/branding.js";
 import { Components, componentLoader } from "../app/admin/component_loader.js";
-import { locale } from "../app/admin/locale.js";
+import { locale } from "../app/admin/locale/locale.js";
 import { adminJsResources } from "../app/admin/resources/resource_index.js";
 
 const adminjsConfig: AdminJSProviderConfig = {
