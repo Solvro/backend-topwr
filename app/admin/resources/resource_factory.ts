@@ -14,7 +14,7 @@ import {
 
 import logger from "@adonisjs/core/services/logger";
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
-import { LucidModel } from "@adonisjs/lucid/types/model";
+import { LucidModel, ModelColumnOptions } from "@adonisjs/lucid/types/model";
 
 import FilesService from "#services/files_service";
 
@@ -65,6 +65,13 @@ export interface ResourceInfo {
   additionalOptions?: ResourceOptions;
   addImageHandlingForProperties?: string[];
 }
+
+type LucidColumnDefinition = Omit<ModelColumnOptions, "meta"> & {
+  meta?: {
+    type: string;
+    optional: boolean;
+  };
+};
 
 const hideOnEdit = {
   list: true,
@@ -144,6 +151,10 @@ export class ResourceFactory {
         },
       },
     };
+    const beforeEditHooksToChain: BeforeHookLink[] = [];
+    const afterEditHooksToChain: AfterHookLink[] = [];
+    const beforeNewHooksToChain: BeforeHookLink[] = [];
+    const afterDeleteHooksToChain: AfterHookLink[] = [];
     if (resourceInfo.additionalOptions !== undefined) {
       newResource.options = {
         ...newResource.options,
@@ -162,15 +173,52 @@ export class ResourceFactory {
         ...resourceInfo.additionalActions,
       };
     }
+    ResourceFactory.addTimezoneDatetimepickers(
+      newResource,
+      resourceInfo.forModel,
+    );
+    ResourceFactory.addImageHandling(
+      newResource,
+      resourceInfo,
+      beforeNewHooksToChain,
+      beforeEditHooksToChain,
+      afterEditHooksToChain,
+      afterDeleteHooksToChain,
+    );
+    newResource.options.actions = {
+      ...newResource.options.actions,
+      new: this.addNewUploadHook(
+        newResource.options.actions?.new,
+        beforeNewHooksToChain,
+        [],
+      ),
+      edit: this.addEditUploadHook(
+        newResource.options.actions?.edit,
+        beforeEditHooksToChain,
+        afterEditHooksToChain,
+      ),
+      delete: this.addDeleteHook(
+        newResource.options.actions?.delete,
+        [],
+        afterDeleteHooksToChain,
+      ),
+    };
+    return newResource;
+  }
+
+  private static addImageHandling(
+    resource: ResourceWithProperties,
+    resourceInfo: ResourceInfo,
+    beforeNewHooksToChain: BeforeHookLink[],
+    beforeEditHooksToChain: BeforeHookLink[],
+    afterEditHooksToChain: AfterHookLink[],
+    afterDeleteHooksToChain: AfterHookLink[],
+  ) {
     if (resourceInfo.addImageHandlingForProperties !== undefined) {
-      const beforeEditHooksToChain: BeforeHookLink[] = [];
-      const afterEditHooksToChain: AfterHookLink[] = [];
-      const beforeNewHooksToChain: BeforeHookLink[] = [];
-      const afterDeleteHooksToChain: AfterHookLink[] = [];
       resourceInfo.addImageHandlingForProperties.forEach((propertyName) => {
         const uploadPropertyName = `_${propertyName}`;
 
-        newResource.options.properties[uploadPropertyName] = {
+        resource.options.properties[uploadPropertyName] = {
           type: "mixed",
           isVisible: photoHandlerVisibility,
           components: {
@@ -178,7 +226,7 @@ export class ResourceFactory {
             show: "PhotoDisplay",
           },
         };
-        newResource.options.properties[propertyName] = {
+        resource.options.properties[propertyName] = {
           isVisible: hideOnEdit,
         };
         beforeEditHooksToChain.push(
@@ -200,26 +248,39 @@ export class ResourceFactory {
           ResourceFactory.createAfterDeleteUploadHookLink(propertyName),
         );
       });
-      newResource.options.actions = {
-        ...newResource.options.actions,
-        new: this.addNewUploadHook(
-          newResource.options.actions?.new,
-          beforeNewHooksToChain,
-          [],
-        ),
-        edit: this.addEditUploadHook(
-          newResource.options.actions?.edit,
-          beforeEditHooksToChain,
-          afterEditHooksToChain,
-        ),
-        delete: this.addDeleteHook(
-          newResource.options.actions?.delete,
-          [],
-          afterDeleteHooksToChain,
-        ),
-      };
     }
-    return newResource;
+  }
+
+  private static getDateFields(baseModel: LucidModel): string[] {
+    const dateFields: string[] = [];
+    baseModel.$columnsDefinitions.forEach(
+      (def: LucidColumnDefinition, name: string) => {
+        if (
+          def.meta !== undefined &&
+          (def.meta.type === "datetime" || def.meta.type === "date") &&
+          name !== "createdAt" &&
+          name !== "updatedAt"
+        ) {
+          dateFields.push(name);
+        }
+      },
+    );
+    return dateFields;
+  }
+
+  private static addTimezoneDatetimepickers(
+    resource: ResourceWithProperties,
+    baseModel: LucidModel,
+  ) {
+    const dateFields = ResourceFactory.getDateFields(baseModel);
+    dateFields.forEach((dateField) => {
+      resource.options.properties[dateField] = {
+        ...resource.options.properties[dateField],
+        components: {
+          edit: "TimezoneDatepicker",
+        },
+      };
+    });
   }
 
   private static addNewUploadHook(
