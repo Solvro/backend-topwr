@@ -37,16 +37,19 @@ export default class extends BaseSeeder {
       {
         departmentId: 1,
         linkType: LinkType.TopwrBuildings,
+        name: "Link to B-42",
         link: "topwr:buildings/42",
       },
       {
         departmentId: 1,
         linkType: LinkType.Default,
+        name: "Link to WA",
         link: "http://wa.pwr.edu.pl",
       },
       {
         departmentId: 2,
         linkType: LinkType.TopwrBuildings,
+        name: "Link to B-28",
         link: "topwr:buildings/28",
       },
       {

@@ -40,6 +40,7 @@ interface DepartmentLinkDraft {
   department_id: number | null;
   linkType: string;
   link: string;
+  name: string;
 }
 
 export default class DepartmentsScraper extends BaseScraperModule {
@@ -182,6 +183,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             departmentId: linkEntry.department_id,
             linkType: this.detectLinkType(linkEntry.link),
             link: linkEntry.link,
+            name: linkEntry.name,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           },

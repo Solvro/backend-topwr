@@ -21,6 +21,9 @@ export default class DepartmentsLink extends BaseModel {
   @typedColumn({ type: "string" })
   declare link: string;
 
+  @typedColumn({ type: "string" })
+  declare name: string;
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
