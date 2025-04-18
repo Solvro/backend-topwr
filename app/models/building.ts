@@ -5,6 +5,7 @@ import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
 import { BuildingIcon } from "#enums/building_icon";
+import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -50,8 +51,8 @@ export default class Building extends BaseModel {
   @typedColumn({ type: "uuid", optional: true })
   declare coverKey: string | null;
 
-  @typedColumn({ type: "string", optional: true })
-  declare externalDigitalGuideMode: string | null;
+  @typedColumn({ type: ExternalDigitalGuideMode, optional: true })
+  declare externalDigitalGuideMode: ExternalDigitalGuideMode;
 
   @typedColumn({ type: "string", optional: true })
   declare externalDigitalGuideIdOrUrl: string | null;
