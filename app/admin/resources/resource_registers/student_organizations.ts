@@ -9,7 +9,7 @@ import StudentOrganizationTag from "#models/student_organization_tag";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Student Organizations",
+  name: "organizationsNavigation",
   icon: "Cpu",
 };
 

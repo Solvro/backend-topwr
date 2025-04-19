@@ -24,7 +24,7 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
   const [uploadPreviewURL, setUploadPreviewURL] = useState<string | undefined>(
     undefined,
   );
-  const { translateProperty } = useTranslation();
+  const { translateComponent, translateButton } = useTranslation();
 
   useEffect(
     () => () =>
@@ -48,6 +48,8 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
       `Invalid dropbox configuration. Original property '${propertyName}' for dropbox '${property.name}' is not defined.`,
     );
   }
+
+  const resourceId = originalProperty.resourceId;
 
   // exclusively for the PropertyDescription component
   // according to the docs, path and propertyPath should be equal for non-array properties
@@ -123,11 +125,11 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
     (photoExists || currentState === "upload") && currentState !== "delete";
   const uploadButtonLabel = photoWillExist
     ? uploadZoneVisible
-      ? "Cancel replace"
-      : "Replace"
+      ? translateButton("cancel", resourceId)
+      : translateButton("save", resourceId)
     : uploadZoneVisible
-      ? "Cancel upload"
-      : "Upload";
+      ? translateButton("cancel", resourceId)
+      : translateButton("upload", resourceId);
   const uploadButtonVariant = uploadZoneVisible
     ? "secondary"
     : photoWillExist
@@ -143,7 +145,7 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
     <FormGroup>
       {/* minor code borrowing from adminjs (modified PropertyLabel, edit components for standard values) */}
       <Label required={originalProperty.isRequired}>
-        {translateProperty(originalProperty.label, originalProperty.resourceId)}
+        {translateComponent("photoDropbox.labels.title", resourceId)}
         {property.description !== undefined && (
           <PropertyDescription property={originalExtendedProperty} />
         )}
@@ -168,7 +170,7 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
       {currentState === "delete" && (
         <>
           <span style={{ color: "orangered" }}>
-            The current image will be deleted
+            {translateComponent("photoDropbox.messages.deleted", resourceId)}
           </span>
           <br />
         </>
@@ -184,20 +186,30 @@ const PhotoDropbox: FC<BasePropertyProps> = (props) => {
       )}
       {showDeleteButton && (
         <Button onClick={onDeleteClicked} variant="danger" style={buttonStyle}>
-          Delete
+          {translateButton("delete", resourceId)}
         </Button>
       )}
       {showRestoreButton && (
         <Button onClick={onRestoreClicked} variant="info" style={buttonStyle}>
-          Restore
+          {translateButton("restore", resourceId)}
         </Button>
       )}
       {uploadZoneVisible && (
         <div>
-          <Label>Upload a new image:</Label>
+          <Label>
+            {translateComponent("photoDropbox.messages.upload", resourceId)}
+          </Label>
           <DropZone
             onChange={handleFileDrop}
             multiple={false}
+            // idk, does not work passing just dropZone with { returnObjects: true } option
+            translations={{
+              placeholder: translateComponent("dropZone.placeholder"),
+              acceptedSize: translateComponent("dropZone.acceptedSize"),
+              acceptedType: translateComponent("dropZone.acceptedType"),
+              unsupportedSize: translateComponent("dropZone.unsupportedSize"),
+              unsupportedType: translateComponent("dropZone.unsupportedType"),
+            }}
             validate={{ maxSize: MAX_FILE_SIZE, mimeTypes: ALLOWED_FILE_TYPES }}
           />
         </div>

@@ -12,7 +12,7 @@ import VersionScreenshot from "#models/version_screenshot";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Versions",
+  name: "versionsNavigation",
   icon: "GitBranch",
 };
 
