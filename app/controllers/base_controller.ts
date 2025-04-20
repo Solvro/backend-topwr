@@ -1,7 +1,4 @@
 import adonisString from "@poppinss/utils/string";
-import vine, { VineBoolean, VineObject, VineValidator } from "@vinejs/vine";
-import { OptionalModifier } from "@vinejs/vine/schema/base/literal";
-import { SchemaTypes } from "@vinejs/vine/types";
 import assert from "node:assert";
 
 import type { HttpContext } from "@adonisjs/core/http";
@@ -15,7 +12,6 @@ import {
   LucidModel,
   LucidRow,
   ModelAttributes,
-  ModelColumnOptions,
   ModelQueryBuilderContract,
 } from "@adonisjs/lucid/types/model";
 import {
@@ -27,7 +23,6 @@ import {
 } from "@adonisjs/lucid/types/relations";
 
 import {
-  ValidatedColumnDef,
   validateColumnDef,
   validateTypedManyToManyRelation,
 } from "#decorators/typed_model";
@@ -40,6 +35,13 @@ import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 import "#utils/maps";
+import {
+  AnyValidator,
+  AutogenCacheEntry,
+  PrimaryKeyFieldDescriptor,
+  RelationValidator,
+  relationValidator,
+} from "#utils/model_autogen";
 import { paginationValidator } from "#validators/pagination";
 
 interface Scopes<T extends LucidModel> {
@@ -61,59 +63,10 @@ type ScopesWithoutFirstArg<T extends LucidModel> = {
   [K in keyof Scopes<T>]: ScopeMethod<Scopes<T>[K], T>;
 };
 
-type RelationValidator = VineValidator<
-  VineObject<
-    Record<string, OptionalModifier<VineBoolean>>,
-    Record<string, string | number | boolean | null | undefined>,
-    Record<string, boolean | undefined>,
-    Record<string, boolean | undefined>
-  >,
-  [undefined]
->;
-type AnyValidator = VineValidator<SchemaTypes, [undefined]>;
-
-interface PrimaryKeyFieldDescriptor {
-  fieldName: string;
-  columnOptions: ValidatedColumnDef;
-}
-
-interface AutogenCacheEntry {
-  // keyed by json-encoded list of relations
-  selfValidation: Map<string, InternalControllerValidationError | null>;
-  primaryKeyField: PrimaryKeyFieldDescriptor | InternalControllerError;
-  // i give up on properly typing these validators
-  pathIdValidator: AnyValidator;
-  storeValidator: AnyValidator;
-  updateValidator: AnyValidator;
-  // indexed by relation name
-  relationStoreValidators: Map<string, AnyValidator>;
-  relationAttachValidators: Map<string, AnyValidator>;
-  relationDetachValidators: Map<string, AnyValidator>;
-  manyToManyIdValidators: Map<string, AnyValidator>;
-}
-
-const relationValidatorCache = new Map<string, RelationValidator>();
-const modelAutogenCache = new Map<LucidModel, Partial<AutogenCacheEntry>>();
-
-function relationValidator(relations: string[]): RelationValidator {
-  // check cache
-  const cacheKey = JSON.stringify(relations);
-  const cachedEntry = relationValidatorCache.get(cacheKey);
-  if (cachedEntry !== undefined) {
-    return cachedEntry;
-  }
-
-  // construct validator
-  const validator = vine.compile(
-    vine.object(
-      Object.fromEntries(
-        relations.map((rel) => [rel, vine.boolean().optional()]),
-      ),
-    ),
-  );
-  relationValidatorCache.set(cacheKey, validator);
-  return validator;
-}
+const selfValidationCache = new Map<
+  LucidModel,
+  Map<string, InternalControllerValidationError | null>
+>();
 
 interface SmuggledScopes {
   smuggledScopes: Record<string, undefined>;
@@ -147,10 +100,10 @@ export default abstract class BaseController<
    */
   protected abstract readonly crudRelations: string[];
   protected abstract readonly model: T;
-  #modelCacheEntry?: Partial<AutogenCacheEntry>;
+  #modelCacheEntry?: AutogenCacheEntry;
 
-  private get modelCacheEntry(): Partial<AutogenCacheEntry> {
-    this.#modelCacheEntry ??= modelAutogenCache.getOrInsert(this.model, {});
+  private get modelCacheEntry(): AutogenCacheEntry {
+    this.#modelCacheEntry ??= AutogenCacheEntry.for(this.model);
     return this.#modelCacheEntry;
   }
 
@@ -173,303 +126,41 @@ export default abstract class BaseController<
   }
 
   protected get primaryKeyField(): PrimaryKeyFieldDescriptor {
-    // check cache
-    if (
-      this.modelCacheEntry.primaryKeyField instanceof InternalControllerError
-    ) {
-      throw this.modelCacheEntry.primaryKeyField;
-    } else if (this.modelCacheEntry.primaryKeyField !== undefined) {
-      return this.modelCacheEntry.primaryKeyField;
-    }
-
-    // attempt to find the primary key field
-    let primaryKeyField: PrimaryKeyFieldDescriptor | undefined;
-    for (const [name, field] of this.model.$columnsDefinitions.entries()) {
-      if (!field.isPrimary) {
-        continue;
-      }
-      if (primaryKeyField !== undefined) {
-        this.modelCacheEntry.primaryKeyField = new InternalControllerError(
-          `Model '${this.model.name}' has more than one primary key field!`,
-        );
-        throw this.modelCacheEntry.primaryKeyField;
-      }
-      primaryKeyField = {
-        fieldName: name,
-        columnOptions: field as ValidatedColumnDef,
-      };
-    }
-
-    this.modelCacheEntry.primaryKeyField =
-      primaryKeyField ??
-      new InternalControllerError(
-        `Model '${this.model.name}' has no primary key field!`,
-      );
-    if (
-      this.modelCacheEntry.primaryKeyField instanceof InternalControllerError
-    ) {
-      throw this.modelCacheEntry.primaryKeyField;
-    }
     return this.modelCacheEntry.primaryKeyField;
   }
 
   protected get pathIdValidator(): AnyValidator {
-    this.modelCacheEntry.pathIdValidator ??= vine.compile(
-      vine.object({
-        params: vine.object({
-          id: this.primaryKeyField.columnOptions.meta.validator,
-        }),
-      }),
-    );
-
     return this.modelCacheEntry.pathIdValidator;
   }
 
   protected get storeValidator(): AnyValidator {
-    this.modelCacheEntry.storeValidator ??= vine.compile(
-      vine.object(
-        Object.fromEntries(
-          this.model.$columnsDefinitions
-            .entries()
-            .map((value: [string, ModelColumnOptions]) => {
-              const [name, field] = value as [string, ValidatedColumnDef];
-              if (field.meta.autoGenerated) {
-                return undefined;
-              }
-              return [name, field.meta.validator] as [string, SchemaTypes];
-            })
-            .filter((e) => e !== undefined),
-        ),
-      ),
-    );
-
     return this.modelCacheEntry.storeValidator;
   }
 
   protected get updateValidator(): AnyValidator {
-    this.modelCacheEntry.updateValidator ??= vine.compile(
-      vine.object(
-        Object.fromEntries(
-          this.model.$columnsDefinitions
-            .entries()
-            .map((value: [string, ModelColumnOptions]) => {
-              const [name, field] = value as [string, ValidatedColumnDef];
-              if (field.meta.autoGenerated) {
-                return undefined;
-              }
-              let validator = field.meta.validator;
-              if (
-                "optional" in validator &&
-                typeof validator.optional === "function"
-              ) {
-                validator = (validator.optional as () => SchemaTypes)();
-              }
-              return [name, validator] as [string, SchemaTypes];
-            })
-            .filter((e) => e !== undefined),
-        ),
-      ),
-    );
-
     return this.modelCacheEntry.updateValidator;
   }
 
   protected relatedStoreValidator(relationName: string): AnyValidator {
-    this.modelCacheEntry.relationStoreValidators ??= new Map();
-    return this.modelCacheEntry.relationStoreValidators.getOrInsertWith(
-      relationName,
-      () => {
-        const relation = this.model.$relationsDefinitions.get(relationName);
-        if (relation === undefined) {
-          throw new InternalControllerError(
-            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
-          );
-        }
-        if (!relation.booted) {
-          relation.boot();
-        }
-        const foreignKey =
-          relation.type === "hasMany" ? relation.foreignKey : undefined;
-        return vine.compile(
-          vine.object(
-            Object.fromEntries(
-              relation
-                .relatedModel()
-                .$columnsDefinitions.entries()
-                .map((value: [string, ModelColumnOptions]) => {
-                  const [name, field] = value as [string, ValidatedColumnDef];
-                  if (field.meta.autoGenerated || name === foreignKey) {
-                    return undefined;
-                  }
-                  return [name, field.meta.validator] as [string, SchemaTypes];
-                })
-                .filter((e) => e !== undefined),
-            ),
-          ),
-        );
-      },
-    );
+    return this.modelCacheEntry.relatedStoreValidator(relationName);
   }
 
   protected attachValidator(relationName: string): AnyValidator {
-    this.modelCacheEntry.relationAttachValidators ??= new Map();
-    return this.modelCacheEntry.relationAttachValidators.getOrInsertWith(
-      relationName,
-      () => {
-        const relation = this.model.$relationsDefinitions.get(relationName);
-        if (relation === undefined) {
-          throw new InternalControllerError(
-            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
-          );
-        }
-        if (relation.type !== "manyToMany") {
-          throw new InternalControllerError(
-            `Relation '${relationName}' is not a manyToMany relation!`,
-          );
-        }
-        if (!validateTypedManyToManyRelation(relation)) {
-          throw new InternalControllerError(
-            `Relation '${relationName}' isn't properly typed!`,
-          );
-        }
-        if (!relation.booted) {
-          relation.boot();
-        }
-        return vine.compile(
-          vine.object(
-            Object.fromEntries(
-              Object.entries(relation.options.meta.declaredColumnTypes)
-                .map(([name, field]) => {
-                  if (field.autoGenerated) {
-                    return undefined;
-                  }
-                  return [name, field.validator];
-                })
-                .filter((e) => e !== undefined),
-            ),
-          ),
-        );
-      },
-    );
+    return this.modelCacheEntry.attachValidator(relationName);
   }
 
   protected detachValidator(relationName: string): AnyValidator {
-    this.modelCacheEntry.relationDetachValidators ??= new Map();
-    return this.modelCacheEntry.relationDetachValidators.getOrInsertWith(
-      relationName,
-      () => {
-        const relation = this.model.$relationsDefinitions.get(relationName);
-        if (relation === undefined) {
-          throw new InternalControllerError(
-            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
-          );
-        }
-        if (relation.type !== "manyToMany") {
-          throw new InternalControllerError(
-            `Relation '${relationName}' is not a manyToMany relation!`,
-          );
-        }
-        if (!validateTypedManyToManyRelation(relation)) {
-          throw new InternalControllerError(
-            `Relation '${relationName}' isn't properly typed!`,
-          );
-        }
-        if (!relation.booted) {
-          relation.boot();
-        }
-        return vine.compile(
-          vine.object(
-            Object.fromEntries(
-              Object.entries(relation.options.meta.declaredColumnTypes)
-                .map(([name, field]) => {
-                  if (!field.detachFilter) {
-                    return undefined;
-                  }
-                  let validator = field.validator;
-                  if (
-                    "optional" in validator &&
-                    typeof validator.optional === "function"
-                  ) {
-                    validator = (validator.optional as () => SchemaTypes)();
-                  }
-                  return [name, validator];
-                })
-                .filter((e) => e !== undefined),
-            ),
-          ),
-        );
-      },
-    );
+    return this.modelCacheEntry.detachValidator(relationName);
   }
 
   protected manyToManyIdsValidator(relationName: string): AnyValidator {
-    this.modelCacheEntry.manyToManyIdValidators ??= new Map();
-    return this.modelCacheEntry.manyToManyIdValidators.getOrInsertWith(
-      relationName,
-      () => {
-        const relation = this.model.$relationsDefinitions.get(relationName);
-        if (relation === undefined) {
-          throw new InternalControllerError(
-            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
-          );
-        }
-        if (relation.type !== "manyToMany") {
-          throw new InternalControllerError(
-            `Relation '${relationName}' is not a manyToMany relation!`,
-          );
-        }
-        if (!validateTypedManyToManyRelation(relation)) {
-          throw new InternalControllerError(
-            `Relation '${relationName}' isn't properly typed!`,
-          );
-        }
-        if (!relation.booted) {
-          relation.boot();
-        }
-        const relatedField = relation
-          .relatedModel()
-          .$columnsDefinitions.get(relation.relatedKey);
-        if (relatedField === undefined) {
-          throw new InternalControllerError(
-            `Related key in relation '${relationName}' ('${relation.relatedKey}') doesn't exist on the related model!`,
-          );
-        }
-        if (!validateColumnDef(relatedField)) {
-          throw new InternalControllerError(
-            `Related key in relation '${relationName}' ('${relation.relatedKey}') isn't properly typed!`,
-          );
-        }
-        return vine.compile(
-          vine.object({
-            params: vine.object({
-              localId: this.primaryKeyField.columnOptions.meta.validator,
-              relatedId: (relatedField as ValidatedColumnDef).meta.validator,
-            }),
-          }),
-        );
-      },
-    );
+    return this.modelCacheEntry.manyToManyIdsValidator(relationName);
   }
 
   /**
-   * Verify that this controller was implemented correctly
-   *
-   * @throws when this controller was implemented incorrectly
+   * The actual self-validation function, does not cache!
    */
-  protected async selfValidate() {
-    // cache
-    this.modelCacheEntry.selfValidation ??= new Map();
-
-    const relationCacheKey = JSON.stringify(this.queryRelations);
-    const relationCachedEntry =
-      this.modelCacheEntry.selfValidation.get(relationCacheKey);
-    if (relationCachedEntry !== undefined) {
-      if (relationCachedEntry === null) {
-        return;
-      }
-      throw relationCachedEntry;
-    }
-
+  protected async doSelfValidate(): Promise<InternalControllerValidationError | null> {
     const issues = [];
 
     // Verify scopes
@@ -576,12 +267,36 @@ export default abstract class BaseController<
       issues.push(error.message);
     }
 
-    if (issues.length !== 0) {
-      const error = new InternalControllerValidationError(issues);
-      this.modelCacheEntry.selfValidation.set(relationCacheKey, error);
-      throw error;
+    return issues.length === 0
+      ? null
+      : new InternalControllerValidationError(issues);
+  }
+
+  /**
+   * Verify that this controller was implemented correctly
+   *
+   * @throws when this controller was implemented incorrectly
+   */
+  protected async selfValidate() {
+    // cache
+    const modelValidationCache = selfValidationCache.getOrInsertWith(
+      this.model,
+      () => new Map(),
+    );
+
+    const relationCacheKey = JSON.stringify([
+      this.queryRelations,
+      this.crudRelations,
+    ]);
+    const selfValidationResult =
+      await modelValidationCache.getOrInsertWithAsync(
+        relationCacheKey,
+        this.doSelfValidate.bind(this),
+      );
+    if (selfValidationResult === null) {
+      return;
     }
-    this.modelCacheEntry.selfValidation.set(relationCacheKey, null);
+    throw selfValidationResult;
   }
 
   /**
