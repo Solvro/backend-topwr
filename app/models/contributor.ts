@@ -43,14 +43,16 @@ export default class Contributor extends BaseModel {
 
   @typedManyToMany(() => Role, {
     pivotTable: "contributor_roles",
-    pivotColumns: { milestone_id: { type: "integer" } },
+    pivotColumns: {
+      milestone_id: { type: "integer", detachFilter: true },
+    },
     pivotTimestamps: true,
   })
   declare roles: ManyToMany<typeof Role>;
 
   @typedManyToMany(() => Milestone, {
     pivotTable: "contributor_roles",
-    pivotColumns: { role_id: { type: "integer" } },
+    pivotColumns: { role_id: { type: "integer", detachFilter: true } },
     pivotTimestamps: true,
   })
   declare milestones: ManyToMany<typeof Milestone>;

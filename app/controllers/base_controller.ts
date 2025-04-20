@@ -9,6 +9,7 @@ import logger from "@adonisjs/core/services/logger";
 import router from "@adonisjs/core/services/router";
 import { Constructor } from "@adonisjs/core/types/container";
 import { LazyImport, StoreRouteNode } from "@adonisjs/core/types/http";
+import db from "@adonisjs/lucid/services/db";
 import {
   ExtractScopes,
   LucidModel,
@@ -87,6 +88,7 @@ interface AutogenCacheEntry {
   // indexed by relation name
   relationStoreValidators: Map<string, AnyValidator>;
   relationAttachValidators: Map<string, AnyValidator>;
+  relationDetachValidators: Map<string, AnyValidator>;
   manyToManyIdValidators: Map<string, AnyValidator>;
 }
 
@@ -342,6 +344,55 @@ export default abstract class BaseController<
                     return undefined;
                   }
                   return [name, field.validator];
+                })
+                .filter((e) => e !== undefined),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  protected detachValidator(relationName: string): AnyValidator {
+    this.modelCacheEntry.relationDetachValidators ??= new Map();
+    return this.modelCacheEntry.relationDetachValidators.getOrInsertWith(
+      relationName,
+      () => {
+        const relation = this.model.$relationsDefinitions.get(relationName);
+        if (relation === undefined) {
+          throw new InternalControllerError(
+            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
+          );
+        }
+        if (relation.type !== "manyToMany") {
+          throw new InternalControllerError(
+            `Relation '${relationName}' is not a manyToMany relation!`,
+          );
+        }
+        if (!validateTypedManyToManyRelation(relation)) {
+          throw new InternalControllerError(
+            `Relation '${relationName}' isn't properly typed!`,
+          );
+        }
+        if (!relation.booted) {
+          relation.boot();
+        }
+        return vine.compile(
+          vine.object(
+            Object.fromEntries(
+              Object.entries(relation.options.meta.declaredColumnTypes)
+                .map(([name, field]) => {
+                  if (!field.detachFilter) {
+                    return undefined;
+                  }
+                  let validator = field.validator;
+                  if (
+                    "optional" in validator &&
+                    typeof validator.optional === "function"
+                  ) {
+                    validator = (validator.optional as () => SchemaTypes)();
+                  }
+                  return [name, validator];
                 })
                 .filter((e) => e !== undefined),
             ),
@@ -971,32 +1022,40 @@ export default abstract class BaseController<
     } = (await request.validateUsing(
       this.manyToManyIdsValidator(relationName),
     )) as { params: { localId: string | number; relatedId: string | number } };
+    const detachFilters = (await request.validateUsing(
+      this.detachValidator(relationName),
+    )) as Record<string, unknown>;
 
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    const mainInstance = await this.model
-      .query()
-      .where(primaryColumnName, localId)
-      .firstOrFail()
-      .addErrorContext(
-        `${this.model.name} with '${primaryColumnName}' = '${localId}' does not exist`,
-      );
-
-    const relationClient = mainInstance.related(
-      relationName as ExtractModelRelations<InstanceType<T>>,
-    );
-    if (relationClient.relation.type !== "manyToMany") {
+    const relation = this.model.$relationsDefinitions.get(relationName);
+    if (relation === undefined) {
       throw new InternalControllerError(
-        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationDetach' method, ` +
-          `which only supports 'manyToMany' relations, but this relation is of type '${relationClient.relation.type}'!`,
+        `Relation '${relationName}' does not exist on model '${this.model.name}'`,
       );
     }
-    await (
-      relationClient as ManyToManyClientContract<
-        ManyToManyRelationContract<T, LucidModel>,
-        LucidModel
-      >
-    ).detach([relatedId]);
+    if (relation.type !== "manyToMany") {
+      throw new InternalControllerError(
+        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationDetach' method, ` +
+          `which only supports 'manyToMany' relations, but this relation is of type '${relation.type}'!`,
+      );
+    }
+    if (!relation.booted) {
+      relation.boot();
+    }
 
-    return { success: true };
+    const result = await db
+      .knexQuery()
+      .table(relation.pivotTable)
+      .where({
+        ...detachFilters,
+        [relation.pivotForeignKey]: localId,
+        [relation.pivotRelatedForeignKey]: relatedId,
+      })
+      .delete();
+
+    if (result === 0) {
+      throw new NotFoundException("No relation attachments matched your query");
+    }
+
+    return { success: true, numDetached: result };
   }
 }
