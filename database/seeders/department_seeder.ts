@@ -2,7 +2,7 @@ import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
 import { LinkType } from "#enums/link_type";
 import Department from "#models/department";
-import DepartmentsLink from "#models/department_link";
+import DepartmentLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 
 export default class extends BaseSeeder {
@@ -33,7 +33,7 @@ export default class extends BaseSeeder {
       },
     ]);
 
-    await DepartmentsLink.createMany([
+    await DepartmentLink.createMany([
       {
         departmentId: 1,
         linkType: LinkType.TopwrBuildings,

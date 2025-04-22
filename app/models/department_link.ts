@@ -11,7 +11,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
 
 import Department from "./department.js";
 
-export default class DepartmentsLink extends BaseModel {
+export default class DepartmentLink extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 

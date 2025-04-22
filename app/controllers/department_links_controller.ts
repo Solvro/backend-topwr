@@ -1,12 +1,12 @@
-import DepartmentsLink from "#models/department_link";
+import DepartmentLink from "#models/department_link";
 
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
 export default class DepartmentLinksController extends BaseController<
-  typeof DepartmentsLink
+  typeof DepartmentLink
 > {
   protected readonly queryRelations = ["department"];
   protected readonly crudRelations = [];
-  protected readonly model = DepartmentsLink;
+  protected readonly model = DepartmentLink;
 }
