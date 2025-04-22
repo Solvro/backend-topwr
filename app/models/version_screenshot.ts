@@ -31,7 +31,7 @@ export default class VersionScreenshot extends BaseModel {
   declare updatedAt: DateTime;
 
   @belongsTo(() => Version)
-  declare change: BelongsTo<typeof Version>;
+  declare version: BelongsTo<typeof Version>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",
