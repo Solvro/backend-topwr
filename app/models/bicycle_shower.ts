@@ -33,20 +33,20 @@ export default class BicycleShower extends BaseModel {
   @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @typedColumn({ type: "string", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
-  @typedColumn({ type: "integer", optional: true })
+  @typedColumn({ foreignKeyOf: () => Building, optional: true })
   declare buildingId: number | null;
-
-  @belongsTo(() => Building)
-  declare building: BelongsTo<typeof Building>;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => Building)
+  declare building: BelongsTo<typeof Building>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",

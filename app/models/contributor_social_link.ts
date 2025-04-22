@@ -15,7 +15,7 @@ export default class ContributorSocialLink extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Contributor })
   declare contributorId: number;
 
   @typedColumn({ type: LinkType })

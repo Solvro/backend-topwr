@@ -30,7 +30,7 @@ export default class Building extends BaseModel {
   @typedColumn({ type: BuildingIcon })
   declare iconType: BuildingIcon;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Campus })
   declare campusId: number;
 
   @typedColumn({ type: "string", columnName: "address_line1" })
@@ -48,7 +48,7 @@ export default class Building extends BaseModel {
   @typedColumn({ type: "boolean" })
   declare haveFood: boolean;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
 
   @typedColumn({ type: ExternalDigitalGuideMode, optional: true })

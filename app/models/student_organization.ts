@@ -28,13 +28,13 @@ export default class StudentOrganization extends BaseModel {
   @typedColumn({ type: "string" })
   declare name: string;
 
-  @typedColumn({ type: "integer", optional: true })
+  @typedColumn({ foreignKeyOf: () => Department, optional: true })
   declare departmentId: number | null;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare logoKey: string | null;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
 
   @typedColumn({ type: "string", optional: true })

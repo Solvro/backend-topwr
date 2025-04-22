@@ -30,7 +30,7 @@ export default class GuideArticle extends BaseModel {
   @typedColumn({ type: "string" })
   declare description: string;
 
-  @typedColumn({ type: "uuid" })
+  @typedColumn({ foreignKeyOf: () => FileEntry })
   declare imageKey: string;
 
   @typedColumn.dateTime({ autoCreate: true })

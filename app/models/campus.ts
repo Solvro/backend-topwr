@@ -18,7 +18,7 @@ export default class Campus extends BaseModel {
   @typedColumn({ type: "string" })
   declare name: string;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
 
   @typedColumn.dateTime({ autoCreate: true })

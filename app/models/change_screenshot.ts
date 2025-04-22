@@ -15,10 +15,10 @@ export default class ChangeScreenshot extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Change })
   declare changeId: number;
 
-  @typedColumn({ type: "uuid" })
+  @typedColumn({ foreignKeyOf: () => FileEntry })
   declare imageKey: string;
 
   @typedColumn({ type: "string", optional: true })

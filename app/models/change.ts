@@ -16,7 +16,7 @@ export default class Change extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Version })
   declare versionId: number;
 
   @typedColumn({ type: ChangeType })

@@ -20,7 +20,7 @@ export default class StudentOrganizationLink extends BaseModel {
   @typedColumn({ type: LinkType })
   declare linkType: LinkType;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => StudentOrganization })
   declare studentOrganizationId: number;
 
   @typedColumn.dateTime({ autoCreate: true })

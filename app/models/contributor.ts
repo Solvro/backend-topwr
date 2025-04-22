@@ -25,7 +25,7 @@ export default class Contributor extends BaseModel {
   @typedColumn({ type: "string" })
   declare name: string;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
   @typedColumn.dateTime({ autoCreate: true })

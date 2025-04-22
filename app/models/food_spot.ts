@@ -30,20 +30,20 @@ export default class FoodSpot extends BaseModel {
   @typedColumn({ type: "number" })
   declare longitude: number;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
-  @typedColumn({ type: "integer", optional: true })
+  @typedColumn({ foreignKeyOf: () => Building, optional: true })
   declare buildingId: number | null;
-
-  @belongsTo(() => Building)
-  declare building: BelongsTo<typeof Building>;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => Building)
+  declare building: BelongsTo<typeof Building>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",

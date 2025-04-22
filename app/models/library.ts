@@ -41,10 +41,10 @@ export default class Library extends BaseModel {
   @typedColumn({ type: "number" })
   declare longitude: number;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
-  @typedColumn({ type: "integer", optional: true })
+  @typedColumn({ foreignKeyOf: () => Building, optional: true })
   declare buildingId: number | null;
 
   @belongsTo(() => Building)

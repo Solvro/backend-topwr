@@ -15,7 +15,7 @@ export default class DepartmentsLink extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Department })
   declare departmentId: number;
 
   @typedColumn({ type: LinkType })

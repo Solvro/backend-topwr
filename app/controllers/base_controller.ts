@@ -30,6 +30,7 @@ import {
   InternalControllerError,
   InternalControllerValidationError,
 } from "#exceptions/base_controller_errors";
+import { BaseError } from "#exceptions/base_error";
 import { NotFoundException } from "#exceptions/http_exceptions";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -263,7 +264,9 @@ export default abstract class BaseController<
     try {
       void this.primaryKeyField;
     } catch (error) {
-      assert(error instanceof InternalControllerError);
+      if (!(error instanceof BaseError)) {
+        throw error;
+      }
       issues.push(error.message);
     }
 

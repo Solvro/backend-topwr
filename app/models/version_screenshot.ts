@@ -15,10 +15,10 @@ export default class VersionScreenshot extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Version })
   declare versionId: number;
 
-  @typedColumn({ type: "uuid" })
+  @typedColumn({ foreignKeyOf: () => FileEntry })
   declare imageKey: string;
 
   @typedColumn({ type: "string", optional: true })

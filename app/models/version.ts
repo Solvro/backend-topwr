@@ -16,7 +16,7 @@ export default class Version extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Milestone })
   declare milestoneId: number;
 
   @typedColumn({ type: "string" })

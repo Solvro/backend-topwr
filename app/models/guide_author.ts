@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
 import { BaseModel } from "@adonisjs/lucid/orm";
-import * as relations from "@adonisjs/lucid/types/relations";
+import type { ManyToMany } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn, typedManyToMany } from "#decorators/typed_model";
 import { GuideAuthorRole } from "#enums/guide_author_role";
@@ -31,7 +31,7 @@ export default class GuideAuthor extends BaseModel {
     relatedKey: "id",
     pivotTimestamps: true,
   })
-  declare guideArticles: relations.ManyToMany<typeof GuideArticle>;
+  declare guideArticles: ManyToMany<typeof GuideArticle>;
 
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();

@@ -32,7 +32,7 @@ export default class Department extends BaseModel {
   @typedColumn({ type: "string" })
   declare betterCode: string;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare logoKey: string | null;
 
   @typedColumn({ type: "string", optional: true })
