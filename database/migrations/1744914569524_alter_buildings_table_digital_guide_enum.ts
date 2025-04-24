@@ -2,6 +2,7 @@ import { BaseSchema } from "@adonisjs/lucid/schema";
 
 export default class extends BaseSchema {
   protected tableName = "buildings";
+
   protected digitalGuideModes = [
     "web_url",
     "digital_guide_building",
@@ -11,20 +12,25 @@ export default class extends BaseSchema {
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
       table
-        .double("longitude")
+        .string("external_digital_guide_mode")
         .alter({ alterNullable: false, alterType: true });
-      table.double("latitude").alter({ alterNullable: false, alterType: true });
+      table
+        .enum("external_digital_guide_mode", this.digitalGuideModes, {
+          useNative: true,
+          enumName: "external_digital_guide_mode",
+          existingType: false,
+        })
+        .defaultTo(null)
+        .alter({ alterNullable: false, alterType: true });
     });
   }
 
   async down() {
     this.schema.alterTable(this.tableName, (table) => {
       table
-        .decimal("longitude")
-        .alter({ alterNullable: false, alterType: true });
-      table
-        .decimal("latitude")
+        .text("external_digital_guide_mode")
         .alter({ alterNullable: false, alterType: true });
     });
+    this.schema.raw(`DROP TYPE IF EXISTS "external_digital_guide_mode"`);
   }
 }

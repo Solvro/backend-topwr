@@ -29,7 +29,7 @@ interface BuildingDraft {
   food: boolean | null;
   naturalName: string;
   externalDigitalGuideIdOrURL: string;
-  externalDigitalGuideMode: ExternalDigitalGuideMode;
+  externalDigitalGuideMode: ExternalDigitalGuideMode | null;
   createdAt: string;
   updatedAt: string;
 }

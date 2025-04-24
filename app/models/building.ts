@@ -52,7 +52,7 @@ export default class Building extends BaseModel {
   declare coverKey: string | null;
 
   @typedColumn({ type: ExternalDigitalGuideMode, optional: true })
-  declare externalDigitalGuideMode: ExternalDigitalGuideMode;
+  declare externalDigitalGuideMode: ExternalDigitalGuideMode | null;
 
   @typedColumn({ type: "string", optional: true })
   declare externalDigitalGuideIdOrUrl: string | null;
