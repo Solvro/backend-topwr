@@ -73,13 +73,6 @@ type LucidColumnDefinition = Omit<ModelColumnOptions, "meta"> & {
   };
 };
 
-const hideOnEdit = {
-  list: true,
-  show: true,
-  filter: true,
-  edit: false,
-};
-
 const photoHandlerVisibility = {
   list: false,
   show: true,
@@ -227,7 +220,7 @@ export class ResourceFactory {
           },
         };
         resource.options.properties[propertyName] = {
-          isVisible: hideOnEdit,
+          isVisible: false,
         };
         beforeEditHooksToChain.push(
           ResourceFactory.createBeforeEditUploadHookLink(
