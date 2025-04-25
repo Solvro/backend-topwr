@@ -20,6 +20,7 @@ export default class extends BaseSchema {
           enumName: "external_digital_guide_mode",
           existingType: false,
         })
+        // .defaultTo(null)
         .alter({ alterNullable: false, alterType: true });
     });
   }
