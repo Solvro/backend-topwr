@@ -13,6 +13,8 @@ import env from "#start/env";
 import { middleware } from "./kernel.js";
 import { resetPasswordThrottle } from "./limiter.js";
 
+const AboutUsController = () => import("#controllers/about_us_controller");
+
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
@@ -84,6 +86,8 @@ router
         router.post("/", [FilesController, "post"]).use(middleware.auth());
       })
       .prefix("/files");
+
+    router.get("/about_us", [AboutUsController, "index"]);
 
     configureBaseRoutes();
   })
