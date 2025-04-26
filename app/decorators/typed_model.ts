@@ -190,7 +190,7 @@ function decoratorTypeToValidatorAndType(
     switch (type) {
       case "string": {
         if (optional === true) {
-          validator = vine.string().minLength(1).optional();
+          validator = vine.string().minLength(1).nullable().optional();
         } else {
           validator = vine.string().minLength(1);
         }
@@ -198,7 +198,7 @@ function decoratorTypeToValidatorAndType(
       }
       case "number": {
         if (optional === true) {
-          validator = vine.number().optional();
+          validator = vine.number().nullable().optional();
         } else {
           validator = vine.number();
         }
@@ -206,7 +206,7 @@ function decoratorTypeToValidatorAndType(
       }
       case "boolean": {
         if (optional === true) {
-          validator = vine.boolean().optional();
+          validator = vine.boolean().nullable().optional();
         } else {
           validator = vine.boolean();
         }
@@ -214,7 +214,7 @@ function decoratorTypeToValidatorAndType(
       }
       case "integer": {
         if (optional === true) {
-          validator = vine.number().withoutDecimals().optional();
+          validator = vine.number().withoutDecimals().nullable().optional();
         } else {
           validator = vine.number().withoutDecimals();
         }
@@ -225,6 +225,7 @@ function decoratorTypeToValidatorAndType(
           validator = vine
             .string()
             .uuid({ version: [4] })
+            .nullable()
             .optional();
         } else {
           validator = vine.string().uuid({ version: [4] });
@@ -239,7 +240,7 @@ function decoratorTypeToValidatorAndType(
   } else {
     let validator;
     if (optional === true) {
-      validator = vine.enum(type).optional();
+      validator = vine.enum(type).nullable().optional();
     } else {
       validator = vine.enum(type);
     }
@@ -270,6 +271,13 @@ function computeTyping(
     const autogen = AutogenCacheEntry.for(model);
     const primaryKey = autogen.primaryKeyField.columnOptions;
     let validator = vine.foreignKey(model);
+    if (
+      options.optional === true &&
+      "nullable" in validator &&
+      typeof validator.nullable === "function"
+    ) {
+      validator = (validator.nullable as () => SchemaTypes)();
+    }
     if (
       options.optional === true &&
       "optional" in validator &&
