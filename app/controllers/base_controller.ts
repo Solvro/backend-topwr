@@ -466,11 +466,23 @@ export default abstract class BaseController<
     }
     await this.selfValidate();
 
-    const result = await this.model.create(
-      (await request.validateUsing(this.storeValidator)) as Partial<
-        ModelAttributes<InstanceType<T>>
-      >,
-    );
+    const result = await this.model
+      .create(
+        (await request.validateUsing(this.storeValidator)) as Partial<
+          ModelAttributes<InstanceType<T>>
+        >,
+      )
+      .addErrorContext({
+        message: "Failed to store object",
+        code: "E_DB_ERROR",
+        status: 500,
+      });
+
+    await result.refresh().addErrorContext({
+      message: "Failed to fetch updated object",
+      code: "E_DB_ERROR",
+      status: 500,
+    });
 
     return {
       success: true,
@@ -511,6 +523,11 @@ export default abstract class BaseController<
     row.merge(updates);
     await row.save().addErrorContext({
       message: "Failed to commit updates",
+      code: "E_DB_ERROR",
+      status: 500,
+    });
+    await row.refresh().addErrorContext({
+      message: "Failed to fetch updated object",
       code: "E_DB_ERROR",
       status: 500,
     });
@@ -666,7 +683,19 @@ export default abstract class BaseController<
         HasManyRelationContract<T, LucidModel>,
         LucidModel
       >
-    ).create(toStore);
+    )
+      .create(toStore)
+      .addErrorContext({
+        message: "Failed to store object",
+        code: "E_DB_ERROR",
+        status: 500,
+      });
+
+    await res.refresh().addErrorContext({
+      message: "Failed to fetch updated object",
+      code: "E_DB_ERROR",
+      status: 500,
+    });
 
     return {
       success: true,
@@ -717,9 +746,15 @@ export default abstract class BaseController<
         ManyToManyRelationContract<T, LucidModel>,
         LucidModel
       >
-    ).attach({
-      [relatedId]: pivotProps,
-    });
+    )
+      .attach({
+        [relatedId]: pivotProps,
+      })
+      .addErrorContext({
+        message: "Failed to attach object",
+        code: "E_DB_ERROR",
+        status: 500,
+      });
 
     return { success: true };
   }
@@ -760,15 +795,24 @@ export default abstract class BaseController<
       relation.boot();
     }
 
-    const result = await db
-      .knexQuery()
-      .table(relation.pivotTable)
-      .where({
-        ...detachFilters,
-        [relation.pivotForeignKey]: localId,
-        [relation.pivotRelatedForeignKey]: relatedId,
-      })
-      .delete();
+    let result;
+    try {
+      result = await db
+        .knexQuery()
+        .table(relation.pivotTable)
+        .where({
+          ...detachFilters,
+          [relation.pivotForeignKey]: localId,
+          [relation.pivotRelatedForeignKey]: relatedId,
+        })
+        .delete();
+    } catch (err) {
+      throw new BaseError("Failed to detach objects", {
+        cause: err,
+        code: "E_DB_ERROR",
+        status: 500,
+      });
+    }
 
     if (result === 0) {
       throw new NotFoundException("No relation attachments matched your query");
