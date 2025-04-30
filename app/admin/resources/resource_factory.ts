@@ -1,5 +1,10 @@
 import { LucidResource } from "@adminjs/adonis";
 import {
+  RelationsFeatureOptions,
+  owningRelationSettingsFeature,
+  targetRelationSettingsFeature,
+} from "@adminjs/relations";
+import {
   Action,
   ActionContext,
   ActionRequest,
@@ -17,6 +22,9 @@ import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import { LucidModel, ModelColumnOptions } from "@adonisjs/lucid/types/model";
 
 import FilesService from "#services/files_service";
+import env from "#start/env";
+
+import { componentLoader } from "../component_loader.js";
 
 export interface ResourceNavigation {
   name: string;
@@ -64,6 +72,8 @@ export interface ResourceInfo {
   additionalActions?: ActionMap;
   additionalOptions?: ResourceOptions;
   addImageHandlingForProperties?: string[];
+  ownedRelations?: RelationsFeatureOptions;
+  isRelationTarget?: boolean;
 }
 
 type LucidColumnDefinition = Omit<ModelColumnOptions, "meta"> & {
@@ -178,6 +188,7 @@ export class ResourceFactory {
       afterEditHooksToChain,
       afterDeleteHooksToChain,
     );
+    ResourceFactory.addRelations(newResource, resourceInfo);
     newResource.options.actions = {
       ...newResource.options.actions,
       new: this.addNewUploadHook(
@@ -274,6 +285,57 @@ export class ResourceFactory {
         },
       };
     });
+  }
+
+  private static addRelations(
+    resource: ResourceWithProperties,
+    resourceInfo: ResourceInfo,
+  ) {
+    const licenseKey = env.get("ADMIN_RELATIONS_KEY");
+    if (licenseKey === undefined) {
+      throw new Error("ADMIN_RELATIONS_KEY is not set");
+    }
+    if (resourceInfo.ownedRelations === undefined) {
+      return;
+    }
+    this.addOwnedRelations(resource, resourceInfo, licenseKey);
+    this.addTargetRelations(resource, resourceInfo);
+  }
+
+  private static addOwnedRelations(
+    resource: ResourceWithProperties,
+    resourceInfo: ResourceInfo,
+    licenseKey: string,
+  ) {
+    if (resourceInfo.ownedRelations === undefined) {
+      return;
+    }
+    if (resource.features === undefined) {
+      resource.features = [];
+    }
+    resource.features.push(
+      owningRelationSettingsFeature({
+        componentLoader,
+        licenseKey,
+        relations: resourceInfo.ownedRelations,
+      }),
+    );
+  }
+
+  private static addTargetRelations(
+    resource: ResourceWithProperties,
+    resourceInfo: ResourceInfo,
+  ) {
+    if (
+      resourceInfo.isRelationTarget === undefined ||
+      !resourceInfo.isRelationTarget
+    ) {
+      return;
+    }
+    if (resource.features === undefined) {
+      resource.features = [];
+    }
+    resource.features.push(targetRelationSettingsFeature());
   }
 
   private static addNewUploadHook(
