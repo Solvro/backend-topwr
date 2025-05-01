@@ -46,12 +46,10 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.ManyToMany,
             junction: {
-              joinKey: StudentOrganization.getTagRelationKey(),
-              inverseJoinKey:
-                StudentOrganizationTag.getStudentOrganizationRelationKey(),
-              throughResourceId: normalizeResourceName(
-                StudentOrganizationsStudentOrganizationTag,
-              ), //pivot entity resource id
+              joinKey: "tag",
+              inverseJoinKey: "student_organization_id",
+              throughResourceId:
+                "student_organizations_student_organization_tags", //pivot entity resource id
             },
             target: {
               resourceId: normalizeResourceName(StudentOrganizationTag),
