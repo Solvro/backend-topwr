@@ -52,6 +52,10 @@ export default class FieldsOfStudy extends BaseModel {
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
 
+  public static getDepartmentRelationKey() {
+    return "departmentId";
+  }
+
   static preloadRelations = preloadRelations(FieldsOfStudy);
 
   static handleSearchQuery = handleSearchQuery(FieldsOfStudy);

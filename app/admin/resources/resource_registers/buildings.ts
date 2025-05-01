@@ -11,7 +11,7 @@ import Library from "#models/library";
 import RegularHour from "#models/regular_hour";
 import SpecialHour from "#models/special_hour";
 
-import { ResourceBuilder } from "../resource_factory.js";
+import { ResourceBuilder, normalizeResourceName } from "../resource_factory.js";
 
 const navigation = {
   name: "Buildings",
@@ -29,12 +29,32 @@ export const BuildingsBuilder: ResourceBuilder = {
       addImageHandlingForProperties: ["coverKey"],
       ownedRelations: [
         {
-          relationName: "Bicycle showers",
+          displayLabel: "Bicycle showers",
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: BicycleShower.name,
+              resourceId: normalizeResourceName(BicycleShower),
               joinKey: BicycleShower.getBuildingsRelationKey(),
+            },
+          },
+        },
+        {
+          displayLabel: "Food spots",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(FoodSpot),
+              joinKey: FoodSpot.getBuildingsRelationKey(),
+            },
+          },
+        },
+        {
+          displayLabel: "Libraries",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(Library),
+              joinKey: Library.getBuildingsRelationKey(),
             },
           },
         },
@@ -56,13 +76,37 @@ export const BuildingsBuilder: ResourceBuilder = {
     {
       forModel: FoodSpot,
       addImageHandlingForProperties: ["photoKey"],
+      isRelationTarget: true,
     },
     {
       forModel: Library,
       addImageHandlingForProperties: ["photoKey"],
+      isRelationTarget: true,
+      ownedRelations: [
+        {
+          displayLabel: "Regular hours",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(RegularHour),
+              joinKey: RegularHour.getLibraryRelationKey(),
+            },
+          },
+        },
+        {
+          displayLabel: "Special hours",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(SpecialHour),
+              joinKey: SpecialHour.getLibraryRelationKey(),
+            },
+          },
+        },
+      ],
     },
-    { forModel: RegularHour },
-    { forModel: SpecialHour },
+    { forModel: RegularHour, isRelationTarget: true },
+    { forModel: SpecialHour, isRelationTarget: true },
   ],
   navigation,
 };

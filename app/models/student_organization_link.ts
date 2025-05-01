@@ -28,4 +28,8 @@ export default class StudentOrganizationLink extends BaseModel {
 
   @belongsTo(() => StudentOrganization)
   declare organization: BelongsTo<typeof StudentOrganization>;
+
+  public static getStudentOrganizationRelationKey() {
+    return "studentOrganizationId";
+  }
 }

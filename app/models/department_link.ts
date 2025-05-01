@@ -32,4 +32,8 @@ export default class DepartmentsLink extends BaseModel {
 
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
+
+  public static getDepartmentRelationKey() {
+    return "departmentId";
+  }
 }

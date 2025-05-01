@@ -1,3 +1,5 @@
+import { RelationType } from "@adminjs/relations";
+
 import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import { organizationSourceEnumsValues } from "#enums/organization_source";
 import { organizationStatusEnumsValues } from "#enums/organization_status";
@@ -6,7 +8,7 @@ import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
 
-import { ResourceBuilder } from "../resource_factory.js";
+import { ResourceBuilder, normalizeResourceName } from "../resource_factory.js";
 
 const navigation = {
   name: "Student Organizations",
@@ -26,14 +28,43 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
         organizationStatus: organizationStatusEnumsValues,
       },
       addImageHandlingForProperties: ["coverKey", "logoKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Student Organization Links",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(StudentOrganizationLink),
+              joinKey:
+                StudentOrganizationLink.getStudentOrganizationRelationKey(),
+            },
+          },
+        },
+        // {
+        //   displayLabel: "Student Organization Tags",
+        //   relation: {
+        //     type: RelationType.ManyToMany,
+        //     junction: {
+        //       joinKey: StudentOrganization.getTagsJoinKey(),
+        //       inverseJoinKey: StudentOrganizationTag.getStudentOrganizationInverseJoinKey(),
+        //       throughResourceId: normalizeResourceName(StudentOrganization)
+        //     },
+        //     target: {
+        //       resourceId: normalizeResourceName(StudentOrganizationTag),
+        //     },
+        //   },
+        // },
+      ],
     },
     {
       forModel: StudentOrganizationLink,
       ...linkTypeAutodetectSetUp,
+      isRelationTarget: true,
     },
     {
       forModel: StudentOrganizationTag,
       additionalProperties: { description: { type: "richtext" } },
+      isRelationTarget: true,
     },
   ],
   navigation,

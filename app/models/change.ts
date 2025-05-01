@@ -40,6 +40,10 @@ export default class Change extends BaseModel {
   @belongsTo(() => Version)
   declare version: BelongsTo<typeof Version>;
 
+  public static getVersionRelationKey() {
+    return "versionId";
+  }
+
   static preloadRelations = preloadRelations(Change);
   static handleSearchQuery = handleSearchQuery(Change);
   static handleSortQuery = handleSortQuery(Change);

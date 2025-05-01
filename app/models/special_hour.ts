@@ -28,6 +28,10 @@ export default class SpecialHour extends BaseModel {
   @belongsTo(() => Library)
   declare library: BelongsTo<typeof Library>;
 
+  public static getLibraryRelationKey() {
+    return "libraryId";
+  }
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 

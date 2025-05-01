@@ -30,6 +30,10 @@ export default class VersionScreenshot extends BaseModel {
   @belongsTo(() => Version)
   declare change: BelongsTo<typeof Version>;
 
+  public static getVersionRelationKey() {
+    return "versionId";
+  }
+
   @belongsTo(() => FileEntry, {
     localKey: "id",
     foreignKey: "imageKey",

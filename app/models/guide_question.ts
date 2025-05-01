@@ -33,6 +33,10 @@ export default class GuideQuestion extends BaseModel {
   })
   declare guideArticle: relations.BelongsTo<typeof GuideArticle>;
 
+  public static getGuideArticleRelationKey() {
+    return "articleId";
+  }
+
   static preloadRelations = preloadRelations(GuideQuestion);
 
   static handleSearchQuery = handleSearchQuery(GuideQuestion);

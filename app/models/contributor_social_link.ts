@@ -29,4 +29,8 @@ export default class ContributorSocialLink extends BaseModel {
 
   @belongsTo(() => Contributor)
   declare contributor: BelongsTo<typeof Contributor>;
+
+  public static getContributorRelationKey() {
+    return "contributorId";
+  }
 }

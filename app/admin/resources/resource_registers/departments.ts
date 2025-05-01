@@ -1,9 +1,11 @@
+import { RelationType } from "@adminjs/relations";
+
 import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import Department from "#models/department";
 import DepartmentsLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 
-import { ResourceBuilder } from "../resource_factory.js";
+import { ResourceBuilder, normalizeResourceName } from "../resource_factory.js";
 
 const navigation = {
   name: "Departments",
@@ -12,15 +14,38 @@ const navigation = {
 
 export const DepartmentsBuilder: ResourceBuilder = {
   builders: [
-    { forModel: FieldsOfStudy },
+    { forModel: FieldsOfStudy, isRelationTarget: true },
     {
       forModel: DepartmentsLink,
       ...linkTypeAutodetectSetUp,
+      isRelationTarget: true,
     },
     {
       forModel: Department,
       additionalProperties: { description: { type: "richtext" } },
       addImageHandlingForProperties: ["logoKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Department links",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(DepartmentsLink),
+              joinKey: DepartmentsLink.getDepartmentRelationKey(),
+            },
+          },
+        },
+        {
+          displayLabel: "Fields of study",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(FieldsOfStudy), //DELETE ME
+              joinKey: FieldsOfStudy.getDepartmentRelationKey(),
+            },
+          },
+        },
+      ],
     },
   ],
   navigation,

@@ -45,6 +45,10 @@ export default class Version extends BaseModel {
   @belongsTo(() => Milestone)
   declare milestone: BelongsTo<typeof Milestone>;
 
+  public static getMilestoneRelationKey() {
+    return "milestoneId";
+  }
+
   static preloadRelations = preloadRelations(Version);
   static handleSearchQuery = handleSearchQuery(Version);
   static handleSortQuery = handleSortQuery(Version);
