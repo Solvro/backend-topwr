@@ -66,7 +66,19 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
     },
     {
       forModel: StudentOrganizationTag,
-      additionalProperties: { description: { type: "richtext" } },
+      additionalProperties: {
+        tag: {
+          isId: true,
+          isTitle: true,
+          position: 1,
+          isVisible: {
+            list: true,
+            edit: true,
+            filter: true,
+            show: true,
+          },
+        },
+      },
       isRelationTarget: true,
     },
     {
