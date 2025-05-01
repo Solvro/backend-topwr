@@ -48,11 +48,12 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
             junction: {
               joinKey: "tag",
               inverseJoinKey: "student_organization_id",
-              throughResourceId:
-                "student_organizations_student_organization_tags", //pivot entity resource id
+              throughResourceId: normalizeResourceName(
+                StudentOrganizationsStudentOrganizationTag,
+              ), // Use the model directly
             },
             target: {
-              resourceId: normalizeResourceName(StudentOrganizationTag),
+              resourceId: normalizeResourceName(StudentOrganizationTag), // Use the model directly
             },
           },
         },
