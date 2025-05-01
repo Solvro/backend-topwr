@@ -77,38 +77,10 @@ export const VersionsBuilder: ResourceBuilder = {
             },
           },
         },
-        // {
-        //   displayLabel: "Student Organization Tags",
-        //   relation: {
-        //     type: RelationType.ManyToMany,
-        //     junction: {
-        //       joinKey: StudentOrganization.getTagsJoinKey(),
-        //       inverseJoinKey: StudentOrganizationTag.getStudentOrganizationInverseJoinKey(),
-        //       throughResourceId: normalizeResourceName(StudentOrganization)
-        //     },
-        //     target: {
-        //       resourceId: normalizeResourceName(StudentOrganizationTag),
-        //     },
-        //   },
-        // },
       ],
     },
     {
       forModel: Role,
-      // {
-      //   displayLabel: "Student Organization Tags",
-      //   relation: {
-      //     type: RelationType.ManyToMany,
-      //     junction: {
-      //       joinKey: StudentOrganization.getTagsJoinKey(),
-      //       inverseJoinKey: StudentOrganizationTag.getStudentOrganizationInverseJoinKey(),
-      //       throughResourceId: normalizeResourceName(StudentOrganization)
-      //     },
-      //     target: {
-      //       resourceId: normalizeResourceName(StudentOrganizationTag),
-      //     },
-      //   },
-      // },
     },
     {
       forModel: Version,

@@ -15,20 +15,6 @@ export const GuidesBuilder: ResourceBuilder = {
   builders: [
     {
       forModel: GuideAuthor,
-      // {
-      //   displayLabel: "Student Organization Tags",
-      //   relation: {
-      //     type: RelationType.ManyToMany,
-      //     junction: {
-      //       joinKey: StudentOrganization.getTagsJoinKey(),
-      //       inverseJoinKey: StudentOrganizationTag.getStudentOrganizationInverseJoinKey(),
-      //       throughResourceId: normalizeResourceName(StudentOrganization)
-      //     },
-      //     target: {
-      //       resourceId: normalizeResourceName(StudentOrganizationTag),
-      //     },
-      //   },
-      // },
     },
     {
       forModel: GuideQuestion,
@@ -51,7 +37,6 @@ export const GuidesBuilder: ResourceBuilder = {
           },
         },
       ],
-      isRelationTarget: true,
     },
   ],
   navigation,

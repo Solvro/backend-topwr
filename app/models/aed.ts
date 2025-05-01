@@ -36,6 +36,10 @@ export default class Aed extends BaseModel {
   @belongsTo(() => Building)
   declare building: BelongsTo<typeof Building>;
 
+  public static getBuildingsRelationKey() {
+    return "buildingId";
+  }
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 

@@ -24,8 +24,4 @@ export default class StudentOrganizationTag extends BaseModel {
     pivotTimestamps: true,
   })
   declare organizations: ManyToMany<typeof StudentOrganization>;
-
-  public static getStudentOrganizationInverseJoinKey() {
-    return "id";
-  }
 }

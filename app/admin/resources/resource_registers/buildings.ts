@@ -58,15 +58,39 @@ export const BuildingsBuilder: ResourceBuilder = {
             },
           },
         },
+        {
+          displayLabel: "Aeds",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(Aed),
+              joinKey: Aed.getBuildingsRelationKey(),
+            },
+          },
+        },
       ],
+      isRelationTarget: true,
     },
     {
       forModel: Campus,
       addImageHandlingForProperties: ["coverKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Buildings",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: normalizeResourceName(Building),
+              joinKey: Building.getCampusRelationKey(),
+            },
+          },
+        },
+      ],
     },
     {
       forModel: Aed,
       addImageHandlingForProperties: ["photoKey"],
+      isRelationTarget: true,
     },
     {
       forModel: BicycleShower,

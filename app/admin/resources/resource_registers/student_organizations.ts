@@ -40,21 +40,8 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
             },
           },
         },
-        // {
-        //   displayLabel: "Student Organization Tags",
-        //   relation: {
-        //     type: RelationType.ManyToMany,
-        //     junction: {
-        //       joinKey: StudentOrganization.getTagsJoinKey(),
-        //       inverseJoinKey: StudentOrganizationTag.getStudentOrganizationInverseJoinKey(),
-        //       throughResourceId: normalizeResourceName(StudentOrganization)
-        //     },
-        //     target: {
-        //       resourceId: normalizeResourceName(StudentOrganizationTag),
-        //     },
-        //   },
-        // },
       ],
+      isRelationTarget: true,
     },
     {
       forModel: StudentOrganizationLink,
@@ -64,7 +51,6 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
     {
       forModel: StudentOrganizationTag,
       additionalProperties: { description: { type: "richtext" } },
-      isRelationTarget: true,
     },
   ],
   navigation,
