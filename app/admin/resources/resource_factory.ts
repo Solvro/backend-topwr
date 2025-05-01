@@ -22,7 +22,7 @@ import logger from "@adonisjs/core/services/logger";
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import { LucidModel, ModelColumnOptions } from "@adonisjs/lucid/types/model";
 
-import OrganizationTagPivot from "#models/organization_tag_dummy";
+import StudentOrganizationsStudentOrganizationTag from "#models/organization_tag_dummy";
 import FilesService from "#services/files_service";
 import env from "#start/env";
 
@@ -159,7 +159,10 @@ export class ResourceFactory {
       .flat(1);
 
     const orgTagPivotDummy: ResourceWithProperties = {
-      resource: new LucidResource(OrganizationTagPivot, DB_DRIVER),
+      resource: new LucidResource(
+        StudentOrganizationsStudentOrganizationTag,
+        DB_DRIVER,
+      ),
       options: {
         navigation: {
           name: "Student Organizations",
