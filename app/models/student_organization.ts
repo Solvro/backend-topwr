@@ -72,6 +72,10 @@ export default class StudentOrganization extends BaseModel {
   })
   declare tags: ManyToMany<typeof StudentOrganizationTag>;
 
+  public static getTagRelationKey() {
+    return "id";
+  }
+
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
 

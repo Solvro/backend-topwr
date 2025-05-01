@@ -4,6 +4,7 @@ import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import { organizationSourceEnumsValues } from "#enums/organization_source";
 import { organizationStatusEnumsValues } from "#enums/organization_status";
 import { organizationTypeEnumsValues } from "#enums/organization_type";
+import OrganizationTagPivot from "#models/organization_tag_dummy";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
@@ -40,6 +41,21 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
             },
           },
         },
+        {
+          displayLabel: "Student Organization Tags",
+          relation: {
+            type: RelationType.ManyToMany,
+            junction: {
+              joinKey: StudentOrganization.getTagRelationKey(),
+              inverseJoinKey:
+                StudentOrganizationTag.getStudentOrganizationRelationKey(),
+              throughResourceId: normalizeResourceName(OrganizationTagPivot), //pivot entity resource id
+            },
+            target: {
+              resourceId: normalizeResourceName(StudentOrganizationTag),
+            },
+          },
+        },
       ],
       isRelationTarget: true,
     },
@@ -51,6 +67,7 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
     {
       forModel: StudentOrganizationTag,
       additionalProperties: { description: { type: "richtext" } },
+      isRelationTarget: true,
     },
   ],
   navigation,
