@@ -77,6 +77,7 @@ jobs:
       DB_USER: postgres
       DB_PASSWORD: postgres
       DB_DATABASE: postgres
+      ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
 
     services:
       postgres:
@@ -172,6 +173,7 @@ jobs:
       DB_PASSWORD: postgres
       DB_DATABASE: postgres
       PGPASSWORD: postgres
+      ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
 
     services:
       postgres:
