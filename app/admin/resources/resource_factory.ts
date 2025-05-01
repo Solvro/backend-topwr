@@ -1,5 +1,6 @@
 import { LucidResource } from "@adminjs/adonis";
 import {
+  RelationOptions,
   RelationsFeatureOptions,
   owningRelationSettingsFeature,
   targetRelationSettingsFeature,
@@ -66,13 +67,18 @@ type AfterHookLink = (
   context?: ActionContext,
 ) => Promise<RecordActionResponse>;
 
+export interface OwnedRelationDefinition {
+  relationName: string;
+  relation: RelationOptions;
+}
+
 export interface ResourceInfo {
   forModel: LucidModel;
   additionalProperties?: Record<string, PropertyOptions>;
   additionalActions?: ActionMap;
   additionalOptions?: ResourceOptions;
   addImageHandlingForProperties?: string[];
-  ownedRelations?: RelationsFeatureOptions;
+  ownedRelations?: OwnedRelationDefinition[];
   isRelationTarget?: boolean;
 }
 
@@ -302,6 +308,16 @@ export class ResourceFactory {
     this.addTargetRelations(resource, resourceInfo);
   }
 
+  private static normalizeResourceName(resourceName: string): string {
+    const snakeCase = resourceName
+      .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+      .toLowerCase();
+    if (snakeCase.endsWith("s")) {
+      return `${snakeCase}es`;
+    }
+    return `${snakeCase}s`;
+  }
+
   private static addOwnedRelations(
     resource: ResourceWithProperties,
     resourceInfo: ResourceInfo,
@@ -313,11 +329,22 @@ export class ResourceFactory {
     if (resource.features === undefined) {
       resource.features = [];
     }
+    const relationDefinitions: RelationsFeatureOptions =
+      resourceInfo.ownedRelations.reduce(
+        (options, { relationName, relation }: OwnedRelationDefinition) => {
+          relation.target.resourceId = this.normalizeResourceName(
+            relation.target.resourceId,
+          );
+          options[relationName] = relation;
+          return options;
+        },
+        {} as RelationsFeatureOptions,
+      );
     resource.features.push(
       owningRelationSettingsFeature({
         componentLoader,
         licenseKey,
-        relations: resourceInfo.ownedRelations,
+        relations: relationDefinitions,
       }),
     );
   }

@@ -1,3 +1,5 @@
+import { RelationType } from "@adminjs/relations";
+
 import { buildingIconEnumsValues } from "#enums/building_icon";
 import { externalDigitalGuideModeEnumsValues } from "#enums/digital_guide_mode";
 import Aed from "#models/aed";
@@ -25,6 +27,18 @@ export const BuildingsBuilder: ResourceBuilder = {
         externalDigitalGuideMode: externalDigitalGuideModeEnumsValues,
       },
       addImageHandlingForProperties: ["coverKey"],
+      ownedRelations: [
+        {
+          relationName: "Bicycle showers",
+          relation: {
+            type: RelationType.OneToMany,
+            target: {
+              resourceId: BicycleShower.name,
+              joinKey: BicycleShower.getBuildingsRelationKey(),
+            },
+          },
+        },
+      ],
     },
     {
       forModel: Campus,
@@ -37,6 +51,7 @@ export const BuildingsBuilder: ResourceBuilder = {
     {
       forModel: BicycleShower,
       addImageHandlingForProperties: ["photoKey"],
+      isRelationTarget: true,
     },
     {
       forModel: FoodSpot,
