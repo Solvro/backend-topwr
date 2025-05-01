@@ -46,6 +46,8 @@ jobs:
 
       - name: Run tests
         run: npm test
+        env:
+          ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
         if: always()
 
       - name: Build
