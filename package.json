@@ -29,12 +29,16 @@
   },
   "scripts": {
     "build": "node ace build",
+    "db:migrate": "node ace migration:run",
+    "db:migrate:reset": "node ace migration:reset",
     "dev": "node ace serve --hmr",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "prepare": "husky || true",
     "prettiercheck": "prettier --check .",
+    "scripts:adduser": "node ace create:user",
+    "scripts:scrape-all-directus-data": "node ace db:scrape -a",
     "start": "node bin/server.js",
     "test": "node ace test",
     "typecheck": "tsc --noEmit"
