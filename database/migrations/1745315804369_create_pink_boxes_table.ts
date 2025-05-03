@@ -9,24 +9,19 @@ export default class extends BaseSchema {
 
       table.text("room_or_nearby").nullable();
       table.text("floor").nullable();
-      table.text("instructions").nullable();
-      table.decimal("latitude").notNullable();
-      table.decimal("longitude").notNullable();
-      table.text("address_line1").nullable();
-      table.text("address_line2").nullable();
-      table.text("photo_url").nullable();
-      table.text("description").nullable();
+      table.double("latitude").notNullable();
+      table.double("longitude").notNullable();
+      table.text("address_line").nullable();
+      table.uuid("photo_key").nullable();
 
+      table.integer("building_id").unsigned().nullable();
       table
-        .integer("building_id")
-        .unsigned()
-        .references("id")
-        .inTable("buildings")
-        .onDelete("SET NULL")
-        .nullable();
+        .foreign("building_id")
+        .references("buildings.id")
+        .onDelete("RESTRICT");
 
-      table.timestamp("created_at");
-      table.timestamp("updated_at");
+      table.timestamp("created_at").notNullable();
+      table.timestamp("updated_at").notNullable();
     });
   }
 
