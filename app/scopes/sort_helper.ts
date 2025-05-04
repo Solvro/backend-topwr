@@ -23,12 +23,12 @@ import { BadRequestException } from "#exceptions/http_exceptions";
  * - invalid value pattern will result in badRequest
  * - mismatch in columns will be ignored as in filtration
  *
- * @param model - The Lucid model instance.
  * @returns scope that takes unknown sort param and tries to parse it using regex rule
  */
-export function handleSortQuery<T extends LucidModel>(
-  model: T,
-): QueryScope<T, (query: ModelQueryBuilderContract<T>, sort: unknown) => void> {
+export function handleSortQuery<T extends LucidModel>(): QueryScope<
+  T,
+  (query: ModelQueryBuilderContract<T>, sort: unknown) => void
+> {
   return scope((query, sort) => {
     if (typeof sort !== "string") {
       // means no value provided
@@ -43,7 +43,7 @@ export function handleSortQuery<T extends LucidModel>(
     }
     const prefix = match[1];
     const column = match[2];
-    if (!model.$hasColumn(column)) {
+    if (!query.model.$hasColumn(column)) {
       return;
     }
     query = query.orderBy(column, prefix === "-" ? "desc" : "asc");

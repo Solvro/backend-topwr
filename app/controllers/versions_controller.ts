@@ -4,7 +4,7 @@ const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
 export default class VersionsController extends BaseController<typeof Version> {
-  protected readonly relations = [
+  protected readonly queryRelations = [
     "screenshots",
     "screenshots.image",
     "changes",
@@ -12,5 +12,6 @@ export default class VersionsController extends BaseController<typeof Version> {
     "changes.screenshots.image",
     "milestone",
   ];
+  protected readonly crudRelations = ["screenshots", "changes"];
   protected readonly model = Version;
 }

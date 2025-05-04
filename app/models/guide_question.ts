@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
 import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
-import * as relations from "@adonisjs/lucid/types/relations";
+import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
 import GuideArticle from "#models/guide_article";
@@ -19,7 +19,7 @@ export default class GuideQuestion extends BaseModel {
   @typedColumn({ type: "string" })
   declare answer: string;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => GuideArticle })
   declare articleId: number;
 
   @typedColumn.dateTime({ autoCreate: true })
@@ -31,11 +31,9 @@ export default class GuideQuestion extends BaseModel {
   @belongsTo(() => GuideArticle, {
     foreignKey: "articleId",
   })
-  declare guideArticle: relations.BelongsTo<typeof GuideArticle>;
+  declare guideArticle: BelongsTo<typeof GuideArticle>;
 
-  static preloadRelations = preloadRelations(GuideQuestion);
-
-  static handleSearchQuery = handleSearchQuery(GuideQuestion);
-
-  static handleSortQuery = handleSortQuery(GuideQuestion);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

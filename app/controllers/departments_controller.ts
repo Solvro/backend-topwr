@@ -6,6 +6,11 @@ const { default: BaseController } = await (() =>
 export default class DepartmentsController extends BaseController<
   typeof Department
 > {
-  protected readonly relations = ["fieldOfStudy", "departmentLink", "logo"];
+  protected readonly queryRelations = [
+    "departmentLinks",
+    "fieldsOfStudy",
+    "logo",
+  ];
+  protected readonly crudRelations = ["departmentLinks", "fieldsOfStudy"];
   protected readonly model = Department;
 }

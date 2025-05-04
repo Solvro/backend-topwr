@@ -6,6 +6,7 @@ const { default: BaseController } = await (() =>
 export default class GuideAuthorsController extends BaseController<
   typeof GuideAuthor
 > {
-  protected readonly relations = ["guideArticles"];
+  protected readonly queryRelations = ["guideArticles"];
+  protected readonly crudRelations = ["guideArticles"];
   protected readonly model = GuideAuthor;
 }

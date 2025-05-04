@@ -1,6 +1,6 @@
 import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import Department from "#models/department";
-import DepartmentsLink from "#models/department_link";
+import DepartmentLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 
 import { ResourceBuilder } from "../resource_factory.js";
@@ -14,7 +14,7 @@ export const DepartmentsBuilder: ResourceBuilder = {
   builders: [
     { forModel: FieldsOfStudy },
     {
-      forModel: DepartmentsLink,
+      forModel: DepartmentLink,
       ...linkTypeAutodetectSetUp,
     },
     {

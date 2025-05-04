@@ -1,12 +1,12 @@
-import FieldsOfStudy from "#models/field_of_study";
+import DepartmentLink from "#models/department_link";
 
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
-export default class FieldsOfStudyController extends BaseController<
-  typeof FieldsOfStudy
+export default class DepartmentLinksController extends BaseController<
+  typeof DepartmentLink
 > {
   protected readonly queryRelations = ["department"];
   protected readonly crudRelations = [];
-  protected readonly model = FieldsOfStudy;
+  protected readonly model = DepartmentLink;
 }

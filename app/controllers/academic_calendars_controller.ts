@@ -6,6 +6,7 @@ const { default: BaseController } = await (() =>
 export default class AcademicCalendarsController extends BaseController<
   typeof AcademicCalendar
 > {
-  protected readonly relations = ["holidays", "daySwaps"];
+  protected readonly queryRelations = ["holidays", "daySwaps"];
+  protected readonly crudRelations = ["holidays", "daySwaps"];
   protected readonly model = AcademicCalendar;
 }

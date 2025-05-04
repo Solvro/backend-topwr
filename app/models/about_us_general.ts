@@ -16,7 +16,7 @@ export default class AboutUsGeneral extends BaseModel {
   @typedColumn({ type: "string" })
   declare description: string;
 
-  @typedColumn({ type: "uuid" })
+  @typedColumn({ foreignKeyOf: () => FileEntry })
   declare coverPhotoKey: string;
 
   @typedColumn.dateTime({ autoCreate: true })
