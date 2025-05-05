@@ -462,7 +462,7 @@ export class ResourceFactory {
   ): BeforeHookLink {
     const autogen = AutogenCacheEntry.for(model);
     return async (request: ActionRequest) => {
-      if (request.payload === undefined) {
+      if (request.payload === undefined || request.method !== "post") {
         return request;
       }
 
