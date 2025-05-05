@@ -4,6 +4,9 @@ import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
 
 import Building from "./building.js";
 import FileEntry from "./file_entry.js";
@@ -24,13 +27,10 @@ export default class PinkBox extends BaseModel {
   @typedColumn({ type: "number" })
   declare longitude: number;
 
-  @typedColumn({ type: "string", optional: true, columnName: "address_line" })
-  declare addressLine: string | null;
-
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
-  @typedColumn({ type: "integer", optional: true })
+  @typedColumn({ foreignKeyOf: () => Building })
   declare buildingId: number;
 
   @belongsTo(() => Building)
@@ -47,4 +47,8 @@ export default class PinkBox extends BaseModel {
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

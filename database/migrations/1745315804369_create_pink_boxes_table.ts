@@ -11,10 +11,9 @@ export default class extends BaseSchema {
       table.text("floor").nullable();
       table.double("latitude").notNullable();
       table.double("longitude").notNullable();
-      table.text("address_line").nullable();
       table.uuid("photo_key").nullable();
 
-      table.integer("building_id").unsigned().nullable();
+      table.integer("building_id").unsigned().notNullable();
       table
         .foreign("building_id")
         .references("buildings.id")
