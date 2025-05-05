@@ -1,3 +1,4 @@
+import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
@@ -39,10 +40,10 @@ export default class Building extends BaseModel {
   @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", validator: vine.number().min(-90).max(90) })
   declare latitude: number;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", validator: vine.number().min(-180).max(180) })
   declare longitude: number;
 
   @typedColumn({ type: "boolean" })

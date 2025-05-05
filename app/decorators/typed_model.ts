@@ -190,9 +190,9 @@ function decoratorTypeToValidatorAndType(
     switch (type) {
       case "string": {
         if (optional === true) {
-          validator = vine.string().minLength(1).nullable().optional();
+          validator = vine.string().trim().minLength(1).nullable().optional();
         } else {
-          validator = vine.string().minLength(1);
+          validator = vine.string().trim().minLength(1);
         }
         break;
       }
