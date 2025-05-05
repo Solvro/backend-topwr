@@ -18,36 +18,27 @@ export default class PinkBox extends BaseModel {
   @typedColumn({ type: "string", optional: true })
   declare floor: string | null;
 
-  @typedColumn({ type: "string", optional: true })
-  declare instructions: string | null;
-
   @typedColumn({ type: "number" })
   declare latitude: number;
 
   @typedColumn({ type: "number" })
   declare longitude: number;
 
-  @typedColumn({ type: "string", optional: true, columnName: "address_line1" })
-  declare addressLine1: string | null;
+  @typedColumn({ type: "string", optional: true, columnName: "address_line" })
+  declare addressLine: string | null;
 
-  @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
-  declare addressLine2: string | null;
-
-  @typedColumn({ type: "string", optional: true })
+  @typedColumn({ type: "uuid", optional: true })
   declare photoKey: string | null;
 
-  @typedColumn({ type: "string", optional: true })
-  declare description: string | null;
-
   @typedColumn({ type: "integer", optional: true })
-  declare buildingId: number | null;
+  declare buildingId: number;
 
   @belongsTo(() => Building)
   declare building: BelongsTo<typeof Building>;
 
   @belongsTo(() => FileEntry, {
-    localKey: "photoKey",
-    foreignKey: "id",
+    localKey: "id",
+    foreignKey: "photoKey",
   })
   declare photo: BelongsTo<typeof FileEntry>;
 
