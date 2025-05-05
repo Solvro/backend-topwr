@@ -2,18 +2,18 @@ import { DateTime } from "luxon";
 
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
+import { BuildingIcon } from "#enums/building_icon";
+import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { Weekday } from "#enums/weekday";
 import Building from "#models/building";
 import Campus from "#models/campus";
 import Library from "#models/library";
 
-import { BuildingIcon } from "../../app/enums/building_icon.js";
-
 export default class BuildingSeeder extends BaseSeeder {
   static environment = ["development", "testing"];
 
   async run() {
-    const capmuses = await Campus.createMany([
+    const campuses = await Campus.createMany([
       {
         name: "taki",
         coverKey: null,
@@ -39,7 +39,7 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.006,
         haveFood: true,
         coverKey: null,
-        externalDigitalGuideMode: "web_url",
+        externalDigitalGuideMode: ExternalDigitalGuideMode.WebUrl,
         externalDigitalGuideIdOrUrl:
           "https://dostepnosc.pwr.edu.pl/dostepnosc-architektoniczna/deklaracje-dostepnosci-budynkow/budynki-a/a2",
       },
@@ -53,7 +53,7 @@ export default class BuildingSeeder extends BaseSeeder {
         longitude: -74.0061,
         haveFood: false,
         coverKey: null,
-        externalDigitalGuideMode: "id",
+        externalDigitalGuideMode: ExternalDigitalGuideMode.DigitalGuideBuilding,
         externalDigitalGuideIdOrUrl: "5",
       },
       {
@@ -70,7 +70,7 @@ export default class BuildingSeeder extends BaseSeeder {
     ];
 
     const updatedBuildings: Building[] = [];
-    for (const [i, campus] of capmuses.entries()) {
+    for (const [i, campus] of campuses.entries()) {
       updatedBuildings[i] = await campus
         .related("buildings")
         .create(buildings[i]);

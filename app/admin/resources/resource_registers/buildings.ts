@@ -1,4 +1,5 @@
 import { buildingIconEnumsValues } from "#enums/building_icon";
+import { externalDigitalGuideModeEnumsValues } from "#enums/digital_guide_mode";
 import Aed from "#models/aed";
 import BicycleShower from "#models/bicycle_shower";
 import Building from "#models/building";
@@ -19,7 +20,10 @@ export const BuildingsBuilder: ResourceBuilder = {
   builders: [
     {
       forModel: Building,
-      additionalProperties: { iconType: buildingIconEnumsValues },
+      additionalProperties: {
+        iconType: buildingIconEnumsValues,
+        externalDigitalGuideMode: externalDigitalGuideModeEnumsValues,
+      },
       addImageHandlingForProperties: ["coverKey"],
     },
     {

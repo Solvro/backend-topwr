@@ -4,6 +4,7 @@ const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
 export default class HolidaysController extends BaseController<typeof Holiday> {
-  protected readonly relations = ["academicCalendar"];
+  protected readonly queryRelations = ["academicCalendar"];
+  protected readonly crudRelations = [];
   protected readonly model = Holiday;
 }

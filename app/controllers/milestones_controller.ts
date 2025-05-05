@@ -6,7 +6,7 @@ const { default: BaseController } = await (() =>
 export default class MilestonesController extends BaseController<
   typeof Milestone
 > {
-  protected readonly relations = [
+  protected readonly queryRelations = [
     "contributors",
     "contributors.socialLinks",
     "versions",
@@ -16,5 +16,6 @@ export default class MilestonesController extends BaseController<
     "versions.changes.screenshots",
     "versions.changes.screenshots.image",
   ];
+  protected readonly crudRelations = ["contributors", "versions"];
   protected readonly model = Milestone;
 }

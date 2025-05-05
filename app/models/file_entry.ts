@@ -11,8 +11,10 @@ import {
   computed,
 } from "@adonisjs/lucid/orm";
 
+import { typedColumn } from "#decorators/typed_model";
+
 export default class FileEntry extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ type: "uuid", isPrimary: true })
   declare id: UUID;
 
   @column({ columnName: "file_extension" })

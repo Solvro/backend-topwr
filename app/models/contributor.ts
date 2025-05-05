@@ -1,13 +1,13 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, hasMany, manyToMany } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type {
   BelongsTo,
   HasMany,
   ManyToMany,
 } from "@adonisjs/lucid/types/relations";
 
-import { typedColumn } from "#decorators/typed_model";
+import { typedColumn, typedManyToMany } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -25,7 +25,7 @@ export default class Contributor extends BaseModel {
   @typedColumn({ type: "string" })
   declare name: string;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
   @typedColumn.dateTime({ autoCreate: true })
@@ -41,16 +41,18 @@ export default class Contributor extends BaseModel {
   })
   declare socialLinks: HasMany<typeof ContributorSocialLink>;
 
-  @manyToMany(() => Role, {
+  @typedManyToMany(() => Role, {
     pivotTable: "contributor_roles",
-    pivotColumns: ["milestone_id"],
+    pivotColumns: {
+      milestone_id: { type: "integer", detachFilter: true },
+    },
     pivotTimestamps: true,
   })
   declare roles: ManyToMany<typeof Role>;
 
-  @manyToMany(() => Milestone, {
+  @typedManyToMany(() => Milestone, {
     pivotTable: "contributor_roles",
-    pivotColumns: ["role_id"],
+    pivotColumns: { role_id: { type: "integer", detachFilter: true } },
     pivotTimestamps: true,
   })
   declare milestones: ManyToMany<typeof Milestone>;
@@ -61,9 +63,9 @@ export default class Contributor extends BaseModel {
   })
   declare photo: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations(Contributor);
-  static handleSearchQuery = handleSearchQuery(Contributor);
-  static handleSortQuery = handleSortQuery(Contributor);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 
   serializeExtras = true;
 }

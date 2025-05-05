@@ -16,7 +16,7 @@ export default class Change extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Version })
   declare versionId: number;
 
   @typedColumn({ type: ChangeType })
@@ -40,7 +40,7 @@ export default class Change extends BaseModel {
   @belongsTo(() => Version)
   declare version: BelongsTo<typeof Version>;
 
-  static preloadRelations = preloadRelations(Change);
-  static handleSearchQuery = handleSearchQuery(Change);
-  static handleSortQuery = handleSortQuery(Change);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

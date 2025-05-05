@@ -5,6 +5,7 @@ import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
 import { BuildingIcon } from "#enums/building_icon";
+import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -29,7 +30,7 @@ export default class Building extends BaseModel {
   @typedColumn({ type: BuildingIcon })
   declare iconType: BuildingIcon;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Campus })
   declare campusId: number;
 
   @typedColumn({ type: "string", columnName: "address_line1" })
@@ -47,11 +48,11 @@ export default class Building extends BaseModel {
   @typedColumn({ type: "boolean" })
   declare haveFood: boolean;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
 
-  @typedColumn({ type: "string", optional: true })
-  declare externalDigitalGuideMode: string | null;
+  @typedColumn({ type: ExternalDigitalGuideMode, optional: true })
+  declare externalDigitalGuideMode: ExternalDigitalGuideMode | null;
 
   @typedColumn({ type: "string", optional: true })
   declare externalDigitalGuideIdOrUrl: string | null;
@@ -83,9 +84,7 @@ export default class Building extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  static preloadRelations = preloadRelations(Building);
-
-  static handleSearchQuery = handleSearchQuery(Building);
-
-  static handleSortQuery = handleSortQuery(Building);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

@@ -4,6 +4,9 @@ import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
 
 import Building from "./building.js";
 import FileEntry from "./file_entry.js";
@@ -24,17 +27,14 @@ export default class Aed extends BaseModel {
   @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
   @typedColumn({
-    type: "integer",
+    foreignKeyOf: () => Building,
     optional: true,
   })
   declare buildingId: number | null;
-
-  @belongsTo(() => Building)
-  declare building: BelongsTo<typeof Building>;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
@@ -42,9 +42,16 @@ export default class Aed extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
+  @belongsTo(() => Building)
+  declare building: BelongsTo<typeof Building>;
+
   @belongsTo(() => FileEntry, {
     localKey: "id",
     foreignKey: "photoKey",
   })
   declare photo: BelongsTo<typeof FileEntry>;
+
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

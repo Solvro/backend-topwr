@@ -4,6 +4,7 @@ import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import { BuildingIcon } from "#enums/building_icon";
+import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Building from "#models/building";
 import Campus from "#models/campus";
 import FilesService from "#services/files_service";
@@ -28,7 +29,7 @@ interface BuildingDraft {
   food: boolean | null;
   naturalName: string;
   externalDigitalGuideIdOrURL: string;
-  externalDigitalGuideMode: string;
+  externalDigitalGuideMode: ExternalDigitalGuideMode | null;
   createdAt: string;
   updatedAt: string;
 }

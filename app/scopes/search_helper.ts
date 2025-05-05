@@ -5,7 +5,6 @@ import { scope } from "@adonisjs/lucid/orm";
 import {
   LucidModel,
   ModelAttributes,
-  ModelColumnOptions,
   ModelQueryBuilderContract,
   QueryScope,
 } from "@adonisjs/lucid/types/model";
@@ -13,26 +12,16 @@ import {
 import { BadRequestException } from "#exceptions/http_exceptions";
 import env from "#start/env";
 
-import { ColumnDef, ColumnType } from "../decorators/typed_model.js";
+import {
+  ValidatedColumnDef,
+  validateColumnDef,
+} from "../decorators/typed_model.js";
 
 /*
  *
  * Thanks to Dawid Linek for concept
  *
  */
-
-const types = new Set(["number", "string", "boolean", "DateTime", "enum"]);
-
-export interface ColumnDefExplicit extends ModelColumnOptions {
-  meta:
-    | {
-        declaredType: Exclude<ColumnType, "enum">;
-      }
-    | {
-        declaredType: "enum";
-        allowedValues: string[];
-      };
-}
 
 export interface FromTo {
   from?: string;
@@ -52,7 +41,6 @@ export type QueryValues =
 /**
  * Based on object of params filter query including in, from, to, like options
  *
- * @param {T} model - The Lucid model instance.
  * @returns {LucidQueryScope<T>} - A Lucid query scope function.
  *
  * The returned scope function takes an object where:
@@ -90,9 +78,7 @@ export type QueryValues =
  * **NOTE**
  *  - Consider using **@TypedModel** decorator on model to inject type property into every column easily
  */
-export function handleSearchQuery<T extends LucidModel>(
-  model: T,
-): QueryScope<
+export function handleSearchQuery<T extends LucidModel>(): QueryScope<
   T,
   (
     query: ModelQueryBuilderContract<T>,
@@ -106,7 +92,7 @@ export function handleSearchQuery<T extends LucidModel>(
         queryParam,
         queryValue,
         excluded as string[],
-        model,
+        query.model,
       );
       if (entry === undefined) {
         continue;
@@ -126,10 +112,10 @@ export function handleSearchQuery<T extends LucidModel>(
 
 function handleArray<T extends LucidModel>(
   query: ModelQueryBuilderContract<T>,
-  column: ColumnDefExplicit,
+  column: ValidatedColumnDef,
   values: string[],
 ) {
-  const columnType = column.meta.declaredType;
+  const columnType = column.meta.typing.declaredType;
   const invalid = arrayTypeCheckHelper(values, column);
   if (invalid.length > 0) {
     throw new BadRequestException(
@@ -148,10 +134,10 @@ function handleArray<T extends LucidModel>(
 
 function handleFromTo<T extends LucidModel>(
   query: ModelQueryBuilderContract<T>,
-  column: ColumnDefExplicit,
+  column: ValidatedColumnDef,
   value: FromTo,
 ) {
-  const columnType = column.meta.declaredType;
+  const columnType = column.meta.typing.declaredType;
   if (columnType !== "number" && columnType !== "DateTime") {
     // [from]/[to] make sense only on number or date
     throw new BadRequestException(
@@ -203,15 +189,15 @@ function handleFromTo<T extends LucidModel>(
 
 function handleDirectValue<T extends LucidModel>(
   query: ModelQueryBuilderContract<T>,
-  column: ColumnDefExplicit,
+  column: ValidatedColumnDef,
   value: string,
 ) {
-  const columnType = column.meta.declaredType;
+  const columnType = column.meta.typing.declaredType;
   const invalid = arrayTypeCheckHelper([value], column);
   if (invalid.length > 0) {
     const allowedValues =
-      column.meta.declaredType === "enum"
-        ? `. allowed values for this column: ${column.meta.allowedValues.join(", ")}`
+      column.meta.typing.declaredType === "enum"
+        ? `. allowed values for this column: ${column.meta.typing.allowedValues.join(", ")}`
         : "";
     throw new BadRequestException(
       `invalid filter value '${value}' ` +
@@ -230,15 +216,15 @@ function handleDirectValue<T extends LucidModel>(
 
 function arrayTypeCheckHelper(
   values: (string | undefined)[],
-  column: ColumnDefExplicit,
+  column: ValidatedColumnDef,
 ) {
   let invalid: string[] = [];
-  switch (column.meta.declaredType) {
+  switch (column.meta.typing.declaredType) {
     case "string": {
       break;
     }
     case "enum": {
-      const allowedValues = column.meta.allowedValues;
+      const allowedValues = column.meta.typing.allowedValues;
       invalid = values.filter(
         (value) => value !== undefined && !allowedValues.includes(value),
       ) as string[];
@@ -277,7 +263,7 @@ function extractEntry<T extends LucidModel>(
   value: string | string[] | FromTo | undefined,
   excluded: string[],
   model: T,
-): [ColumnDefExplicit, string | string[] | FromTo] | undefined {
+): [ValidatedColumnDef, string | string[] | FromTo] | undefined {
   if (excluded.includes(param) || param.trim() === "") {
     return;
   }
@@ -286,19 +272,11 @@ function extractEntry<T extends LucidModel>(
     return;
   }
   // predicate for ts type safety
-  const isTypeValid = (column: ColumnDef): column is ColumnDefExplicit => {
-    return (
-      column.meta?.declaredType !== undefined &&
-      types.has(column.meta.declaredType) &&
-      (column.meta.declaredType !== "enum" ||
-        column.meta.allowedValues !== undefined)
-    );
-  };
   const column = model.$getColumn(param);
   if (column === undefined) {
     return;
   }
-  if (isTypeValid(column)) {
+  if (validateColumnDef(column)) {
     return [column, value];
   }
 

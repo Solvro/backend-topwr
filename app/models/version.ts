@@ -16,7 +16,7 @@ export default class Version extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Milestone })
   declare milestoneId: number;
 
   @typedColumn({ type: "string" })
@@ -45,7 +45,7 @@ export default class Version extends BaseModel {
   @belongsTo(() => Milestone)
   declare milestone: BelongsTo<typeof Milestone>;
 
-  static preloadRelations = preloadRelations(Version);
-  static handleSearchQuery = handleSearchQuery(Version);
-  static handleSortQuery = handleSortQuery(Version);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }
