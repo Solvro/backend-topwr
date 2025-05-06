@@ -1,3 +1,4 @@
+import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
@@ -21,10 +22,10 @@ export default class BicycleShower extends BaseModel {
   @typedColumn({ type: "string", optional: true })
   declare instructions: string | null;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", validator: vine.number().min(-90).max(90) })
   declare latitude: number;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", validator: vine.number().min(-180).max(180) })
   declare longitude: number;
 
   @typedColumn({ type: "string", optional: true, columnName: "address_line1" })

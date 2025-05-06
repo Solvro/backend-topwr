@@ -16,7 +16,9 @@ import logger from "@adonisjs/core/services/logger";
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import { LucidModel, ModelColumnOptions } from "@adonisjs/lucid/types/model";
 
+import { AdminPanelErrorReporter } from "#exceptions/admin_panel_error_reporter";
 import FilesService from "#services/files_service";
+import { AutogenCacheEntry } from "#utils/model_autogen";
 
 export interface ResourceNavigation {
   name: string;
@@ -178,6 +180,11 @@ export class ResourceFactory {
       afterEditHooksToChain,
       afterDeleteHooksToChain,
     );
+    const validatorHook = ResourceFactory.createResourceValidatorHook(
+      resourceInfo.forModel,
+    );
+    beforeEditHooksToChain.push(validatorHook);
+    beforeNewHooksToChain.push(validatorHook);
     newResource.options.actions = {
       ...newResource.options.actions,
       new: this.addNewUploadHook(
@@ -447,6 +454,26 @@ export class ResourceFactory {
         await FilesService.deleteFileWithKey(currentCover);
       }
       return entity;
+    };
+  }
+
+  private static createResourceValidatorHook(
+    model: LucidModel,
+  ): BeforeHookLink {
+    const autogen = AutogenCacheEntry.for(model);
+    return async (request: ActionRequest) => {
+      if (request.payload === undefined || request.method !== "post") {
+        return request;
+      }
+
+      request.payload = (await autogen.storeValidator.validate(
+        request.payload,
+        {
+          errorReporter: () => new AdminPanelErrorReporter(),
+        },
+      )) as Record<string, unknown>;
+
+      return request;
     };
   }
 
