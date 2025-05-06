@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: topwr-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: thisisasecret
+      POSTGRES_DB: topwr
+    volumes:
+      - topwr_db_data:/var/lib/postgresql/data
+  adonis:
+    build:
+      context: .
+      dockerfile: Dockerfile # Assuming your Adonis app's Dockerfile is in the current directory
+    container_name: topwr-api
+    environment:
+      DB_CONNECTION: pg
+      DB_HOST: topwr-db # Service name for PostgreSQL
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: thisisasecret
+      DB_NAME: topwr
+    ports:
+      - "3333:3333" # Expose Adonis app's port (you can modify if needed)
+    volumes:
+      - ./.env:/app/.env # Mount your .env file
+    depends_on:
+      - postgres
+volumes:
+  topwr_db_data:
