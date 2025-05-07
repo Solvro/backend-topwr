@@ -7,8 +7,12 @@ import { organizationTypeEnumsValues } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
+import {
+  anyCaseToPlural_snake_case,
+  getOneToManyRelationForeignKey,
+} from "#utils/model_utils";
 
-import { ResourceBuilder, normalizeResourceName } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "Student Organizations",
@@ -34,9 +38,11 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(StudentOrganizationLink),
-              joinKey:
-                StudentOrganizationLink.getStudentOrganizationRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(StudentOrganizationLink),
+              joinKey: getOneToManyRelationForeignKey(
+                StudentOrganization,
+                "test",
+              ),
             },
           },
         },

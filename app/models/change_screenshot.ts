@@ -33,10 +33,6 @@ export default class ChangeScreenshot extends BaseModel {
   @belongsTo(() => Change)
   declare change: BelongsTo<typeof Change>;
 
-  public static getChangesRelationKey() {
-    return "changeId";
-  }
-
   @belongsTo(() => FileEntry, {
     localKey: "id",
     foreignKey: "imageKey",

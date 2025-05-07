@@ -10,8 +10,12 @@ import Milestone from "#models/milestone";
 import Role from "#models/role";
 import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
+import {
+  anyCaseToPlural_snake_case,
+  getOneToManyRelationForeignKey,
+} from "#utils/model_utils";
 
-import { ResourceBuilder, normalizeResourceName } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "Versions",
@@ -29,8 +33,8 @@ export const VersionsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(ChangeScreenshot),
-              joinKey: ChangeScreenshot.getChangesRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(ChangeScreenshot),
+              joinKey: getOneToManyRelationForeignKey(Change, "test"),
             },
           },
         },
@@ -57,8 +61,8 @@ export const VersionsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(ContributorSocialLink),
-              joinKey: ContributorSocialLink.getContributorRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(ContributorSocialLink),
+              joinKey: getOneToManyRelationForeignKey(Contributor, "test"),
             },
           },
         },
@@ -72,8 +76,8 @@ export const VersionsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(Version),
-              joinKey: Version.getMilestoneRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(Version),
+              joinKey: getOneToManyRelationForeignKey(Version, "test"),
             },
           },
         },
@@ -90,8 +94,8 @@ export const VersionsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(Change),
-              joinKey: Change.getVersionRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(Change),
+              joinKey: getOneToManyRelationForeignKey(Version, "test"),
             },
           },
         },
@@ -100,8 +104,8 @@ export const VersionsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(VersionScreenshot),
-              joinKey: VersionScreenshot.getVersionRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(VersionScreenshot),
+              joinKey: getOneToManyRelationForeignKey(Version, "test"),
             },
           },
         },

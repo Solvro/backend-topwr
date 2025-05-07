@@ -5,8 +5,12 @@ import Department from "#models/department";
 import DepartmentLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 import StudentOrganization from "#models/student_organization";
+import {
+  anyCaseToPlural_snake_case,
+  getOneToManyRelationForeignKey,
+} from "#utils/model_utils";
 
-import { ResourceBuilder, normalizeResourceName } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "Departments",
@@ -31,8 +35,8 @@ export const DepartmentsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(DepartmentsLink),
-              joinKey: DepartmentsLink.getDepartmentRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(DepartmentLink),
+              joinKey: getOneToManyRelationForeignKey(Department, "test"),
             },
           },
         },
@@ -41,8 +45,8 @@ export const DepartmentsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(FieldsOfStudy),
-              joinKey: FieldsOfStudy.getDepartmentRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(FieldsOfStudy),
+              joinKey: getOneToManyRelationForeignKey(Department, "test"),
             },
           },
         },
@@ -51,8 +55,8 @@ export const DepartmentsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(StudentOrganization),
-              joinKey: StudentOrganization.getDepartmentRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(StudentOrganization),
+              joinKey: getOneToManyRelationForeignKey(Department, "test"),
             },
           },
         },

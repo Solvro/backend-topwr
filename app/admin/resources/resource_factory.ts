@@ -73,28 +73,6 @@ export interface OwnedRelationDefinition {
   displayLabel: string; //You can put whatever you want here - it's just a display label
   relation: RelationOptions;
 }
-/**
- * Helper function for quick relation defining with LucidModels
- *
- * Admin uses multiple form snake_case as resource names in relations.
- * If your resource is a usual noun, you can use this function to normalise it.
- * Otherwise, type the correct form yourself.
- * @returns Normalized name of the resource
- * @example
- * const model = BicycleShower extends LucidModel; //model name = 'BicycleShower'
- * const normalized = normalizeResourceName(model);// normalized = 'bicycle_showers'
- */
-export function normalizeResourceName(model: LucidModel): string {
-  const snakeCase = model.name
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .toLowerCase();
-  if (snakeCase.endsWith("s")) {
-    return `${snakeCase}es`;
-  } else if (snakeCase.endsWith("y")) {
-    return `${snakeCase.slice(0, -1)}ies`;
-  }
-  return `${snakeCase}s`;
-}
 
 export interface ResourceInfo {
   forModel: LucidModel;

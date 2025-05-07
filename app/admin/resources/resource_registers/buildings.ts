@@ -10,8 +10,12 @@ import FoodSpot from "#models/food_spot";
 import Library from "#models/library";
 import RegularHour from "#models/regular_hour";
 import SpecialHour from "#models/special_hour";
+import {
+  anyCaseToPlural_snake_case,
+  getOneToManyRelationForeignKey,
+} from "#utils/model_utils";
 
-import { ResourceBuilder, normalizeResourceName } from "../resource_factory.js";
+import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
   name: "Buildings",
@@ -33,8 +37,8 @@ export const BuildingsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(BicycleShower),
-              joinKey: BicycleShower.getBuildingsRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(BicycleShower),
+              joinKey: getOneToManyRelationForeignKey(Building, "test"),
             },
           },
         },
@@ -43,8 +47,8 @@ export const BuildingsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(FoodSpot),
-              joinKey: FoodSpot.getBuildingsRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(FoodSpot),
+              joinKey: getOneToManyRelationForeignKey(Building, "test"),
             },
           },
         },
@@ -53,8 +57,8 @@ export const BuildingsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(Library),
-              joinKey: Library.getBuildingsRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(Library),
+              joinKey: getOneToManyRelationForeignKey(Building, "test"),
             },
           },
         },
@@ -63,8 +67,8 @@ export const BuildingsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(Aed),
-              joinKey: Aed.getBuildingsRelationKey(),
+              resourceId: anyCaseToPlural_snake_case(Aed),
+              joinKey: getOneToManyRelationForeignKey(Building, "test"),
             },
           },
         },
@@ -80,7 +84,7 @@ export const BuildingsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(Building),
+              resourceId: anyCaseToPlural_snake_case(Building),
               joinKey: Building.getCampusRelationKey(),
             },
           },
@@ -112,7 +116,7 @@ export const BuildingsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(RegularHour),
+              resourceId: anyCaseToPlural_snake_case(RegularHour),
               joinKey: RegularHour.getLibraryRelationKey(),
             },
           },
@@ -122,7 +126,7 @@ export const BuildingsBuilder: ResourceBuilder = {
           relation: {
             type: RelationType.OneToMany,
             target: {
-              resourceId: normalizeResourceName(SpecialHour),
+              resourceId: anyCaseToPlural_snake_case(SpecialHour),
               joinKey: SpecialHour.getLibraryRelationKey(),
             },
           },

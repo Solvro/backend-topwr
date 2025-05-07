@@ -51,10 +51,6 @@ export default class Library extends BaseModel {
   @belongsTo(() => Building)
   declare building: BelongsTo<typeof Building>;
 
-  public static getBuildingsRelationKey() {
-    return "buildingId";
-  }
-
   @hasMany(() => RegularHour)
   declare regularHours: HasMany<typeof RegularHour>;
 
