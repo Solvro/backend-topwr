@@ -8,7 +8,7 @@ import { InvalidModelDefinition } from "#exceptions/model_autogen_errors";
  * Admin uses multiple form snake_case as resource names in relations.
  * If your resource is a usual noun, you can use this function to normalise it.
  * Otherwise, type the correct form yourself.
- * @returns Normalized name of the resource
+ * @returns Plural form of the normalized name of the resource
  * @example
  * const model = BicycleShower extends LucidModel; //model name = 'BicycleShower'
  * const normalized = anyCaseToPlural_snake_case(model);// normalized = 'bicycle_showers'
@@ -32,24 +32,40 @@ export function anyCaseToPlural_snake_case(model: LucidModel): string {
  * Lucid uses multiple form camelCase as resource names in relations.
  * If your resource is a usual noun, you can use this function to normalise it.
  * Otherwise, type the correct form yourself.
- * @returns Normalized name of the resource
+ * @returns Plural form of the normalized name of the resource
  * @example
  * const model = BicycleShower extends LucidModel; //model name = 'BicycleShower'
- * const normalized = anyCaseToPlural_snake_case(model);// normalized = 'bicycleShowers'
+ * const normalized = anyCaseToPlural_camelCase(model);// normalized = 'bicycleShowers'
  */
 // eslint-disable-next-line @typescript-eslint/naming-convention
 export function anyCaseToPlural_camelCase(model: LucidModel): string {
-  const camelCase = model.name
-    .replace(/[-_\s]+(.)?/g, (_, char: string | undefined) =>
-      char !== undefined ? char.toUpperCase() : "",
-    )
-    .replace(/^[A-Z]/, (char) => char.toLowerCase());
+  const camelCase = anyCaseToSingular_camelCase(model);
   if (camelCase.endsWith("s")) {
     return `${camelCase}es`;
   } else if (camelCase.endsWith("y")) {
     return `${camelCase.slice(0, -1)}ies`;
   }
   return `${camelCase}s`;
+}
+
+/**
+ * Helper function for quick relation defining with LucidModels
+ *
+ * Lucid uses singular form camelCase as resource names in reference relations.
+ * If your resource is a usual noun, you can use this function to normalise it.
+ * Otherwise, type the correct form yourself.
+ * @returns Normalized name of the resource
+ * @example
+ * const model = BicycleShower extends LucidModel; //model name = 'BicycleShower'
+ * const normalized = anyCaseToSingular_camelCase(model);// normalized = 'bicycleShower'
+ */
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export function anyCaseToSingular_camelCase(model: LucidModel): string {
+  return model.name
+    .replace(/[-_\s]+(.)?/g, (_, char: string | undefined) =>
+      char !== undefined ? char.toUpperCase() : "",
+    )
+    .replace(/^[A-Z]/, (char) => char.toLowerCase());
 }
 
 export function getOneToManyRelationForeignKey(
@@ -72,9 +88,4 @@ export function getOneToManyRelationForeignKey(
   throw new InvalidModelDefinition(
     `Relation '${relationName}' is not a one-to-many relation for model '${model.name}. It's a '${relation.type}' relation.`,
   );
-}
-
-export interface OneToManyReferenceRelationData {
-  relationFieldName: string;
-  relatedModelName: string;
 }

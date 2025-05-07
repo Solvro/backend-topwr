@@ -39,7 +39,12 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
     {
       forModel: StudentOrganizationLink,
       ...linkTypeAutodetectSetUp,
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: StudentOrganization,
+          ownerModelSingular_camelCase: "organization",
+        },
+      ],
     },
     {
       forModel: StudentOrganizationTag,

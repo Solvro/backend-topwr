@@ -53,8 +53,7 @@ export const BuildingsBuilder: ResourceBuilder = {
       ],
       targetedByModels: [
         {
-          targetModel: Campus,
-          targetModelPlural_camelCase: "campus",
+          ownerModel: Campus,
         },
       ],
     },
@@ -73,22 +72,34 @@ export const BuildingsBuilder: ResourceBuilder = {
     {
       forModel: Aed,
       addImageHandlingForProperties: ["photoKey"],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Building,
+        },
+      ],
     },
     {
       forModel: BicycleShower,
       addImageHandlingForProperties: ["photoKey"],
-      isRelationTarget: true,
+      targetedByModels: [{ ownerModel: Building }],
     },
     {
       forModel: FoodSpot,
       addImageHandlingForProperties: ["photoKey"],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Building,
+        },
+      ],
     },
     {
       forModel: Library,
       addImageHandlingForProperties: ["photoKey"],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Building,
+        },
+      ],
       ownedRelations: [
         {
           displayLabel: "Regular hours",
@@ -104,8 +115,22 @@ export const BuildingsBuilder: ResourceBuilder = {
         },
       ],
     },
-    { forModel: RegularHour, isRelationTarget: true },
-    { forModel: SpecialHour, isRelationTarget: true },
+    {
+      forModel: RegularHour,
+      targetedByModels: [
+        {
+          ownerModel: Library,
+        },
+      ],
+    },
+    {
+      forModel: SpecialHour,
+      targetedByModels: [
+        {
+          ownerModel: Library,
+        },
+      ],
+    },
   ],
   navigation,
 };

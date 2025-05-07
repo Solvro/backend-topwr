@@ -12,11 +12,22 @@ const navigation = {
 
 export const DepartmentsBuilder: ResourceBuilder = {
   builders: [
-    { forModel: FieldsOfStudy, isRelationTarget: true },
+    {
+      forModel: FieldsOfStudy,
+      targetedByModels: [
+        {
+          ownerModel: Department,
+        },
+      ],
+    },
     {
       forModel: DepartmentLink,
       ...linkTypeAutodetectSetUp,
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Department,
+        },
+      ],
     },
     {
       forModel: Department,

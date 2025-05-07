@@ -34,9 +34,20 @@ export const AcademicCalendarsBuilder: ResourceBuilder = {
     {
       forModel: DaySwap,
       additionalProperties: { changedWeekday: weekdayEnumValues },
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: AcademicCalendar,
+        },
+      ],
     },
-    { forModel: Holiday, isRelationTarget: true },
+    {
+      forModel: Holiday,
+      targetedByModels: [
+        {
+          ownerModel: AcademicCalendar,
+        },
+      ],
+    },
   ],
   navigation,
 };

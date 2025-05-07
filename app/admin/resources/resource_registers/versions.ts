@@ -30,22 +30,33 @@ export const VersionsBuilder: ResourceBuilder = {
           },
         },
       ],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Version,
+        },
+      ],
     },
     {
       forModel: ContributorSocialLink,
       ...linkTypeAutodetectSetUp,
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Contributor,
+        },
+      ],
     },
     {
       forModel: ChangeScreenshot,
       addImageHandlingForProperties: ["imageKey"],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Change,
+        },
+      ],
     },
     {
       forModel: Contributor,
       addImageHandlingForProperties: ["photoKey"],
-      isRelationTarget: true,
       ownedRelations: [
         {
           displayLabel: "Contributor social Links",
@@ -87,12 +98,20 @@ export const VersionsBuilder: ResourceBuilder = {
           },
         },
       ],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Milestone,
+        },
+      ],
     },
     {
       forModel: VersionScreenshot,
       addImageHandlingForProperties: ["imageKey"],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: Version,
+        },
+      ],
     },
   ],
   navigation,

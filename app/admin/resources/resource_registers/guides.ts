@@ -17,7 +17,11 @@ export const GuidesBuilder: ResourceBuilder = {
     {
       forModel: GuideQuestion,
       additionalProperties: { answer: { type: "richtext" } },
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          ownerModel: GuideArticle,
+        },
+      ],
     },
     {
       forModel: GuideArticle,
