@@ -1,5 +1,3 @@
-import { RelationType } from "@adminjs/relations";
-
 import { changeTypeEnumsValues } from "#enums/change_type";
 import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import Change from "#models/change";
@@ -10,10 +8,6 @@ import Milestone from "#models/milestone";
 import Role from "#models/role";
 import Version from "#models/version";
 import VersionScreenshot from "#models/version_screenshot";
-import {
-  anyCaseToPlural_snake_case,
-  getOneToManyRelationForeignKey,
-} from "#utils/model_utils";
 
 import { ResourceBuilder } from "../resource_factory.js";
 
@@ -30,12 +24,9 @@ export const VersionsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Change screenshots",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(ChangeScreenshot),
-              joinKey: getOneToManyRelationForeignKey(Change, "test"),
-            },
+          relationDefinition: {
+            targetModel: ChangeScreenshot,
+            targetModelPlural_camelCase: "screenshots",
           },
         },
       ],
@@ -58,12 +49,9 @@ export const VersionsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Contributor social Links",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(ContributorSocialLink),
-              joinKey: getOneToManyRelationForeignKey(Contributor, "test"),
-            },
+          relationDefinition: {
+            targetModel: ContributorSocialLink,
+            targetModelPlural_camelCase: "socialLinks",
           },
         },
       ],
@@ -73,12 +61,8 @@ export const VersionsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Versions",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(Version),
-              joinKey: getOneToManyRelationForeignKey(Version, "test"),
-            },
+          relationDefinition: {
+            targetModel: Version,
           },
         },
       ],
@@ -91,22 +75,15 @@ export const VersionsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Changes",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(Change),
-              joinKey: getOneToManyRelationForeignKey(Version, "test"),
-            },
+          relationDefinition: {
+            targetModel: Change,
           },
         },
         {
           displayLabel: "Version screenshots",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(VersionScreenshot),
-              joinKey: getOneToManyRelationForeignKey(Version, "test"),
-            },
+          relationDefinition: {
+            targetModel: VersionScreenshot,
+            targetModelPlural_camelCase: "screenshots",
           },
         },
       ],

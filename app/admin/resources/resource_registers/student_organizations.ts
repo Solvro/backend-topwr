@@ -1,5 +1,3 @@
-import { RelationType } from "@adminjs/relations";
-
 import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import { organizationSourceEnumsValues } from "#enums/organization_source";
 import { organizationStatusEnumsValues } from "#enums/organization_status";
@@ -7,10 +5,6 @@ import { organizationTypeEnumsValues } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
-import {
-  anyCaseToPlural_snake_case,
-  getOneToManyRelationForeignKey,
-} from "#utils/model_utils";
 
 import { ResourceBuilder } from "../resource_factory.js";
 
@@ -35,19 +29,12 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Student Organization Links",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(StudentOrganizationLink),
-              joinKey: getOneToManyRelationForeignKey(
-                StudentOrganization,
-                "test",
-              ),
-            },
+          relationDefinition: {
+            targetModel: StudentOrganizationLink,
+            targetModelPlural_camelCase: "links",
           },
         },
       ],
-      isRelationTarget: true,
     },
     {
       forModel: StudentOrganizationLink,

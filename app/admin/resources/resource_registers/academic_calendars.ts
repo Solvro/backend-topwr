@@ -1,14 +1,7 @@
-import { RelationType } from "@adminjs/relations";
-
 import { weekdayEnumValues } from "#enums/weekday";
 import AcademicCalendar from "#models/academic_calendar";
 import DaySwap from "#models/day_swap";
 import Holiday from "#models/holiday";
-import {
-  anyCaseToPlural_camelCase,
-  anyCaseToPlural_snake_case,
-  getOneToManyRelationForeignKey,
-} from "#utils/model_utils";
 
 import { ResourceBuilder } from "../resource_factory.js";
 
@@ -24,28 +17,16 @@ export const AcademicCalendarsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Day swaps",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(DaySwap),
-              joinKey: getOneToManyRelationForeignKey(
-                AcademicCalendar,
-                anyCaseToPlural_camelCase(DaySwap),
-              ),
-            },
+          relationDefinition: {
+            targetModel: DaySwap,
           },
         },
         {
           displayLabel: "Holidays",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: "holidays",
-              joinKey: getOneToManyRelationForeignKey(
-                AcademicCalendar,
-                "holidays",
-              ),
-            },
+          relationDefinition: {
+            targetModel: Holiday,
+            targetModelPlural_camelCase: "holidays",
+            targetModelPlural_snake_case: "holidays",
           },
         },
       ],

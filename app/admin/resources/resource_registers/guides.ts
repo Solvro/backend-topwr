@@ -1,12 +1,6 @@
-import { RelationType } from "@adminjs/relations";
-
 import GuideArticle from "#models/guide_article";
 import GuideAuthor from "#models/guide_author";
 import GuideQuestion from "#models/guide_question";
-import {
-  anyCaseToPlural_snake_case,
-  getOneToManyRelationForeignKey,
-} from "#utils/model_utils";
 
 import { ResourceBuilder } from "../resource_factory.js";
 
@@ -32,12 +26,8 @@ export const GuidesBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Guide questions",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(GuideQuestion),
-              joinKey: getOneToManyRelationForeignKey(GuideArticle, "test"),
-            },
+          relationDefinition: {
+            targetModel: GuideQuestion,
           },
         },
       ],

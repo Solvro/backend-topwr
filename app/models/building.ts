@@ -61,10 +61,6 @@ export default class Building extends BaseModel {
   @belongsTo(() => Campus)
   declare campus: BelongsTo<typeof Campus>;
 
-  public static getCampusRelationKey() {
-    return "campusId";
-  }
-
   @hasMany(() => Aed)
   declare aeds: HasMany<typeof Aed>;
 

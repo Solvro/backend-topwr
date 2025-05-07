@@ -1,5 +1,3 @@
-import { RelationType } from "@adminjs/relations";
-
 import { buildingIconEnumsValues } from "#enums/building_icon";
 import { externalDigitalGuideModeEnumsValues } from "#enums/digital_guide_mode";
 import Aed from "#models/aed";
@@ -10,10 +8,6 @@ import FoodSpot from "#models/food_spot";
 import Library from "#models/library";
 import RegularHour from "#models/regular_hour";
 import SpecialHour from "#models/special_hour";
-import {
-  anyCaseToPlural_snake_case,
-  getOneToManyRelationForeignKey,
-} from "#utils/model_utils";
 
 import { ResourceBuilder } from "../resource_factory.js";
 
@@ -34,42 +28,26 @@ export const BuildingsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Bicycle showers",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(BicycleShower),
-              joinKey: getOneToManyRelationForeignKey(Building, "test"),
-            },
+          relationDefinition: {
+            targetModel: BicycleShower,
           },
         },
         {
           displayLabel: "Food spots",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(FoodSpot),
-              joinKey: getOneToManyRelationForeignKey(Building, "test"),
-            },
+          relationDefinition: {
+            targetModel: FoodSpot,
           },
         },
         {
           displayLabel: "Libraries",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(Library),
-              joinKey: getOneToManyRelationForeignKey(Building, "test"),
-            },
+          relationDefinition: {
+            targetModel: Library,
           },
         },
         {
           displayLabel: "Aeds",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(Aed),
-              joinKey: getOneToManyRelationForeignKey(Building, "test"),
-            },
+          relationDefinition: {
+            targetModel: Aed,
           },
         },
       ],
@@ -81,12 +59,8 @@ export const BuildingsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Buildings",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(Building),
-              joinKey: Building.getCampusRelationKey(),
-            },
+          relationDefinition: {
+            targetModel: Building,
           },
         },
       ],
@@ -113,22 +87,14 @@ export const BuildingsBuilder: ResourceBuilder = {
       ownedRelations: [
         {
           displayLabel: "Regular hours",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(RegularHour),
-              joinKey: RegularHour.getLibraryRelationKey(),
-            },
+          relationDefinition: {
+            targetModel: RegularHour,
           },
         },
         {
           displayLabel: "Special hours",
-          relation: {
-            type: RelationType.OneToMany,
-            target: {
-              resourceId: anyCaseToPlural_snake_case(SpecialHour),
-              joinKey: SpecialHour.getLibraryRelationKey(),
-            },
+          relationDefinition: {
+            targetModel: SpecialHour,
           },
         },
       ],
