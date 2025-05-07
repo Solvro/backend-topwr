@@ -66,10 +66,15 @@ export function getOneToManyRelationForeignKey(
   if (!relation.booted) {
     relation.boot();
   }
-  if (relation.type === "hasMany") {
+  if (relation.type === "hasMany" || relation.type === "belongsTo") {
     return relation.foreignKey;
   }
   throw new InvalidModelDefinition(
-    `Relation '${relationName}' is not a one-to-many relation for model '${model.name}'`,
+    `Relation '${relationName}' is not a one-to-many relation for model '${model.name}. It's a '${relation.type}' relation.`,
   );
+}
+
+export interface OneToManyReferenceRelationData {
+  relationFieldName: string;
+  relatedModelName: string;
 }

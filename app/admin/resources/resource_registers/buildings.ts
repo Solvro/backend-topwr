@@ -51,7 +51,12 @@ export const BuildingsBuilder: ResourceBuilder = {
           },
         },
       ],
-      isRelationTarget: true,
+      targetedByModels: [
+        {
+          targetModel: Campus,
+          targetModelPlural_camelCase: "campus",
+        },
+      ],
     },
     {
       forModel: Campus,
