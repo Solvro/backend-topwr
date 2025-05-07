@@ -2,7 +2,7 @@ import { RelationType } from "@adminjs/relations";
 
 import { linkTypeAutodetectSetUp } from "#enums/link_type";
 import Department from "#models/department";
-import DepartmentsLink from "#models/department_link";
+import DepartmentLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 import StudentOrganization from "#models/student_organization";
 
@@ -17,7 +17,7 @@ export const DepartmentsBuilder: ResourceBuilder = {
   builders: [
     { forModel: FieldsOfStudy, isRelationTarget: true },
     {
-      forModel: DepartmentsLink,
+      forModel: DepartmentLink,
       ...linkTypeAutodetectSetUp,
       isRelationTarget: true,
     },

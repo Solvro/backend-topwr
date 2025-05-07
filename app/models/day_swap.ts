@@ -15,7 +15,7 @@ export default class DaySwap extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => AcademicCalendar })
   declare academicCalendarId: number;
 
   @typedColumn.date({
@@ -38,11 +38,7 @@ export default class DaySwap extends BaseModel {
   @belongsTo(() => AcademicCalendar)
   declare academicCalendar: BelongsTo<typeof AcademicCalendar>;
 
-  public static getAcademicCalendarRelationKey() {
-    return "academicCalendarId";
-  }
-
-  static preloadRelations = preloadRelations(DaySwap);
-  static handleSearchQuery = handleSearchQuery(DaySwap);
-  static handleSortQuery = handleSortQuery(DaySwap);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

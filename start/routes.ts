@@ -13,35 +13,45 @@ import env from "#start/env";
 import { middleware } from "./kernel.js";
 import { resetPasswordThrottle } from "./limiter.js";
 
+const AboutUsController = () => import("#controllers/about_us_controller");
+
+const { default: BaseController } = await (() =>
+  import("#controllers/base_controller"))();
+
 const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
-const BuildingsController = () => import("#controllers/buildings_controller");
-const CampusesController = () => import("#controllers/campuses_controller");
-const StudentOrganizationsController = () =>
-  import("#controllers/student_organizations_controller");
-const RolesController = () => import("#controllers/roles_controller");
-const ContributorsController = () =>
-  import("#controllers/contributors_controller");
-const MilestonesController = () => import("#controllers/milestones_controller");
-const VersionsController = () => import("#controllers/versions_controller");
-const ChangesController = () => import("#controllers/changes_controller");
-const DepartmentsController = () =>
-  import("#controllers/departments_controller");
-const FieldsOfStudyController = () =>
-  import("#controllers/fields_of_study_controller");
-const GuideArticlesController = () =>
-  import("#controllers/guide_articles_controller");
-const GuideAuthorsController = () =>
-  import("#controllers/guide_authors_controller");
-const GuideQuestionsController = () =>
-  import("#controllers/guide_questions_controller");
-const AboutUsController = () => import("#controllers/about_us_controller");
-const AcademicCalendarsController = () =>
-  import("#controllers/academic_calendars_controller");
-const HolidaysController = () => import("#controllers/holidays_controller");
-const DaySwapsController = () => import("#controllers/day_swaps_controller");
-const LibrariesController = () => import("#controllers/libraries_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
+
+const configureBaseRoutes = await BaseController.configureByNames([
+  "academic_calendars",
+  "aeds",
+  "bicycle_showers",
+  "buildings",
+  "campuses",
+  "change_screenshots",
+  "changes",
+  "contributor_social_links",
+  "contributors",
+  "day_swaps",
+  "department_links",
+  "departments",
+  "fields_of_study",
+  "food_spots",
+  "guide_articles",
+  "guide_authors",
+  "guide_questions",
+  "holidays",
+  "libraries",
+  "milestones",
+  "regular_hours",
+  "roles",
+  "special_hours",
+  "student_organization_links",
+  "student_organization_tags",
+  "student_organizations",
+  "version_screenshots",
+  "versions",
+]);
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -77,129 +87,8 @@ router
       })
       .prefix("/files");
 
-    router
-      .group(() => {
-        router.get("/:id", [CampusesController, "show"]);
-        router.get("/", [CampusesController, "index"]);
-      })
-      .prefix("/campuses");
+    router.get("/about_us", [AboutUsController, "index"]);
 
-    router
-      .group(() => {
-        router.get("/:id", [BuildingsController, "show"]);
-        router.get("/", [BuildingsController, "index"]);
-      })
-      .prefix("/buildings");
-
-    router
-      .group(() => {
-        router.get("/:id", [LibrariesController, "show"]);
-        router.get("/", [LibrariesController, "index"]);
-      })
-      .prefix("/libraries");
-
-    router
-      .group(() => {
-        router.get("/:id", [StudentOrganizationsController, "show"]);
-        router.get("/", [StudentOrganizationsController, "index"]);
-      })
-      .prefix("/student_organizations");
-
-    router
-      .group(() => {
-        router.get("/:id", [RolesController, "show"]);
-        router.get("/", [RolesController, "index"]);
-      })
-      .prefix("/roles");
-
-    router
-      .group(() => {
-        router.get("/:id", [ContributorsController, "show"]);
-        router.get("/", [ContributorsController, "index"]);
-      })
-      .prefix("/contributors");
-
-    router
-      .group(() => {
-        router.get("/:id", [MilestonesController, "show"]);
-        router.get("/", [MilestonesController, "index"]);
-      })
-      .prefix("/milestones");
-
-    router
-      .group(() => {
-        router.get("/:id", [VersionsController, "show"]);
-        router.get("/", [VersionsController, "index"]);
-      })
-      .prefix("/versions");
-
-    router
-      .group(() => {
-        router.get("/:id", [ChangesController, "show"]);
-        router.get("/", [ChangesController, "index"]);
-      })
-      .prefix("/changes");
-
-    router
-      .group(() => {
-        router.get("/:id", [DepartmentsController, "show"]);
-        router.get("/", [DepartmentsController, "index"]);
-      })
-      .prefix("/departments");
-
-    router
-      .group(() => {
-        router.get("/:id", [FieldsOfStudyController, "show"]);
-        router.get("/", [FieldsOfStudyController, "index"]);
-      })
-      .prefix("/fields_of_study");
-
-    router
-      .group(() => {
-        router.get("/:id", [GuideArticlesController, "show"]);
-        router.get("/", [GuideArticlesController, "index"]);
-      })
-      .prefix("/guide_articles");
-
-    router
-      .group(() => {
-        router.get("/:id", [GuideAuthorsController, "show"]);
-        router.get("/", [GuideAuthorsController, "index"]);
-      })
-      .prefix("/guide_authors");
-
-    router
-      .group(() => {
-        router.get("/:id", [GuideQuestionsController, "show"]);
-        router.get("/", [GuideQuestionsController, "index"]);
-      })
-      .prefix("/guide_questions");
-
-    router
-      .group(() => {
-        router.get("/", [AboutUsController, "index"]);
-      })
-      .prefix("/about_us");
-
-    router
-      .group(() => {
-        router.get("/:id", [AcademicCalendarsController, "show"]);
-        router.get("/", [AcademicCalendarsController, "index"]);
-      })
-      .prefix("/academic_calendars");
-
-    router
-      .group(() => {
-        router.get("/:id", [HolidaysController, "show"]);
-        router.get("/", [HolidaysController, "index"]);
-      })
-      .prefix("/holidays");
-
-    router
-      .group(() => {
-        router.get("/:id", [DaySwapsController, "show"]);
-        router.get("/", [DaySwapsController, "index"]);
-      })
-      .prefix("/day_swaps");
+    configureBaseRoutes();
   })
   .prefix("/api/v1");

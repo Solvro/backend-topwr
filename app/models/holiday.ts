@@ -14,7 +14,7 @@ export default class Holiday extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => AcademicCalendar })
   declare academicCalendarId: number;
 
   @typedColumn.date({
@@ -39,11 +39,7 @@ export default class Holiday extends BaseModel {
   @belongsTo(() => AcademicCalendar)
   declare academicCalendar: BelongsTo<typeof AcademicCalendar>;
 
-  public static getAcademicCalendarRelationKey() {
-    return "academicCalendarId";
-  }
-
-  static preloadRelations = preloadRelations(Holiday);
-  static handleSearchQuery = handleSearchQuery(Holiday);
-  static handleSortQuery = handleSortQuery(Holiday);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

@@ -1,9 +1,10 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, manyToMany } from "@adonisjs/lucid/orm";
-import * as relations from "@adonisjs/lucid/types/relations";
+import { BaseModel } from "@adonisjs/lucid/orm";
+import type { ManyToMany } from "@adonisjs/lucid/types/relations";
 
-import { typedColumn } from "#decorators/typed_model";
+import { typedColumn, typedManyToMany } from "#decorators/typed_model";
+import { GuideAuthorRole } from "#enums/guide_author_role";
 import GuideArticle from "#models/guide_article";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -22,19 +23,17 @@ export default class GuideAuthor extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  @manyToMany(() => GuideArticle, {
+  @typedManyToMany(() => GuideArticle, {
     pivotTable: "guide_article_authors",
-    pivotColumns: ["role"],
+    pivotColumns: { role: { type: GuideAuthorRole } },
     pivotForeignKey: "author_id",
     pivotRelatedForeignKey: "article_id",
     relatedKey: "id",
     pivotTimestamps: true,
   })
-  declare guideArticles: relations.ManyToMany<typeof GuideArticle>;
+  declare guideArticles: ManyToMany<typeof GuideArticle>;
 
-  static preloadRelations = preloadRelations(GuideAuthor);
-
-  static handleSearchQuery = handleSearchQuery(GuideAuthor);
-
-  static handleSortQuery = handleSortQuery(GuideAuthor);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

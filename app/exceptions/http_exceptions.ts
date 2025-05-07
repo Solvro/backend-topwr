@@ -59,3 +59,13 @@ export class UnathorizedException extends BaseError {
     });
   }
 }
+
+export class InternalServerException extends BaseError {
+  constructor(message?: string, options?: BaseErrorOptions) {
+    super(message ?? "Internal server error", {
+      code: "E_INTERNAL_SERVER_ERROR",
+      ...options,
+      status: 500,
+    });
+  }
+}

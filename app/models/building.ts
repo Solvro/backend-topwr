@@ -1,3 +1,4 @@
+import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
@@ -30,7 +31,7 @@ export default class Building extends BaseModel {
   @typedColumn({ type: BuildingIcon })
   declare iconType: BuildingIcon;
 
-  @typedColumn({ type: "integer" })
+  @typedColumn({ foreignKeyOf: () => Campus })
   declare campusId: number;
 
   @typedColumn({ type: "string", columnName: "address_line1" })
@@ -39,16 +40,16 @@ export default class Building extends BaseModel {
   @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", validator: vine.number().min(-90).max(90) })
   declare latitude: number;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", validator: vine.number().min(-180).max(180) })
   declare longitude: number;
 
   @typedColumn({ type: "boolean" })
   declare haveFood: boolean;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
 
   @typedColumn({ type: ExternalDigitalGuideMode, optional: true })
@@ -88,9 +89,7 @@ export default class Building extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  static preloadRelations = preloadRelations(Building);
-
-  static handleSearchQuery = handleSearchQuery(Building);
-
-  static handleSortQuery = handleSortQuery(Building);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

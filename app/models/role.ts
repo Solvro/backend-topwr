@@ -1,9 +1,9 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, manyToMany } from "@adonisjs/lucid/orm";
+import { BaseModel } from "@adonisjs/lucid/orm";
 import type { ManyToMany } from "@adonisjs/lucid/types/relations";
 
-import { typedColumn } from "#decorators/typed_model";
+import { typedColumn, typedManyToMany } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -23,16 +23,16 @@ export default class Role extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  @manyToMany(() => Contributor, {
+  @typedManyToMany(() => Contributor, {
     pivotTable: "contributor_roles",
-    pivotColumns: ["milestone_id"],
+    pivotColumns: { milestone_id: { type: "integer", detachFilter: true } },
     pivotTimestamps: true,
   })
   declare contributors: ManyToMany<typeof Contributor>;
 
-  static preloadRelations = preloadRelations(Role);
-  static handleSearchQuery = handleSearchQuery(Role);
-  static handleSortQuery = handleSortQuery(Role);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 
   serializeExtras = true;
 }

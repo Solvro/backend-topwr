@@ -18,7 +18,7 @@ export default class Campus extends BaseModel {
   @typedColumn({ type: "string" })
   declare name: string;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
 
   @typedColumn.dateTime({ autoCreate: true })
@@ -36,9 +36,7 @@ export default class Campus extends BaseModel {
   })
   declare cover: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations(Campus);
-
-  static handleSearchQuery = handleSearchQuery(Campus);
-
-  static handleSortQuery = handleSortQuery(Campus);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

@@ -32,7 +32,7 @@ export default class Department extends BaseModel {
   @typedColumn({ type: "string" })
   declare betterCode: string;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare logoKey: string | null;
 
   @typedColumn({ type: "string", optional: true })
@@ -51,14 +51,14 @@ export default class Department extends BaseModel {
   declare updatedAt: DateTime;
 
   @hasMany(() => FieldOfStudy)
-  declare fieldOfStudy: HasMany<typeof FieldOfStudy>;
+  declare fieldsOfStudy: HasMany<typeof FieldOfStudy>;
 
   @hasMany(() => DepartmentLink, {
     onQuery: (query) => {
       return query.orderByRaw(applyLinkTypeSorting);
     },
   })
-  declare departmentLink: HasMany<typeof DepartmentLink>;
+  declare departmentLinks: HasMany<typeof DepartmentLink>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",
@@ -66,9 +66,7 @@ export default class Department extends BaseModel {
   })
   declare logo: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations(Department);
-
-  static handleSearchQuery = handleSearchQuery(Department);
-
-  static handleSortQuery = handleSortQuery(Department);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

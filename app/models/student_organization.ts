@@ -1,13 +1,13 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, hasMany, manyToMany } from "@adonisjs/lucid/orm";
+import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type {
   BelongsTo,
   HasMany,
   ManyToMany,
 } from "@adonisjs/lucid/types/relations";
 
-import { typedColumn } from "#decorators/typed_model";
+import { typedColumn, typedManyToMany } from "#decorators/typed_model";
 import { applyLinkTypeSorting } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
@@ -28,13 +28,13 @@ export default class StudentOrganization extends BaseModel {
   @typedColumn({ type: "string" })
   declare name: string;
 
-  @typedColumn({ type: "integer", optional: true })
+  @typedColumn({ foreignKeyOf: () => Department, optional: true })
   declare departmentId: number | null;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare logoKey: string | null;
 
-  @typedColumn({ type: "uuid", optional: true })
+  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
 
   @typedColumn({ type: "string", optional: true })
@@ -62,13 +62,14 @@ export default class StudentOrganization extends BaseModel {
   })
   declare links: HasMany<typeof StudentOrganizationLink>;
 
-  @manyToMany(() => StudentOrganizationTag, {
+  @typedManyToMany(() => StudentOrganizationTag, {
     pivotTable: "student_organizations_student_organization_tags",
     localKey: "id",
     pivotForeignKey: "student_organization_id",
     relatedKey: "tag",
     pivotRelatedForeignKey: "tag",
     pivotTimestamps: true,
+    pivotColumns: {},
   })
   declare tags: ManyToMany<typeof StudentOrganizationTag>;
 
@@ -97,9 +98,7 @@ export default class StudentOrganization extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  static handleSearchQuery = handleSearchQuery(StudentOrganization);
-
-  static handleSortQuery = handleSortQuery(StudentOrganization);
-
-  static preloadRelations = preloadRelations(StudentOrganization);
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

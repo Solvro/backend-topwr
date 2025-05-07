@@ -15,7 +15,6 @@ import { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
  * - **Values** are booleans indicating whether to preload the corresponding relation.
  *
  * @template T - Type of the Lucid model.
- * @param {T} model - The Lucid model to preload relations on.
  * @returns **QueryScope** A scope function that takes a query and a relations object.
  *
  * @example
@@ -24,9 +23,7 @@ import { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
  *    scopes.preloadRelations(request.only(["campus"]));
  *  });
  */
-export function preloadRelations<T extends LucidModel>(
-  model: T,
-): QueryScope<
+export function preloadRelations<T extends LucidModel>(): QueryScope<
   T,
   (
     query: ModelQueryBuilderContract<T>,
@@ -36,7 +33,7 @@ export function preloadRelations<T extends LucidModel>(
   return scope((query, relations) => {
     for (const [relation, value] of Object.entries(relations)) {
       if (value === true) {
-        query = preloadSinglePath(query, model, relation.split("."));
+        query = preloadSinglePath(query, relation.split("."));
       }
     }
   });
@@ -48,13 +45,11 @@ export function preloadRelations<T extends LucidModel>(
  * - Base case [2] of function is the mismatch in provided relation name
  *
  * @param query - current query to work on
- * @param {T} model - The Lucid model to validate NEXT related model preload
  * @param relationParts - array that holds further chained relations that remain to be loaded in that single path
  * @returns {ModelQueryBuilderContract<T>} query to chain other queries on
  */
 function preloadSinglePath<T extends LucidModel>(
   query: ModelQueryBuilderContract<T>,
-  model: T,
   relationParts: string[],
 ): ModelQueryBuilderContract<T> {
   const relation = relationParts.shift();
@@ -62,6 +57,7 @@ function preloadSinglePath<T extends LucidModel>(
     return query;
   }
 
+  const model = query.model;
   const relationDefinition = model.$relationsDefinitions.get(relation);
   if (relationDefinition === undefined) {
     logger.warn(`'${relation}' relation not defined in '${model.name}' model`);
@@ -71,11 +67,7 @@ function preloadSinglePath<T extends LucidModel>(
   query = query.preload(
     relation as ExtractModelRelations<InstanceType<T>>,
     (nestedQuery: ModelQueryBuilderContract<T>) => {
-      void preloadSinglePath(
-        nestedQuery,
-        relationDefinition.relatedModel(),
-        relationParts,
-      );
+      void preloadSinglePath(nestedQuery, relationParts);
     },
   );
 
