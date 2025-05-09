@@ -12,12 +12,42 @@ const navigation = {
 
 export const AcademicCalendarsBuilder: ResourceBuilder = {
   builders: [
-    { forModel: AcademicCalendar },
+    {
+      forModel: AcademicCalendar,
+      ownedRelations: [
+        {
+          displayLabel: "Day swaps",
+          relationDefinition: {
+            targetModel: DaySwap,
+          },
+        },
+        {
+          displayLabel: "Holidays",
+          relationDefinition: {
+            targetModel: Holiday,
+            targetModelPlural_camelCase: "holidays",
+            targetModelPlural_snake_case: "holidays",
+          },
+        },
+      ],
+    },
     {
       forModel: DaySwap,
       additionalProperties: { changedWeekday: weekdayEnumValues },
+      targetedByModels: [
+        {
+          ownerModel: AcademicCalendar,
+        },
+      ],
     },
-    { forModel: Holiday },
+    {
+      forModel: Holiday,
+      targetedByModels: [
+        {
+          ownerModel: AcademicCalendar,
+        },
+      ],
+    },
   ],
   navigation,
 };

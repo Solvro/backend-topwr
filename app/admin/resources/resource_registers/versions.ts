@@ -21,25 +21,97 @@ export const VersionsBuilder: ResourceBuilder = {
     {
       forModel: Change,
       additionalProperties: { type: changeTypeEnumsValues },
+      ownedRelations: [
+        {
+          displayLabel: "Change screenshots",
+          relationDefinition: {
+            targetModel: ChangeScreenshot,
+            targetModelPlural_camelCase: "screenshots",
+          },
+        },
+      ],
+      targetedByModels: [
+        {
+          ownerModel: Version,
+        },
+      ],
     },
     {
       forModel: ContributorSocialLink,
       ...linkTypeAutodetectSetUp,
+      targetedByModels: [
+        {
+          ownerModel: Contributor,
+        },
+      ],
     },
     {
       forModel: ChangeScreenshot,
       addImageHandlingForProperties: ["imageKey"],
+      targetedByModels: [
+        {
+          ownerModel: Change,
+        },
+      ],
     },
     {
       forModel: Contributor,
       addImageHandlingForProperties: ["photoKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Contributor social Links",
+          relationDefinition: {
+            targetModel: ContributorSocialLink,
+            targetModelPlural_camelCase: "socialLinks",
+          },
+        },
+      ],
     },
-    { forModel: Milestone },
-    { forModel: Role },
-    { forModel: Version },
+    {
+      forModel: Milestone,
+      ownedRelations: [
+        {
+          displayLabel: "Versions",
+          relationDefinition: {
+            targetModel: Version,
+          },
+        },
+      ],
+    },
+    {
+      forModel: Role,
+    },
+    {
+      forModel: Version,
+      ownedRelations: [
+        {
+          displayLabel: "Changes",
+          relationDefinition: {
+            targetModel: Change,
+          },
+        },
+        {
+          displayLabel: "Version screenshots",
+          relationDefinition: {
+            targetModel: VersionScreenshot,
+            targetModelPlural_camelCase: "screenshots",
+          },
+        },
+      ],
+      targetedByModels: [
+        {
+          ownerModel: Milestone,
+        },
+      ],
+    },
     {
       forModel: VersionScreenshot,
       addImageHandlingForProperties: ["imageKey"],
+      targetedByModels: [
+        {
+          ownerModel: Version,
+        },
+      ],
     },
   ],
   navigation,

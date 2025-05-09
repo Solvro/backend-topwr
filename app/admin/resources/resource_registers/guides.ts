@@ -11,15 +11,30 @@ const navigation = {
 
 export const GuidesBuilder: ResourceBuilder = {
   builders: [
-    { forModel: GuideAuthor },
+    {
+      forModel: GuideAuthor,
+    },
     {
       forModel: GuideQuestion,
       additionalProperties: { answer: { type: "richtext" } },
+      targetedByModels: [
+        {
+          ownerModel: GuideArticle,
+        },
+      ],
     },
     {
       forModel: GuideArticle,
       additionalProperties: { description: { type: "richtext" } },
       addImageHandlingForProperties: ["imageKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Guide questions",
+          relationDefinition: {
+            targetModel: GuideQuestion,
+          },
+        },
+      ],
     },
   ],
   navigation,
