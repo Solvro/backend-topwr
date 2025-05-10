@@ -1,5 +1,6 @@
 import { buildingIconEnumsValues } from "#enums/building_icon";
 import { externalDigitalGuideModeEnumsValues } from "#enums/digital_guide_mode";
+import { weekdayEnumValues } from "#enums/weekday";
 import Aed from "#models/aed";
 import BicycleShower from "#models/bicycle_shower";
 import Building from "#models/building";
@@ -46,7 +47,12 @@ export const BuildingsBuilder: ResourceBuilder = {
       forModel: Library,
       addImageHandlingForProperties: ["photoKey"],
     },
-    { forModel: RegularHour },
+    {
+      forModel: RegularHour,
+      additionalProperties: {
+        weekDay: weekdayEnumValues,
+      },
+    },
     { forModel: SpecialHour },
   ],
   navigation,
