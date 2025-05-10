@@ -41,6 +41,7 @@
     },
     "dashboard": {
       "aboutUs": {
+        "title": "O nas",
         "subtitle": "Poznaj nasz projekt"
       },
       "calendars": {
