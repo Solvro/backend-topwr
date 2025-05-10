@@ -10,6 +10,7 @@
       "#utils/*": ["./app/utils/*.js"],
       "#decorators/*": ["./app/decorators/*.js"],
       "#commands/*": ["./commands/*.js"]
-    }
+    },
+    "resolveJsonModule": true
   }
 }
