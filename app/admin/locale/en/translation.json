@@ -1,32 +1,30 @@
 {
   "labels": {
     "buildingsNavigation": "Buildings",
-    "adminNavigation": "Admin Panel",
+    "adminNavigation": "Admin panel",
     "calendarsNavigation": "Calendars",
     "guidesNavigation": "Guides",
-    "aboutUsNavigation": "About Us",
+    "aboutUsNavigation": "About us",
     "departmentsNavigation": "Departments",
-    "organizationsNavigation": "Student Organizations",
+    "organizationsNavigation": "Student organizations",
     "versionsNavigation": "Versions",
-    "dashboard": "Dashboard"
+    "dashboard": "Dashboard",
+    "true": "Yes",
+    "false": "No"
   },
   "properties": {
     "id": "ID",
     "name": "Name",
     "date": "Date",
-    "addressLine1": "Address Line 1",
-    "addressLine2": "Address Line 2",
+    "addressLine1": "Address line 1",
+    "addressLine2": "Address line 2",
     "latitude": "Latitude",
     "longitude": "Longitude",
-    "photoKey": "Photo Key",
-    "coverKey": "Cover Key",
-    "imageKey": "Image Key",
-    "logoKey": "Logo Key",
-    "createdAt": "Created At",
-    "updatedAt": "Updated At",
+    "createdAt": "Created at",
+    "updatedAt": "Updated at",
     "title": "Title",
     "description": "Description",
-    "linkType": "Link Type",
+    "linkType": "Link type",
     "link": "Link"
   },
   "buttons": {
@@ -43,30 +41,31 @@
     },
     "dashboard": {
       "aboutUs": {
+        "title": "About us",
         "subtitle": "Get to know our project!"
       },
       "calendars": {
-        "title": "Academic Calendar",
+        "title": "Academic calendar",
         "subtitle": "Academic calendar for students. Exam sessions, holidays, day swaps"
       },
       "admin": {
-        "title": "Admin Panel",
+        "title": "Admin panel",
         "subtitle": "Admin panel for managing users"
       },
       "buildings": {
         "title": "Buildings",
-        "subtitle": "Buildings and multilayered map of university"
+        "subtitle": "Buildings and multilayered map of the university"
       },
       "departments": {
         "title": "Departments",
-        "subtitle": "Departments and fields of studies on university"
+        "subtitle": "Departments and fields of studies on the university"
       },
       "guides": {
         "title": "Guides",
-        "subtitle": "Guides for students, employees and guests of university"
+        "subtitle": "Guides for students, employees and guests of the university"
       },
       "organizations": {
-        "title": "Student Organizations",
+        "title": "Student organizations",
         "subtitle": "Student organizations, science clubs, communities"
       },
       "versions": {
@@ -83,12 +82,12 @@
     },
     "photoDisplay": {
       "labels": {
-        "title": "Photo"
+        "title": "Image"
       },
       "messages": {
-        "fetching": "Fetching the preview...",
-        "noPhoto": "There is no photo uploaded yet",
-        "notExist": "Photo with given key does not exist on disk. Upload again or replace it",
+        "fetching": "Fetching image preview...",
+        "noPhoto": "No image uploaded yet",
+        "notExist": "Image with given key does not exist on disk. Upload again or replace it",
         "errorWithStatus": "There was an error fetching the preview: {{status}} -> {{response}}",
         "error": "There was an error fetching the preview: {{error}}",
         "alt": "current '{{property}}' image"
@@ -96,11 +95,11 @@
     },
     "photoDropbox": {
       "labels": {
-        "title": "Photo"
+        "title": "Image"
       },
       "messages": {
-        "deleted": "Existing picture will be deleted",
-        "upload": "Upload new photo"
+        "deleted": "Existing image will be deleted",
+        "upload": "Upload new Image"
       }
     }
   },
@@ -108,16 +107,28 @@
     "buildings": {
       "properties": {
         "identifier": "Identifier",
-        "specialName": "Special Name",
-        "photoLabel": "Building Photo",
-        "iconType": "Icon Type",
+        "specialName": "Special name",
+        "photoLabel": "Building image",
+        "iconType": "Icon type",
         "campusId": "Campus ID",
-        "haveFood": "Food Available",
-        "externalDigitalGuideMode": "Guide Type",
-        "externalDigitalGuideIdOrUrl": "Guide Link"
+        "haveFood": "Food available",
+        "externalDigitalGuideMode": "Guide type",
+        "externalDigitalGuideIdOrUrl": "Guide link"
       },
       "labels": {
-        "buildings": "Buildings"
+        "buildings": "Buildings",
+        "haveFood": {
+          "true": "Yes",
+          "false": "No"
+        },
+        "iconType": {
+          "ICON": "Icon"
+        },
+        "externalDigitalGuideMode": {
+          "web_url": "Web URL or ToPWR deeplink",
+          "digital_guide_building": "Building in digital guide",
+          "other_digital_guide_place": "'Object' in digital guide"
+        }
       }
     },
     "campuses": {
@@ -130,7 +141,7 @@
         "buildingId": "Building ID"
       },
       "labels": {
-        "aeds": "Defibrillators"
+        "aeds": "AEDs"
       }
     },
     "bicycle_showers": {
@@ -140,7 +151,7 @@
         "buildingId": "Building ID"
       },
       "labels": {
-        "bicycle_showers": "Bicycle Showers"
+        "bicycle_showers": "Bicycle showers"
       }
     },
     "food_spots": {
@@ -148,7 +159,7 @@
         "buildingId": "Building ID"
       },
       "labels": {
-        "food_spots": "Food Spots"
+        "food_spots": "Food spots"
       }
     },
     "libraries": {
@@ -156,7 +167,7 @@
         "email": "Email",
         "title": "Name",
         "room": "Room",
-        "phone": "Contact Phone",
+        "phone": "Contact phone",
         "buildingId": "Building ID"
       },
       "labels": {
@@ -166,29 +177,38 @@
     "regular_hours": {
       "properties": {
         "weekDay": "Weekday",
-        "openTime": "Opening Time",
-        "closeTime": "Closing Time",
+        "openTime": "Opening time",
+        "closeTime": "Closing time",
         "libraryId": "Library ID"
       },
       "labels": {
-        "regular_hours": "Regular Hours"
+        "regular_hours": "Regular hours",
+        "weekDay": {
+          "Monday": "Poniedziałek",
+          "Tuesday": "Wtorek",
+          "Wednesday": "Środa",
+          "Thursday": "Czwartek",
+          "Friday": "Piątek",
+          "Saturday": "Sobota",
+          "Sunday": "Niedziela"
+        }
       }
     },
     "special_hours": {
       "properties": {
-        "specialDate": "Special Date",
-        "openTime": "Opening Time",
-        "closeTime": "Closing Time",
+        "specialDate": "Special date",
+        "openTime": "Opening time",
+        "closeTime": "Closing time",
         "libraryId": "Library ID"
       },
       "labels": {
-        "special_hours": "Special Hours"
+        "special_hours": "Special hours"
       }
     },
     "users": {
       "properties": {
         "email": "Email",
-        "fullName": "Full Name"
+        "fullName": "Full name"
       },
       "labels": {
         "users": "Users"
@@ -196,30 +216,47 @@
     },
     "academic_calendars": {
       "properties": {
-        "semesterStartDate": "Semester Start Date",
-        "examSessionStartDate": "Exam Session Start Date",
-        "examSessionLastDate": "Exam Session End Date",
-        "isFirstWeekEven": "First Week Is Even"
+        "semesterStartDate": "Semester start date",
+        "examSessionStartDate": "Exam session start date",
+        "examSessionLastDate": "Exam session end date",
+        "isFirstWeekEven": "First week is even"
       },
       "labels": {
-        "academic_calendars": "Academic Calendars"
+        "academic_calendars": "Academic calendars",
+        "isFirstWeekEven": {
+          "true": "tak",
+          "false": "nie"
+        }
       }
     },
     "day_swaps": {
       "properties": {
-        "academicCalendarId": "Academic Calendar ID",
-        "changedWeekday": "Changed Weekday",
-        "changedDayIsEven": "Changed Day Is Even"
+        "academicCalendarId": "Academic calendar ID",
+        "changedWeekday": "Changed weekday",
+        "changedDayIsEven": "Changed day is even"
       },
       "labels": {
-        "day_swaps": "Day Swaps"
+        "day_swaps": "Day swaps",
+        "changedDayIsEven": {
+          "true": "tak",
+          "false": "nie"
+        },
+        "changedWeekday": {
+          "Monday": "Poniedziałek",
+          "Tuesday": "Wtorek",
+          "Wednesday": "Środa",
+          "Thursday": "Czwartek",
+          "Friday": "Piątek",
+          "Saturday": "Sobota",
+          "Sunday": "Niedziela"
+        }
       }
     },
     "holidays": {
       "properties": {
-        "academicCalendarId": "Academic Calendar ID",
-        "startDate": "Start Date",
-        "lastDate": "End Date"
+        "academicCalendarId": "Academic calendar ID",
+        "startDate": "Start date",
+        "lastDate": "End date"
       },
       "labels": {
         "holidays": "Holidays"
@@ -227,10 +264,10 @@
     },
     "guide_authors": {
       "properties": {
-        "name": "Full Name"
+        "name": "Full name"
       },
       "labels": {
-        "guide_authors": "Guide Authors"
+        "guide_authors": "Guide authors"
       }
     },
     "guide_questions": {
@@ -239,39 +276,51 @@
         "articleId": "Article ID"
       },
       "labels": {
-        "guide_questions": "Guide Questions"
+        "guide_questions": "Guide questions"
       }
     },
     "guide_articles": {
       "properties": {
-        "shortDesc": "Short Description"
+        "shortDesc": "Short description"
       },
       "labels": {
-        "guide_articles": "Guide Articles"
+        "guide_articles": "Guide articles"
       }
     },
     "about_us_general_links": {
       "properties": {},
       "labels": {
-        "about_us_general_links": "About Us - Links"
+        "about_us_general_links": "About us - links"
       }
     },
     "about_us_general": {
       "labels": {
-        "about_us_general": "About Us"
+        "about_us_general": "About us"
       }
     },
     "fields_of_studies": {
       "properties": {
         "departmentId": "Department ID",
         "url": "URL",
-        "semesterCount": "Number of Semesters",
-        "isEnglish": "In English",
-        "is2ndDegree": "Second Degree",
-        "hasWeekendOption": "Weekend Study Option"
+        "semesterCount": "Number of semesters",
+        "isEnglish": "Language",
+        "is2ndDegree": "Second degree",
+        "hasWeekendOption": "Weekend study option"
       },
       "labels": {
-        "fields_of_studies": "Fields of Study"
+        "fields_of_studies": "Fields of study",
+        "isEnglish": {
+          "true": "English",
+          "false": "Polish"
+        },
+        "is2ndDegree": {
+          "true": "engineering studies",
+          "false": "master studies"
+        },
+        "hasWeekendOption": {
+          "true": "Full-time and part-time",
+          "false": "Full-time"
+        }
       }
     },
     "departments_links": {
@@ -279,15 +328,15 @@
         "departmentId": "Department ID"
       },
       "labels": {
-        "departments_links": "Department Links"
+        "departments_links": "Department links"
       }
     },
     "departments": {
       "properties": {
         "code": "Code",
-        "betterCode": "Enhanced Code",
-        "gradientStart": "Gradient Start",
-        "gradientStop": "Gradient End"
+        "betterCode": "Full code",
+        "gradientStart": "Gradient start",
+        "gradientStop": "Gradient end"
       },
       "labels": {
         "departments": "Departments"
@@ -296,22 +345,39 @@
     "student_organizations": {
       "properties": {
         "departmentId": "Department ID",
-        "shortDescription": "Short Description",
-        "coverPreview": "Cover Preview",
+        "shortDescription": "Short description",
+        "coverPreview": "Cover preview",
         "source": "Source",
-        "organizationType": "Organization Type",
-        "organizationStatus": "Organization Status"
+        "organizationType": "Organization type",
+        "organizationStatus": "Organization status"
       },
       "labels": {
-        "student_organizations": "Student Organizations"
+        "student_organizations": "Student organizations",
+        "source": {
+          "student_department": "Student department",
+          "manual": "Manual",
+          "pwr_active": "PWR active"
+        },
+        "organizationType": {
+          "scientific_club": "Scientific club",
+          "student_organization": "Student organization",
+          "student_medium": "Student medium",
+          "culture_agenda": "Culture agenda",
+          "student_council": "Student council"
+        },
+        "organizationStatus": {
+          "active": "Active",
+          "inactive": "Inactive",
+          "unknown": "Unknown"
+        }
       }
     },
     "student_organization_links": {
       "properties": {
-        "studentOrganizationId": "Student Organization ID"
+        "studentOrganizationId": "Student organization ID"
       },
       "labels": {
-        "student_organization_links": "Student Organization Links"
+        "student_organization_links": "Student organization links"
       }
     },
     "student_organization_tags": {
@@ -319,16 +385,20 @@
         "tag": "Tag"
       },
       "labels": {
-        "student_organization_tags": "Student Organization Tags"
+        "student_organization_tags": "Student organization tags"
       }
     },
     "changes": {
       "properties": {
         "versionId": "Version ID",
-        "type": "Change Type"
+        "type": "Change type"
       },
       "labels": {
-        "changes": "Changes"
+        "changes": "Changes",
+        "change_type": {
+          "fix": "Fix",
+          "feature": "Feature"
+        }
       }
     },
     "contributor_social_links": {
@@ -336,7 +406,7 @@
         "contributorId": "Contributor ID"
       },
       "labels": {
-        "contributor_social_links": "Contributor Social Links"
+        "contributor_social_links": "Contributor social links"
       }
     },
     "change_screenshots": {
@@ -345,12 +415,12 @@
         "subtitle": "Subtitle"
       },
       "labels": {
-        "change_screenshots": "Change Screenshots"
+        "change_screenshots": "Change screenshots"
       }
     },
     "contributors": {
       "properties": {
-        "name": "Full Name"
+        "name": "Full name"
       },
       "labels": {
         "contributors": "Contributors"
@@ -369,7 +439,7 @@
     "versions": {
       "properties": {
         "milestoneId": "Milestone ID",
-        "releaseDate": "Release Date"
+        "releaseDate": "Release date"
       },
       "labels": {
         "versions": "Versions"
@@ -381,7 +451,7 @@
         "subtitle": "Subtitle"
       },
       "labels": {
-        "version_screenshots": "Version Screenshots"
+        "version_screenshots": "Version screenshots"
       }
     }
   }

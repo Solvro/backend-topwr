@@ -8,7 +8,9 @@
     "departmentsNavigation": "Wydziały",
     "organizationsNavigation": "Organizacje studenckie",
     "versionsNavigation": "Wersje",
-    "dashboard": "Kokpit"
+    "dashboard": "Kokpit",
+    "true": "tak",
+    "false": "nie"
   },
   "properties": {
     "id": "ID",
@@ -18,16 +20,12 @@
     "addressLine2": "Linia adresowa 2",
     "latitude": "Szerokość geogr.",
     "longitude": "Długość geogr.",
-    "photoKey": "Klucz zdjęcia",
-    "coverKey": "Klucz zdjęcia",
-    "imageKey": "Klucz zdjęcia",
-    "logoKey": "Klucz zdjęcia",
     "createdAt": "Utworzono",
     "updatedAt": "Zaktualizowano",
     "title": "Tytuł",
     "description": "Opis",
-    "linkType": "Typ odnośnika",
-    "link": "Odnośnik"
+    "linkType": "Typ linku",
+    "link": "Link"
   },
   "buttons": {
     "save": "Zapisz",
@@ -38,7 +36,7 @@
   },
   "components": {
     "Login": {
-      "welcomeHeader": "Elo Żelo !",
+      "welcomeHeader": "Elo Żelo!",
       "welcomeMessage": "AdonisJS - najlepszy backend framework dla aplikacji Node.js"
     },
     "dashboard": {
@@ -59,7 +57,7 @@
       },
       "departments": {
         "title": "Wydziały",
-        "subtitle": "Wudziały i kierunki studiów na uczelni"
+        "subtitle": "Wydziały i kierunki studiów na uczelni"
       },
       "guides": {
         "title": "Przewodniki",
@@ -83,24 +81,24 @@
     },
     "photoDisplay": {
       "labels": {
-        "title": "Zdjęcie"
+        "title": "Grafika"
       },
       "messages": {
         "fetching": "Pobieranie podglądu...",
-        "noPhoto": "Nie dodano jeszcze żadnego zdjęcia",
-        "notExist": "Zdjęcie o danym kluczu nie istnieje w pamięci systemu. Prześlij ponownie lub zastąp je.",
+        "noPhoto": "Nie dodano jeszcze żadnej grafiki",
+        "notExist": "Grafika nie istnieje w systemie, prześlij ją ponownie lub zastąp",
         "errorWithStatus": "Błąd przy pobieraniu podglądu: {{status}} -> {{response}}",
         "error": "Błąd przy pobieraniu podglądu: {{error}}",
-        "alt": "Zdjęcie '{{property}}'"
+        "alt": "Grafika '{{property}}'"
       }
     },
     "photoDropbox": {
       "labels": {
-        "title": "Zdjęcie"
+        "title": "Grafika"
       },
       "messages": {
-        "deleted": "Obecne zdjęcie zostanie usunięte",
-        "upload": "Prześlij nowe zdjęcie"
+        "deleted": "Obecna grafika zostanie usunięta",
+        "upload": "Prześlij nową grafikę"
       }
     }
   },
@@ -109,15 +107,26 @@
       "properties": {
         "identifier": "Symbol",
         "specialName": "Nazwa specjalna",
-        "photoLabel": "Zdjęcie budynku",
         "iconType": "Typ ikony",
         "campusId": "ID kampusu",
         "haveFood": "Dostępne jedzenie",
-        "externalDigitalGuideMode": "Rodzaj przewodnika",
-        "externalDigitalGuideIdOrUrl": "Odnośnik do przewodnika"
+        "externalDigitalGuideMode": "Rodzaj informacji dodatkowej",
+        "externalDigitalGuideIdOrUrl": "Link lub ID cyfrowego przewodnika"
       },
       "labels": {
-        "buildings": "Budynki"
+        "buildings": "Budynki",
+        "haveFood": {
+          "true": "Tak",
+          "false": "Nie"
+        },
+        "iconType": {
+          "ICON": "Icon"
+        },
+        "externalDigitalGuideMode": {
+          "web_url": "Web URL lub ToPWR deeplink",
+          "digital_guide_building": "Budynek w cyfrowym przewodniku",
+          "other_digital_guide_place": "'Obiekt' w cyfrowym przewodniku"
+        }
       }
     },
     "campuses": {
@@ -171,7 +180,16 @@
         "libraryId": "ID biblioteki"
       },
       "labels": {
-        "regular_hours": "Godziny regularne"
+        "regular_hours": "Godziny regularne",
+        "weekDay": {
+          "Monday": "Poniedziałek",
+          "Tuesday": "Wtorek",
+          "Wednesday": "Środa",
+          "Thursday": "Czwartek",
+          "Friday": "Piątek",
+          "Saturday": "Sobota",
+          "Sunday": "Niedziela"
+        }
       }
     },
     "special_hours": {
@@ -199,27 +217,42 @@
         "semesterStartDate": "Data rozpoczęcia semestru",
         "examSessionStartDate": "Data rozpoczęcia sesji",
         "examSessionLastDate": "Data zakończenia sesji",
-        "isFirstWeekEven": "Pierwszy tydzień jest parzysty"
+        "isFirstWeekEven": "Czy pierwszy tydzień jest parzysty"
       },
       "labels": {
-        "academic_calendars": "Kalendarze akademickie"
+        "academic_calendars": "Kalendarze akademickie",
+        "isFirstWeekEven": {
+          "true": "tak",
+          "false": "nie"
+        }
       }
     },
     "day_swaps": {
       "properties": {
-        "academicCalendarId": "ID Kalendarza akademickiego",
-        "changedWeekday": "Zmieniony dzień tygodnia",
-        "changedWeekday": "Poniedziałek",
-        "changedDayIsEven": "Zmieniony dniem parzystym",
-        "changedDayIsEven": "tak"
+        "academicCalendarId": "ID kalendarza akademickiego",
+        "changedWeekday": "Zmiana na jaki dzień tygodnia",
+        "changedDayIsEven": "Czy zmieniono na dzień parzysty"
       },
       "labels": {
-        "day_swaps": "Zmiany dni tygodnia"
+        "day_swaps": "Zmiany dni tygodnia",
+        "changedDayIsEven": {
+          "true": "tak",
+          "false": "nie"
+        },
+        "changedWeekday": {
+          "Monday": "Poniedziałek",
+          "Tuesday": "Wtorek",
+          "Wednesday": "Środa",
+          "Thursday": "Czwartek",
+          "Friday": "Piątek",
+          "Saturday": "Sobota",
+          "Sunday": "Niedziela"
+        }
       }
     },
     "holidays": {
       "properties": {
-        "academicCalendarId": "ID Kalendarza akademickiego",
+        "academicCalendarId": "ID kalendarza akademickiego",
         "startDate": "Data rozpoczęcia",
         "lastDate": "Data zakończenia"
       },
@@ -229,7 +262,7 @@
     },
     "guide_authors": {
       "properties": {
-        "name": "Imie i nazwisko"
+        "name": "Imię i nazwisko"
       },
       "labels": {
         "guide_authors": "Autorzy przewodnika"
@@ -255,7 +288,7 @@
     "about_us_general_links": {
       "properties": {},
       "labels": {
-        "about_us_general_links": "O nas - Odnośniki"
+        "about_us_general_links": "O nas - linki społecznościowe"
       }
     },
     "about_us_general": {
@@ -266,14 +299,26 @@
     "fields_of_studies": {
       "properties": {
         "departmentId": "ID wydziału",
-        "url": "URL",
+        "url": "Link",
         "semesterCount": "Liczba semestrów",
-        "isEnglish": "W języku angielskim",
-        "is2ndDegree": "Drugiego stopnia",
-        "hasWeekendOption": "Możliwość studiowania niestacjonarnego"
+        "isEnglish": "Język wykładowy",
+        "is2ndDegree": "Stopień studiów",
+        "hasWeekendOption": "Tryb studiów"
       },
       "labels": {
-        "fields_of_studies": "Kierunki studiów"
+        "fields_of_studies": "Kierunki studiów",
+        "isEnglish": {
+          "true": "Angielski",
+          "false": "Polski"
+        },
+        "is2ndDegree": {
+          "false": "Inżynierskie",
+          "false": "Magisterskie"
+        },
+        "hasWeekendOption": {
+          "true": "Dzienne lub zaoczne",
+          "false": "Dzienne"
+        }
       }
     },
     "departments_links": {
@@ -281,13 +326,13 @@
         "departmentId": "ID wydziału"
       },
       "labels": {
-        "departments_links": "Odnośniki wydziałów"
+        "departments_links": "Linki wydziałów"
       }
     },
     "departments": {
       "properties": {
         "code": "Kod",
-        "betterCode": "Kod uzupełniony",
+        "betterCode": "Kod uzupełniający",
         "gradientStart": "Początek gradientu",
         "gradientStop": "Koniec gradientu"
       },
@@ -299,13 +344,30 @@
       "properties": {
         "departmentId": "ID wydziału",
         "shortDescription": "Krótki opis",
-        "coverPreview": "Podgląd zdjęcia",
+        "coverPreview": "Podgląd grafiki",
         "source": "Źródło",
         "organizationType": "Typ Organizacji",
-        "organizationStatus": "Status organizacji"
+        "organizationStatus": "Status wpisu organizacji w aplikacji"
       },
       "labels": {
-        "student_organizations": "Organizacje studenckie"
+        "student_organizations": "Organizacje studenckie",
+        "source": {
+          "student_department": "Samorząd studencki",
+          "manual": "Własne",
+          "pwr_active": "PWR active"
+        },
+        "organizationType": {
+          "scientific_club": "Koło naukowe",
+          "student_organization": "Organizacja studencka",
+          "student_medium": "Medium studenckie",
+          "culture_agenda": "Agenda kultury",
+          "student_council": "Samorząd studencki"
+        },
+        "organizationStatus": {
+          "active": "Aktywna",
+          "inactive": "Nieaktywna",
+          "unknown": "Nieznany"
+        }
       }
     },
     "student_organization_links": {
@@ -313,15 +375,15 @@
         "studentOrganizationId": "ID organizacji studenckiej"
       },
       "labels": {
-        "student_organization_links": "Odnośniki organizacji studenckich"
+        "student_organization_links": "Linki organizacji studenckich"
       }
     },
     "student_organization_tags": {
       "properties": {
-        "tag": "Etykieta"
+        "tag": "Tag"
       },
       "labels": {
-        "student_organization_tags": "Etykiety organizacji studenckich"
+        "student_organization_tags": "Tagi organizacji studenckich"
       }
     },
     "changes": {
@@ -330,7 +392,11 @@
         "type": "Typ zmiany"
       },
       "labels": {
-        "changes": "Zmiany"
+        "changes": "Zmiany",
+        "type": {
+          "feature": "Funkcjonalność",
+          "fix": "Poprawka"
+        }
       }
     },
     "contributor_social_links": {
@@ -347,12 +413,12 @@
         "subtitle": "Podtytuł"
       },
       "labels": {
-        "change_screenshots": "Zrzuty ekranu zmian"
+        "change_screenshots": "Ilustracje zmian"
       }
     },
     "contributors": {
       "properties": {
-        "name": "Imie i nazwisko"
+        "name": "Imię i nazwisko"
       },
       "labels": {
         "contributors": "Kontrybutorzy"
@@ -371,7 +437,7 @@
     "versions": {
       "properties": {
         "milestoneId": "ID kamienia milowego",
-        "releaseDate": "Data wypuszczenia"
+        "releaseDate": "Data publikacji"
       },
       "labels": {
         "versions": "Wersje"
@@ -383,7 +449,7 @@
         "subtitle": "Podtytuł"
       },
       "labels": {
-        "version_screenshots": "Zrzuty ekranu wersji"
+        "version_screenshots": "Ilustracje wersji"
       }
     }
   }
