@@ -8,9 +8,7 @@
     "departmentsNavigation": "Departments",
     "organizationsNavigation": "Student organizations",
     "versionsNavigation": "Versions",
-    "dashboard": "Dashboard",
-    "true": "Yes",
-    "false": "No"
+    "dashboard": "Dashboard"
   },
   "properties": {
     "id": "ID",
@@ -184,13 +182,13 @@
       "labels": {
         "regular_hours": "Regular hours",
         "weekDay": {
-          "Monday": "Poniedziałek",
-          "Tuesday": "Wtorek",
-          "Wednesday": "Środa",
-          "Thursday": "Czwartek",
-          "Friday": "Piątek",
-          "Saturday": "Sobota",
-          "Sunday": "Niedziela"
+          "Monday": "Monday",
+          "Tuesday": "Tuesday",
+          "Wednesday": "Wednesday",
+          "Thursday": "Thursday",
+          "Friday": "Friday",
+          "Saturday": "Saturday",
+          "Sunday": "Sunday"
         }
       }
     },
@@ -224,8 +222,8 @@
       "labels": {
         "academic_calendars": "Academic calendars",
         "isFirstWeekEven": {
-          "true": "tak",
-          "false": "nie"
+          "true": "Yes",
+          "false": "No"
         }
       }
     },
@@ -238,17 +236,17 @@
       "labels": {
         "day_swaps": "Day swaps",
         "changedDayIsEven": {
-          "true": "tak",
-          "false": "nie"
+          "true": "Yes",
+          "false": "No"
         },
         "changedWeekday": {
-          "Monday": "Poniedziałek",
-          "Tuesday": "Wtorek",
-          "Wednesday": "Środa",
-          "Thursday": "Czwartek",
-          "Friday": "Piątek",
-          "Saturday": "Sobota",
-          "Sunday": "Niedziela"
+          "Monday": "Monday",
+          "Tuesday": "Tuesday",
+          "Wednesday": "Wednesday",
+          "Thursday": "Thursday",
+          "Friday": "Friday",
+          "Saturday": "Saturday",
+          "Sunday": "Sunday"
         }
       }
     },
@@ -314,8 +312,8 @@
           "false": "Polish"
         },
         "is2ndDegree": {
-          "true": "engineering studies",
-          "false": "master studies"
+          "true": "Engineering studies",
+          "false": "Master studies"
         },
         "hasWeekendOption": {
           "true": "Full-time and part-time",
