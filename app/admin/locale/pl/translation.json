@@ -8,9 +8,7 @@
     "departmentsNavigation": "Wydziały",
     "organizationsNavigation": "Organizacje studenckie",
     "versionsNavigation": "Wersje",
-    "dashboard": "Kokpit",
-    "true": "tak",
-    "false": "nie"
+    "dashboard": "Kokpit"
   },
   "properties": {
     "id": "ID",
@@ -223,8 +221,8 @@
       "labels": {
         "academic_calendars": "Kalendarze akademickie",
         "isFirstWeekEven": {
-          "true": "tak",
-          "false": "nie"
+          "true": "Tak",
+          "false": "Nie"
         }
       }
     },
@@ -237,8 +235,8 @@
       "labels": {
         "day_swaps": "Zmiany dni tygodnia",
         "changedDayIsEven": {
-          "true": "tak",
-          "false": "nie"
+          "true": "Tak",
+          "false": "Nie"
         },
         "changedWeekday": {
           "Monday": "Poniedziałek",
