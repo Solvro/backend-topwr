@@ -1,0 +1,21 @@
+name: Pull request automation
+
+on:
+  pull_request_target:
+    type: opened
+
+permissions:
+  pull-requests: write
+
+jobs:
+  assign_to_author:
+    name: Assign author if no assignee set
+    if: ${{ github.event.pull_request.assignee == null }}
+    runs-on: ubuntu-latest
+    env:
+      PR_URL: ${{ github.event.pull_request.html_url }}
+      PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Assign the author to the pull request
+        run: gh pr edit "$PR_URL" --add-assignee $PR_AUTHOR
