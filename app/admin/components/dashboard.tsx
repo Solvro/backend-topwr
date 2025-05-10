@@ -17,49 +17,42 @@ const boxes = () => [
   {
     href: "/admin/resources/about_us_general/records/1/show",
     variant: "Moon",
-    subtitle: "aboutUs.subtitle",
+    name: "aboutUs",
   },
   {
     href: "/admin/resources/academic_calendars",
     variant: "Calendar",
-    title: "calendars.title",
-    subtitle: "calendars.subtitle",
+    name: "calendars",
   },
   {
     href: "/admin/resources/users",
     variant: "Clip",
-    title: "admin.title",
-    subtitle: "admin.subtitle",
+    name: "admin",
   },
   {
     href: "/admin/resources/buildings",
     variant: "Launch",
-    title: "buildings.title",
-    subtitle: "buildings.subtitle",
+    name: "buildings",
   },
   {
     href: "/admin/resources/departments",
     variant: "Astronaut",
-    title: "departments.title",
-    subtitle: "departments.subtitle",
+    name: "departments",
   },
   {
     href: "/admin/resources/guide_articles",
     variant: "FlagInCog",
-    title: "guides.title",
-    subtitle: "guides.subtitle",
+    name: "guides",
   },
   {
     href: "/admin/resources/student_organizations",
     variant: "Rocket",
-    title: "organizations.title",
-    subtitle: "organizations.subtitle",
+    name: "organizations",
   },
   {
     href: "/admin/resources/versions",
     variant: "GithubLogo",
-    title: "versions.title",
-    subtitle: "versions.subtitle",
+    name: "versions",
   },
 ];
 
@@ -105,13 +98,13 @@ export const Dashboard: React.FC = () => {
                 height={70}
               />
               <H5 mt="lg">
-                {box.title
-                  ? translateComponent(`dashboard.${box.title}`)
+                {box.name
+                  ? translateComponent(`dashboard.${box.name}.title`)
                   : null}
               </H5>
               <Text>
-                {box.subtitle
-                  ? translateComponent(`dashboard.${box.subtitle}`)
+                {box.name
+                  ? translateComponent(`dashboard.${box.name}.subtitle`)
                   : null}
               </Text>
             </Text>
