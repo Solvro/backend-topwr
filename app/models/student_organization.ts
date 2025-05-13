@@ -28,6 +28,9 @@ export default class StudentOrganization extends BaseModel {
   @typedColumn({ type: "string" })
   declare name: string;
 
+  @typedColumn({ type: "boolean" })
+  declare isStrategic: boolean;
+
   @typedColumn({ foreignKeyOf: () => Department, optional: true })
   declare departmentId: number | null;
 
