@@ -90,14 +90,13 @@ export default class OrganizationsScraper extends BaseScraperModule {
       ]),
     );
     task.update("Creating tags...");
-    await StudentOrganizationTag.createMany([
-      ...tags.data.map((tag) => {
+    await StudentOrganizationTag.createMany(
+      tags.data.map((tag) => {
         return {
           tag: tag.name,
         };
       }),
-      { tag: "strategiczne" },
-    ]);
+    );
     task.update("Creating organizations...");
     for (const org of orgs.data) {
       const logoKey = org.logo !== null ? await this.newAsset(org.logo) : null;
@@ -115,6 +114,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
         source: this.convertSource(org.source),
         organizationType: this.convertType(org.type),
         organizationStatus: OrganizationStatus.Unknown,
+        isStrategic: org.isStrategic,
       });
       const undefinedTags = [];
       const tagNames = [];
@@ -130,9 +130,6 @@ export default class OrganizationsScraper extends BaseScraperModule {
         this.logger.warning(
           `There are some undefined tags in organization ${org.name} (IDs: ${undefinedTags.join(", ")}). Omitting these tags.`,
         );
-      }
-      if (org.isStrategic) {
-        tagNames.push("strategiczne");
       }
       await orgModel.related("tags").attach(tagNames);
     }
