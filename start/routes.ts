@@ -22,6 +22,8 @@ const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
+const CacheReferenceNumberController = () =>
+  import("#controllers/cache_reference_number_controller");
 
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
@@ -92,6 +94,11 @@ router
       .prefix("/files");
 
     router.get("/about_us", [AboutUsController, "index"]);
+
+    router.get("/cache_reference_number", [
+      CacheReferenceNumberController,
+      "index",
+    ]);
 
     configureBaseRoutes();
   })
