@@ -1,3 +1,4 @@
+import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
@@ -8,6 +9,7 @@ import { Weekday } from "#enums/weekday";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
+import { TIME_REGEX } from "#validators/time";
 
 import Library from "./library.js";
 
@@ -18,10 +20,16 @@ export default class RegularHour extends BaseModel {
   @typedColumn({ type: Weekday })
   declare weekDay: Weekday;
 
-  @typedColumn({ type: "string" })
+  @typedColumn({
+    type: "string",
+    validator: vine.string().trim().regex(TIME_REGEX),
+  })
   declare openTime: string;
 
-  @typedColumn({ type: "string" })
+  @typedColumn({
+    type: "string",
+    validator: vine.string().trim().regex(TIME_REGEX),
+  })
   declare closeTime: string;
 
   @typedColumn({ foreignKeyOf: () => Library })

@@ -43,6 +43,7 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "holidays",
   "libraries",
   "milestones",
+  "pink_boxes",
   "regular_hours",
   "roles",
   "special_hours",

@@ -193,7 +193,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
     const nextDlinksId = await fixSequence(
       "department_links",
       undefined,
-      "departments_links_id_seq",
+      "departments_links_id_seq", //Do not change that to 'department_links_id_seq'
     );
     task.update(
       `Department Links created, ID sequence updated to ${nextDlinksId}`,
