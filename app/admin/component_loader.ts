@@ -1,19 +1,23 @@
 import { ComponentLoader } from "adminjs";
+import path from "node:path";
 
 export const componentLoader = new ComponentLoader();
 
 export const Components = {
-  Dashboard: componentLoader.add("Dashboard", "./components/dashboard"),
+  Dashboard: componentLoader.add(
+    "Dashboard",
+    path.resolve(import.meta.dirname, "./components/dashboard"),
+  ),
   PhotoDropbox: componentLoader.add(
     "PhotoDropbox",
-    "./components/photo_dropbox",
+    path.resolve(import.meta.dirname, "./components/photo_dropbox"),
   ),
   PhotoDisplay: componentLoader.add(
     "PhotoDisplay",
-    "./components/photo_display",
+    path.resolve(import.meta.dirname, "./components/photo_display"),
   ),
   TimezoneDatepicker: componentLoader.add(
     "TimezoneDatepicker",
-    "./components/timezone_datepicker",
+    path.resolve(import.meta.dirname, "./components/timezone_datepicker"),
   ),
 };
