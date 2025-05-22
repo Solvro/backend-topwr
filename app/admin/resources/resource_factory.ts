@@ -22,6 +22,7 @@ import {
 
 import logger from "@adonisjs/core/services/logger";
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
+import { BaseModel } from "@adonisjs/lucid/orm";
 import { LucidModel, ModelColumnOptions } from "@adonisjs/lucid/types/model";
 
 import { AdminPanelErrorReporter } from "#exceptions/admin_panel_error_reporter";
@@ -32,6 +33,7 @@ import {
   anyCaseToPlural_camelCase,
   anyCaseToPlural_snake_case,
   anyCaseToSingular_camelCase,
+  getManyToManyRelationJoinKey,
   getOneToManyRelationForeignKey,
 } from "#utils/model_utils";
 
@@ -104,15 +106,18 @@ export interface OneToManyTargetRelationDefinition {
   ownerModelSingular_camelCase?: string;
 }
 
-//this will be finished in m-n relations branch - it's just a placeholder for now
 export interface ManyToManyOwnedRelationDefinition {
   targetModel: LucidModel;
-  throughResourceId: string;
+  targetModelPlural_snake_case?: string;
+  targetModelPlural_camelCase?: string;
+  throughResourceModel: LucidModel;
+  throughResourcePlural_snake_case?: string;
 }
 
 const isManyToMany = (
   relDef: OneToManyRelationDefinition | ManyToManyOwnedRelationDefinition,
-): relDef is ManyToManyOwnedRelationDefinition => "throughResourceId" in relDef;
+): relDef is ManyToManyOwnedRelationDefinition =>
+  "throughResourceModel" in relDef;
 
 export interface ResourceInfo {
   forModel: LucidModel;
@@ -161,11 +166,61 @@ const readOnlyTimestamps = {
   },
 } as const;
 
+function createLucidDummy(
+  dummyName: string,
+  tableName: string,
+  keyOneName: string,
+  keyTwoName: string,
+) {
+  const dummyModel = class extends BaseModel {
+    public static table = tableName;
+    public static name = dummyName;
+  } as LucidModel;
+  console.log(keyOneName, keyTwoName);
+  dummyModel.$columnsDefinitions = new Map();
+  dummyModel.$columnsDefinitions.set(keyOneName, {
+    isPrimary: true,
+    serializeAs: null,
+    columnName: keyOneName,
+    hasGetter: false,
+    hasSetter: false,
+    meta: {
+      typing: {
+        booted: false,
+        options: {
+          isPrimary: true,
+          type: "number",
+        },
+      },
+    },
+  });
+  dummyModel.$columnsDefinitions.set(keyTwoName, {
+    isPrimary: true,
+    serializeAs: null,
+    columnName: keyTwoName,
+    hasGetter: false,
+    hasSetter: false,
+    meta: {
+      typing: {
+        booted: false,
+        options: {
+          isPrimary: true,
+          type: "string",
+        },
+      },
+    },
+  });
+  dummyModel.boot();
+  return dummyModel;
+}
+
 export class ResourceFactory {
   private registeredResources: ResourceBuilder[];
+  private static resourceDummies: ResourceWithOptions[];
 
   constructor(registeredResources?: ResourceBuilder[]) {
     this.registeredResources = registeredResources ?? [];
+    ResourceFactory.resourceDummies = [];
   }
 
   public registerResource(resourceBuilder: ResourceBuilder) {
@@ -173,9 +228,11 @@ export class ResourceFactory {
   }
 
   public buildResources(): ResourceWithOptions[] {
-    return this.registeredResources
+    const buildResult = this.registeredResources
       .map((resourceBuilder) => this.createResources(resourceBuilder))
       .flat(1);
+    buildResult.push(...ResourceFactory.resourceDummies);
+    return buildResult;
   }
 
   public createResources(
@@ -411,10 +468,60 @@ export class ResourceFactory {
   }
 
   private static addOwnedManyToManyRelation(
-    _: LucidModel,
-    __: ManyToManyOwnedRelationDefinition,
+    parentModel: LucidModel,
+    relationDefinition: ManyToManyOwnedRelationDefinition,
   ): ManyToManyRelationOptions {
-    throw new Error("Not implemented"); //just a placeholder; will be done in m-n branch after this gets merged
+    const keys = getManyToManyRelationJoinKey(
+      parentModel,
+      relationDefinition.targetModelPlural_camelCase ??
+        anyCaseToPlural_camelCase(relationDefinition.targetModel),
+    );
+    relationDefinition.throughResourceModel =
+      this.createAndRegisterLucidModelDummy(
+        keys.pivotTableName,
+        "student_organizations_student_organization_tag",
+        keys.joinKey,
+        keys.inverseJoinKey,
+      );
+    return {
+      type: RelationType.ManyToMany,
+      junction: {
+        joinKey: keys.joinKey,
+        inverseJoinKey: keys.inverseJoinKey,
+        throughResourceId:
+          relationDefinition.throughResourcePlural_snake_case ??
+          anyCaseToPlural_snake_case(relationDefinition.throughResourceModel),
+      },
+      target: {
+        resourceId:
+          relationDefinition.targetModelPlural_snake_case ??
+          anyCaseToPlural_snake_case(relationDefinition.targetModel),
+      },
+    };
+  }
+
+  private static createAndRegisterLucidModelDummy(
+    tableName: string,
+    dummyName: string,
+    keyOneName: string,
+    keyTwoName: string,
+  ): LucidModel {
+    const dummy = createLucidDummy(
+      dummyName,
+      tableName,
+      keyOneName,
+      keyTwoName,
+    );
+    const newResource: ResourceWithProperties = {
+      resource: new LucidResource(dummy, DB_DRIVER),
+      options: {
+        navigation: false,
+        properties: {},
+      },
+    };
+    newResource.features = [targetRelationSettingsFeature()];
+    this.resourceDummies.push(newResource);
+    return dummy;
   }
 
   private static addTargetRelations(

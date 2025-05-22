@@ -1,4 +1,5 @@
 import { LucidModel } from "@adonisjs/lucid/types/model";
+import { RelationshipsContract } from "@adonisjs/lucid/types/relations";
 
 import { InvalidModelDefinition } from "#exceptions/model_autogen_errors";
 
@@ -68,10 +69,10 @@ export function anyCaseToSingular_camelCase(model: LucidModel): string {
     .replace(/^[A-Z]/, (char) => char.toLowerCase());
 }
 
-export function getOneToManyRelationForeignKey(
+function checkAndGetRelation(
   model: LucidModel,
   relationName: string,
-): string {
+): RelationshipsContract {
   const relation = model.$relationsDefinitions.get(relationName);
   if (relation === undefined) {
     throw new InvalidModelDefinition(
@@ -82,10 +83,42 @@ export function getOneToManyRelationForeignKey(
   if (!relation.booted) {
     relation.boot();
   }
+  return relation;
+}
+
+export function getOneToManyRelationForeignKey(
+  model: LucidModel,
+  relationName: string,
+): string {
+  const relation = checkAndGetRelation(model, relationName);
   if (relation.type === "hasMany" || relation.type === "belongsTo") {
     return relation.foreignKey;
   }
   throw new InvalidModelDefinition(
     `Relation '${relationName}' is not a one-to-many relation for model '${model.name}. It's a '${relation.type}' relation.`,
   );
+}
+
+export interface ManyToManyRelationKeys {
+  joinKey: string;
+  inverseJoinKey: string;
+  pivotTableName: string;
+}
+
+export function getManyToManyRelationJoinKey(
+  model: LucidModel,
+  relationName: string,
+): ManyToManyRelationKeys {
+  const relation = checkAndGetRelation(model, relationName);
+  if (relation.type !== "manyToMany") {
+    throw new InvalidModelDefinition(
+      `Relation '${relationName}' is not a many-to-many relation for model '${model.name}. It's a '${relation.type}' relation.`,
+    );
+  }
+  //console.log(relation)
+  return {
+    joinKey: relation.pivotRelatedForeignKey,
+    inverseJoinKey: relation.pivotForeignKey,
+    pivotTableName: relation.pivotTable,
+  };
 }
