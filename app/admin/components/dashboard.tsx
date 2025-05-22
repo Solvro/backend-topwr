@@ -42,7 +42,7 @@ const boxes = () => [
     subtitle: "Wydziały i kierunki studiów na uczelni",
   },
   {
-    href: "/admin/resources/guides",
+    href: "/admin/resources/guide_articles",
     variant: "FlagInCog",
     title: "Przewodniki",
     subtitle: "Przewodniki dla studentów, pracowników i gości uczelni",
