@@ -1,0 +1,88 @@
+{
+  "data": [
+    {
+      "roomOrNearby": "Przy pomieszczeniu 39",
+      "floor": "Niski parter",
+      "latitude": 51.10738,
+      "longitude": 17.05964,
+      "buildingId": 2
+    },
+    {
+      "roomOrNearby": "Pomieszczenie 1.32",
+      "floor": "Na parterze",
+      "latitude": 51.10804,
+      "longitude": 17.06399,
+      "buildingId": 4
+    },
+    {
+      "roomOrNearby": "-",
+      "floor": "Na parterze",
+      "latitude": 51.10918,
+      "longitude": 17.05895,
+      "buildingId": 26
+    },
+    {
+      "roomOrNearby": "-",
+      "floor": "Na parterze",
+      "latitude": 51.10828,
+      "longitude": 17.06044,
+      "buildingId": 27
+    },
+    {
+      "roomOrNearby": "Pomieszczenie 0.36",
+      "floor": "Na parterze",
+      "latitude": 51.10738,
+      "longitude": 17.05964,
+      "buildingId": 1
+    },
+    {
+      "roomOrNearby": "Pomieszczenie 0.39",
+      "floor": "Na parterze",
+      "latitude": 51.10882,
+      "longitude": 17.05703,
+      "buildingId": 34
+    },
+    {
+      "roomOrNearby": "Pomieszczenie 016",
+      "floor": "Na parterze",
+      "latitude": 51.10963,
+      "longitude": 17.05786,
+      "buildingId": 41
+    },
+    {
+      "roomOrNearby": "-",
+      "floor": "Na parterze",
+      "latitude": 51.108768,
+      "longitude": 17.054569,
+      "buildingId": 50
+    },
+    {
+      "roomOrNearby": "Przy pomieszczeniu 0.33",
+      "floor": "Przyziemie",
+      "latitude": 51.11898,
+      "longitude": 17.05446,
+      "buildingId": 42
+    },
+    {
+      "roomOrNearby": "Pomieszczenie 021",
+      "floor": "Na parterze, część A",
+      "latitude": 51.10448,
+      "longitude": 17.05438,
+      "buildingId": 60
+    },
+    {
+      "roomOrNearby": "-",
+      "floor": "Na parterze",
+      "latitude": 51.11671,
+      "longitude": 17.06619,
+      "buildingId": 48
+    },
+    {
+      "roomOrNearby": "Pomieszczenie 2.0.6",
+      "floor": "Piętro 2",
+      "latitude": 51.10076,
+      "longitude": 17.08949,
+      "buildingId": 70
+    }
+  ]
+}
