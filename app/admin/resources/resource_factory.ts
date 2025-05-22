@@ -19,6 +19,7 @@ import {
   ResourceOptions,
   ResourceWithOptions,
 } from "adminjs";
+import { DateTime } from "luxon";
 
 import logger from "@adonisjs/core/services/logger";
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
@@ -185,10 +186,11 @@ function createLucidDummy(
   columnDefs: DummyColumnDef[],
 ) {
   const dummyModel = class extends BaseModel {
-    public static table = tableName;
-    public static name = dummyName;
+    static table = tableName;
+    static name = dummyName;
+    declare createdAt: DateTime;
+    declare updatedAt: DateTime;
   } as LucidModel;
-  console.log(columnDefs);
   dummyModel.$columnsDefinitions = new Map();
   columnDefs.forEach((columnDef) => {
     dummyModel.$columnsDefinitions.set(columnDef.columnName, {
@@ -208,6 +210,48 @@ function createLucidDummy(
       },
     });
   });
+  dummyModel.$columnsDefinitions.set("createdAt", {
+    isPrimary: false,
+    columnName: "created_at",
+    serializeAs: "created_at",
+    hasGetter: false,
+    hasSetter: false,
+    meta: {
+      type: "datetime",
+      autoCreate: true,
+      typing: {
+        booted: false,
+        options: {
+          columnName: "created_at",
+          type: "datetime",
+          autoCreate: true,
+        },
+      },
+    },
+  });
+
+  dummyModel.$columnsDefinitions.set("updatedAt", {
+    isPrimary: false,
+    columnName: "updated_at",
+    serializeAs: "updated_at",
+    hasGetter: false,
+    hasSetter: false,
+    meta: {
+      type: "datetime",
+      autoCreate: true,
+      autoUpdate: true,
+      typing: {
+        booted: false,
+        options: {
+          columnName: "updated_at",
+          type: "datetime",
+          autoCreate: true,
+          autoUpdate: true,
+        },
+      },
+    },
+  });
+
   dummyModel.boot();
   return dummyModel;
 }
@@ -523,7 +567,7 @@ export class ResourceFactory {
     tableName: string,
     dummyName: string,
     columnDefs: DummyColumnDef[],
-  ): LucidModel {
+  ) {
     const dummy = createLucidDummy(dummyName, tableName, columnDefs);
     const newResource: ResourceWithProperties = {
       resource: new LucidResource(dummy, DB_DRIVER),
@@ -531,9 +575,9 @@ export class ResourceFactory {
         navigation: false,
         properties: {},
       },
+      features: [targetRelationSettingsFeature()],
     };
     this.resourceDummies.push(newResource);
-    return dummy;
   }
 
   private static addTargetRelations(
