@@ -34,14 +34,6 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
             targetModelPlural_camelCase: "links",
           },
         },
-        {
-          displayLabel: "Organization tags",
-          relationDefinition: {
-            targetModel: StudentOrganizationTag,
-            targetModelPlural_camelCase: "tags",
-            throughResourceModel: undefined,
-          },
-        },
       ],
     },
     {

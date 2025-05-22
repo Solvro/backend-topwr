@@ -110,14 +110,15 @@ export interface ManyToManyOwnedRelationDefinition {
   targetModel: LucidModel;
   targetModelPlural_snake_case?: string;
   targetModelPlural_camelCase?: string;
-  throughResourceModel: LucidModel;
-  throughResourcePlural_snake_case?: string;
+  additionalRelationColumnDefinition?: ManyToManyRelationAdditionalColumn[];
+  joinKeyType: string;
+  inverseJoinKeyType: string;
 }
 
 const isManyToMany = (
   relDef: OneToManyRelationDefinition | ManyToManyOwnedRelationDefinition,
 ): relDef is ManyToManyOwnedRelationDefinition =>
-  "throughResourceModel" in relDef;
+  "additionalRelationColumnDefinition" in relDef;
 
 export interface ResourceInfo {
   forModel: LucidModel;
@@ -127,6 +128,7 @@ export interface ResourceInfo {
   addImageHandlingForProperties?: string[];
   ownedRelations?: OwnedRelationDefinition[]; //if owns (is parent of) any relations
   targetedByModels?: OneToManyTargetRelationDefinition[]; //if belongs to any models (is child of)
+  isInManyToMany?: boolean;
 }
 
 type LucidColumnDefinition = Omit<ModelColumnOptions, "meta"> & {
@@ -166,49 +168,45 @@ const readOnlyTimestamps = {
   },
 } as const;
 
+export interface ManyToManyRelationAdditionalColumn {
+  columnName: string;
+  type: string;
+}
+
+interface DummyColumnDef {
+  columnName: string;
+  isPrimary: boolean;
+  type: string;
+}
+
 function createLucidDummy(
   dummyName: string,
   tableName: string,
-  keyOneName: string,
-  keyTwoName: string,
+  columnDefs: DummyColumnDef[],
 ) {
   const dummyModel = class extends BaseModel {
     public static table = tableName;
     public static name = dummyName;
   } as LucidModel;
-  console.log(keyOneName, keyTwoName);
+  console.log(columnDefs);
   dummyModel.$columnsDefinitions = new Map();
-  dummyModel.$columnsDefinitions.set(keyOneName, {
-    isPrimary: true,
-    serializeAs: null,
-    columnName: keyOneName,
-    hasGetter: false,
-    hasSetter: false,
-    meta: {
-      typing: {
-        booted: false,
-        options: {
-          isPrimary: true,
-          type: "number",
+  columnDefs.forEach((columnDef) => {
+    dummyModel.$columnsDefinitions.set(columnDef.columnName, {
+      isPrimary: columnDef.isPrimary,
+      serializeAs: null,
+      columnName: columnDef.columnName,
+      hasGetter: false,
+      hasSetter: false,
+      meta: {
+        typing: {
+          booted: false,
+          options: {
+            isPrimary: columnDef.isPrimary,
+            type: columnDef.type,
+          },
         },
       },
-    },
-  });
-  dummyModel.$columnsDefinitions.set(keyTwoName, {
-    isPrimary: true,
-    serializeAs: null,
-    columnName: keyTwoName,
-    hasGetter: false,
-    hasSetter: false,
-    meta: {
-      typing: {
-        booted: false,
-        options: {
-          isPrimary: true,
-          type: "string",
-        },
-      },
-    },
+    });
   });
   dummyModel.boot();
   return dummyModel;
@@ -476,21 +474,42 @@ export class ResourceFactory {
       relationDefinition.targetModelPlural_camelCase ??
         anyCaseToPlural_camelCase(relationDefinition.targetModel),
     );
-    relationDefinition.throughResourceModel =
-      this.createAndRegisterLucidModelDummy(
-        keys.pivotTableName,
-        "student_organizations_student_organization_tag",
-        keys.joinKey,
-        keys.inverseJoinKey,
+
+    const columnDefs: DummyColumnDef[] = [
+      {
+        columnName: keys.joinKey,
+        isPrimary: true,
+        type: relationDefinition.joinKeyType,
+      },
+      {
+        columnName: keys.inverseJoinKey,
+        isPrimary: true,
+        type: relationDefinition.inverseJoinKeyType,
+      },
+    ];
+
+    if (relationDefinition.additionalRelationColumnDefinition !== undefined) {
+      relationDefinition.additionalRelationColumnDefinition.forEach(
+        (columnDef) => {
+          columnDefs.push({
+            columnName: columnDef.columnName,
+            isPrimary: false,
+            type: columnDef.type,
+          });
+        },
       );
+    }
+    this.createAndRegisterLucidModelDummy(
+      keys.pivotTableName,
+      keys.pivotTableName,
+      columnDefs,
+    );
     return {
       type: RelationType.ManyToMany,
       junction: {
         joinKey: keys.joinKey,
         inverseJoinKey: keys.inverseJoinKey,
-        throughResourceId:
-          relationDefinition.throughResourcePlural_snake_case ??
-          anyCaseToPlural_snake_case(relationDefinition.throughResourceModel),
+        throughResourceId: keys.pivotTableName,
       },
       target: {
         resourceId:
@@ -503,15 +522,9 @@ export class ResourceFactory {
   private static createAndRegisterLucidModelDummy(
     tableName: string,
     dummyName: string,
-    keyOneName: string,
-    keyTwoName: string,
+    columnDefs: DummyColumnDef[],
   ): LucidModel {
-    const dummy = createLucidDummy(
-      dummyName,
-      tableName,
-      keyOneName,
-      keyTwoName,
-    );
+    const dummy = createLucidDummy(dummyName, tableName, columnDefs);
     const newResource: ResourceWithProperties = {
       resource: new LucidResource(dummy, DB_DRIVER),
       options: {
@@ -519,7 +532,6 @@ export class ResourceFactory {
         properties: {},
       },
     };
-    newResource.features = [targetRelationSettingsFeature()];
     this.resourceDummies.push(newResource);
     return dummy;
   }
@@ -528,16 +540,26 @@ export class ResourceFactory {
     resource: ResourceWithProperties,
     resourceInfo: ResourceInfo,
   ) {
+    if (resource.features === undefined) {
+      resource.features = [];
+    }
+    let pushedTarget = false;
+    if (
+      resourceInfo.isInManyToMany !== undefined &&
+      resourceInfo.isInManyToMany
+    ) {
+      resource.features.push(targetRelationSettingsFeature());
+      pushedTarget = true;
+    }
     if (
       resourceInfo.targetedByModels === undefined ||
       resourceInfo.targetedByModels.length === 0
     ) {
       return;
     }
-    if (resource.features === undefined) {
-      resource.features = [];
+    if (!pushedTarget) {
+      resource.features.push(targetRelationSettingsFeature());
     }
-    resource.features.push(targetRelationSettingsFeature());
     this.addRelationReferenceProperty(
       resource,
       resourceInfo.forModel,

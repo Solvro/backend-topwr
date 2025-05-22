@@ -115,7 +115,7 @@ export function getManyToManyRelationJoinKey(
       `Relation '${relationName}' is not a many-to-many relation for model '${model.name}. It's a '${relation.type}' relation.`,
     );
   }
-  //console.log(relation)
+  console.log(relation);
   return {
     joinKey: relation.pivotRelatedForeignKey,
     inverseJoinKey: relation.pivotForeignKey,

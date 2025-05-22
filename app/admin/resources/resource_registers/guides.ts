@@ -22,6 +22,7 @@ export const GuidesBuilder: ResourceBuilder = {
           ownerModel: GuideArticle,
         },
       ],
+      isInManyToMany: true,
     },
     {
       forModel: GuideArticle,
@@ -32,6 +33,20 @@ export const GuidesBuilder: ResourceBuilder = {
           displayLabel: "Guide questions",
           relationDefinition: {
             targetModel: GuideQuestion,
+          },
+        },
+        {
+          displayLabel: "Guide authors",
+          relationDefinition: {
+            targetModel: GuideAuthor,
+            additionalRelationColumnDefinition: [
+              {
+                columnName: "role",
+                type: "string",
+              },
+            ],
+            inverseJoinKeyType: "number",
+            joinKeyType: "number",
           },
         },
       ],
