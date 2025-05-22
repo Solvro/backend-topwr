@@ -79,6 +79,10 @@ export default class StudentOrganization extends BaseModel {
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
 
+  public static getDepartmentRelationKey() {
+    return "departmentId";
+  }
+
   @belongsTo(() => FileEntry, {
     localKey: "id",
     foreignKey: "logoKey",

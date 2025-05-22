@@ -49,6 +49,7 @@
   "dependencies": {
     "@adminjs/adonis": "^1.1.0",
     "@adminjs/passwords": "^4.0.0",
+    "@adminjs/relations": "^1.1.2",
     "@adonisjs/auth": "^9.4.0",
     "@adonisjs/core": "^6.14.1",
     "@adonisjs/cors": "^2.2.1",

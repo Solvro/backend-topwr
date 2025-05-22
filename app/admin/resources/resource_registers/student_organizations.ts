@@ -26,10 +26,25 @@ export const StudentOrganizationsBuilder: ResourceBuilder = {
         organizationStatus: organizationStatusEnumsValues,
       },
       addImageHandlingForProperties: ["coverKey", "logoKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Student Organization Links",
+          relationDefinition: {
+            targetModel: StudentOrganizationLink,
+            targetModelPlural_camelCase: "links",
+          },
+        },
+      ],
     },
     {
       forModel: StudentOrganizationLink,
       ...linkTypeAutodetectSetUp,
+      targetedByModels: [
+        {
+          ownerModel: StudentOrganization,
+          ownerModelSingular_camelCase: "organization",
+        },
+      ],
     },
     {
       forModel: StudentOrganizationTag,

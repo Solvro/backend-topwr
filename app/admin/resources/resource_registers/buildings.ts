@@ -1,6 +1,5 @@
 import { buildingIconEnumsValues } from "#enums/building_icon";
 import { externalDigitalGuideModeEnumsValues } from "#enums/digital_guide_mode";
-import { weekdayEnumValues } from "#enums/weekday";
 import Aed from "#models/aed";
 import BicycleShower from "#models/bicycle_shower";
 import Building from "#models/building";
@@ -26,34 +25,112 @@ export const BuildingsBuilder: ResourceBuilder = {
         externalDigitalGuideMode: externalDigitalGuideModeEnumsValues,
       },
       addImageHandlingForProperties: ["coverKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Bicycle showers",
+          relationDefinition: {
+            targetModel: BicycleShower,
+          },
+        },
+        {
+          displayLabel: "Food spots",
+          relationDefinition: {
+            targetModel: FoodSpot,
+          },
+        },
+        {
+          displayLabel: "Libraries",
+          relationDefinition: {
+            targetModel: Library,
+          },
+        },
+        {
+          displayLabel: "Aeds",
+          relationDefinition: {
+            targetModel: Aed,
+          },
+        },
+      ],
+      targetedByModels: [
+        {
+          ownerModel: Campus,
+        },
+      ],
     },
     {
       forModel: Campus,
       addImageHandlingForProperties: ["coverKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Buildings",
+          relationDefinition: {
+            targetModel: Building,
+          },
+        },
+      ],
     },
     {
       forModel: Aed,
       addImageHandlingForProperties: ["photoKey"],
+      targetedByModels: [
+        {
+          ownerModel: Building,
+        },
+      ],
     },
     {
       forModel: BicycleShower,
       addImageHandlingForProperties: ["photoKey"],
+      targetedByModels: [{ ownerModel: Building }],
     },
     {
       forModel: FoodSpot,
       addImageHandlingForProperties: ["photoKey"],
+      targetedByModels: [
+        {
+          ownerModel: Building,
+        },
+      ],
     },
     {
       forModel: Library,
       addImageHandlingForProperties: ["photoKey"],
+      targetedByModels: [
+        {
+          ownerModel: Building,
+        },
+      ],
+      ownedRelations: [
+        {
+          displayLabel: "Regular hours",
+          relationDefinition: {
+            targetModel: RegularHour,
+          },
+        },
+        {
+          displayLabel: "Special hours",
+          relationDefinition: {
+            targetModel: SpecialHour,
+          },
+        },
+      ],
     },
     {
       forModel: RegularHour,
-      additionalProperties: {
-        weekDay: weekdayEnumValues,
-      },
+      targetedByModels: [
+        {
+          ownerModel: Library,
+        },
+      ],
     },
-    { forModel: SpecialHour },
+    {
+      forModel: SpecialHour,
+      targetedByModels: [
+        {
+          ownerModel: Library,
+        },
+      ],
+    },
   ],
   navigation,
 };

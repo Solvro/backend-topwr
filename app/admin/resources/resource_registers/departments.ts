@@ -12,15 +12,42 @@ const navigation = {
 
 export const DepartmentsBuilder: ResourceBuilder = {
   builders: [
-    { forModel: FieldsOfStudy },
+    {
+      forModel: FieldsOfStudy,
+      targetedByModels: [
+        {
+          ownerModel: Department,
+        },
+      ],
+    },
     {
       forModel: DepartmentLink,
       ...linkTypeAutodetectSetUp,
+      targetedByModels: [
+        {
+          ownerModel: Department,
+        },
+      ],
     },
     {
       forModel: Department,
       additionalProperties: { description: { type: "richtext" } },
       addImageHandlingForProperties: ["logoKey"],
+      ownedRelations: [
+        {
+          displayLabel: "Department links",
+          relationDefinition: {
+            targetModel: DepartmentLink,
+          },
+        },
+        {
+          displayLabel: "Fields of study",
+          relationDefinition: {
+            targetModel: FieldsOfStudy,
+            targetModelPlural_camelCase: "fieldsOfStudy",
+          },
+        },
+      ],
     },
   ],
   navigation,
