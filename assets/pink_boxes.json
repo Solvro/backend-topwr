@@ -15,14 +15,12 @@
       "buildingId": 4
     },
     {
-      "roomOrNearby": "-",
       "floor": "Na parterze",
       "latitude": 51.10918,
       "longitude": 17.05895,
       "buildingId": 26
     },
     {
-      "roomOrNearby": "-",
       "floor": "Na parterze",
       "latitude": 51.10828,
       "longitude": 17.06044,
@@ -50,7 +48,6 @@
       "buildingId": 41
     },
     {
-      "roomOrNearby": "-",
       "floor": "Na parterze",
       "latitude": 51.108768,
       "longitude": 17.054569,
@@ -71,7 +68,6 @@
       "buildingId": 60
     },
     {
-      "roomOrNearby": "-",
       "floor": "Na parterze",
       "latitude": 51.11671,
       "longitude": 17.06619,
