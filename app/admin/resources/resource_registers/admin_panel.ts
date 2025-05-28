@@ -3,7 +3,7 @@ import User from "#models/user";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Admin Panel",
+  name: "adminNavigation",
   icon: "Terminal",
 };
 

@@ -6,7 +6,7 @@ import Holiday from "#models/holiday";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Academic Calendars",
+  name: "calendarsNavigation",
   icon: "Calendar",
 };
 

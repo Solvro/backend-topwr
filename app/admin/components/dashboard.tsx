@@ -8,56 +8,51 @@ import {
   Text,
 } from "@adminjs/design-system";
 import { styled } from "@adminjs/design-system/styled-components";
+import { useTranslation } from "adminjs";
 import React from "react";
+
+// const { translateLabel } = useTranslation()
 
 const boxes = () => [
   {
     href: "/admin/resources/about_us_general/records/1/show",
     variant: "Moon",
-    title: "O nas",
-    subtitle: "Poznaj nasz projekt",
+    name: "aboutUs",
   },
   {
     href: "/admin/resources/academic_calendars",
     variant: "Calendar",
-    title: "Kalendarz akademicki",
-    subtitle: `Kalendarz akademicki dla studentów. Sesje, przerwy, zamiany.`,
+    name: "calendars",
   },
   {
     href: "/admin/resources/users",
     variant: "Clip",
-    title: "Panel admina",
-    subtitle: "Panel administracyjny do zarządzania użytkownikami",
+    name: "admin",
   },
   {
     href: "/admin/resources/buildings",
     variant: "Launch",
-    title: "Budynki",
-    subtitle: "Budynki i wielowarstwowa mapa uczelni",
+    name: "buildings",
   },
   {
     href: "/admin/resources/departments",
     variant: "Astronaut",
-    title: "Wydziały",
-    subtitle: "Wydziały i kierunki studiów na uczelni",
+    name: "departments",
   },
   {
     href: "/admin/resources/guide_articles",
     variant: "FlagInCog",
-    title: "Przewodniki",
-    subtitle: "Przewodniki dla studentów, pracowników i gości uczelni",
+    name: "guides",
   },
   {
     href: "/admin/resources/student_organizations",
     variant: "Rocket",
-    title: "Organizacje studenckie",
-    subtitle: "Organizacje studenckie, koła naukowe, stowarzyszenia",
+    name: "organizations",
   },
   {
     href: "/admin/resources/versions",
     variant: "GithubLogo",
-    title: "Wersje",
-    subtitle: "Wersje aplikacji mobilnej i autorzy",
+    name: "versions",
   },
 ];
 
@@ -80,6 +75,7 @@ const Card = styled(Box)`
 const defaultProps = { variant: "container", boxShadow: "card" };
 
 export const Dashboard: React.FC = () => {
+  const { translateComponent } = useTranslation();
   return (
     <Box
       mt={["xl", "xl"]}
@@ -101,8 +97,16 @@ export const Dashboard: React.FC = () => {
                 width={100}
                 height={70}
               />
-              <H5 mt="lg">{box.title}</H5>
-              <Text>{box.subtitle}</Text>
+              <H5 mt="lg">
+                {box.name
+                  ? translateComponent(`dashboard.${box.name}.title`)
+                  : null}
+              </H5>
+              <Text>
+                {box.name
+                  ? translateComponent(`dashboard.${box.name}.subtitle`)
+                  : null}
+              </Text>
             </Text>
           </Card>
         </Box>

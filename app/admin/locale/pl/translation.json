@@ -1,0 +1,455 @@
+{
+  "labels": {
+    "buildingsNavigation": "Obiekty",
+    "adminNavigation": "Panel administratora",
+    "calendarsNavigation": "Kalendarze",
+    "guidesNavigation": "Przewodniki",
+    "aboutUsNavigation": "O nas",
+    "departmentsNavigation": "Wydziały",
+    "organizationsNavigation": "Organizacje studenckie",
+    "versionsNavigation": "Wersje",
+    "dashboard": "Kokpit"
+  },
+  "properties": {
+    "id": "ID",
+    "name": "Nazwa",
+    "date": "Data",
+    "addressLine1": "Linia adresowa 1",
+    "addressLine2": "Linia adresowa 2",
+    "latitude": "Szerokość geogr.",
+    "longitude": "Długość geogr.",
+    "createdAt": "Utworzono",
+    "updatedAt": "Zaktualizowano",
+    "title": "Tytuł",
+    "description": "Opis",
+    "linkType": "Typ linku",
+    "link": "Link"
+  },
+  "buttons": {
+    "save": "Zapisz",
+    "upload": "Prześlij",
+    "restore": "Przywróć",
+    "delete": "Usuń",
+    "cancel": "Anuluj"
+  },
+  "components": {
+    "Login": {
+      "welcomeHeader": "Elo Żelo!",
+      "welcomeMessage": "AdonisJS - najlepszy backend framework dla aplikacji Node.js"
+    },
+    "dashboard": {
+      "aboutUs": {
+        "title": "O nas",
+        "subtitle": "Poznaj nasz projekt"
+      },
+      "calendars": {
+        "title": "Kalendarz akademicki",
+        "subtitle": "Kalendarz akademicki dla studentów. Sesje, przerwy, zamiany"
+      },
+      "admin": {
+        "title": "Panel administratora",
+        "subtitle": "Panel administracyjny do zarządzania użytkownikami"
+      },
+      "buildings": {
+        "title": "Budynki",
+        "subtitle": "Budynki i wielowarstwowa mapa uczelni"
+      },
+      "departments": {
+        "title": "Wydziały",
+        "subtitle": "Wydziały i kierunki studiów na uczelni"
+      },
+      "guides": {
+        "title": "Przewodniki",
+        "subtitle": "Przewodniki dla studentów, pracowników i gości uczelni"
+      },
+      "organizations": {
+        "title": "Organizacje studenckie",
+        "subtitle": "Organizacje studenckie, koła naukowe, stowarzyszenia"
+      },
+      "versions": {
+        "title": "Wersje",
+        "subtitle": "Wersje aplikacji mobilnej i autorzy"
+      }
+    },
+    "dropZone": {
+      "placeholder": "Przeciągnij plik tutaj lub kliknij aby wybrać",
+      "acceptedSize": "Maks. rozmiar: {{maxSize}}",
+      "acceptedType": "Dozwolone pliki: {{mimeTypes}}",
+      "unsupportedSize": "Plik {{fileName}} jest zbyt duży",
+      "unsupportedType": "Plik {{fileName}} jest niedozwolonego typu: {{fileType}}"
+    },
+    "photoDisplay": {
+      "labels": {
+        "title": "Grafika"
+      },
+      "messages": {
+        "fetching": "Pobieranie podglądu...",
+        "noPhoto": "Nie dodano jeszcze żadnej grafiki",
+        "notExist": "Grafika nie istnieje w systemie, prześlij ją ponownie lub zastąp",
+        "errorWithStatus": "Błąd przy pobieraniu podglądu: {{status}} -> {{response}}",
+        "error": "Błąd przy pobieraniu podglądu: {{error}}",
+        "alt": "Grafika '{{property}}'"
+      }
+    },
+    "photoDropbox": {
+      "labels": {
+        "title": "Grafika"
+      },
+      "messages": {
+        "deleted": "Obecna grafika zostanie usunięta",
+        "upload": "Prześlij nową grafikę"
+      }
+    }
+  },
+  "resources": {
+    "buildings": {
+      "properties": {
+        "identifier": "Symbol",
+        "specialName": "Nazwa specjalna",
+        "iconType": "Typ ikony",
+        "campusId": "ID kampusu",
+        "haveFood": "Dostępne jedzenie",
+        "externalDigitalGuideMode": "Rodzaj informacji dodatkowej",
+        "externalDigitalGuideIdOrUrl": "Link lub ID cyfrowego przewodnika"
+      },
+      "labels": {
+        "buildings": "Budynki",
+        "haveFood": {
+          "true": "Tak",
+          "false": "Nie"
+        },
+        "iconType": {
+          "ICON": "Icon"
+        },
+        "externalDigitalGuideMode": {
+          "web_url": "Web URL lub ToPWR deeplink",
+          "digital_guide_building": "Budynek w cyfrowym przewodniku",
+          "other_digital_guide_place": "'Obiekt' w cyfrowym przewodniku"
+        }
+      }
+    },
+    "campuses": {
+      "labels": {
+        "campuses": "Kampusy"
+      }
+    },
+    "aeds": {
+      "properties": {
+        "buildingId": "ID budynku"
+      },
+      "labels": {
+        "aeds": "Defibrylatory"
+      }
+    },
+    "bicycle_showers": {
+      "properties": {
+        "room": "Pomieszczenie",
+        "instructions": "Instrukcje",
+        "buildingId": "ID budynku"
+      },
+      "labels": {
+        "bicycle_showers": "Prysznice dla rowerzystów"
+      }
+    },
+    "food_spots": {
+      "properties": {
+        "buildingId": "ID budynku"
+      },
+      "labels": {
+        "food_spots": "Punkty gastronomiczne"
+      }
+    },
+    "libraries": {
+      "properties": {
+        "email": "Email",
+        "title": "Nazwa",
+        "room": "Pomieszczenie",
+        "phone": "Telefon kontaktowy",
+        "buildingId": "ID budynku"
+      },
+      "labels": {
+        "libraries": "Biblioteki"
+      }
+    },
+    "regular_hours": {
+      "properties": {
+        "weekDay": "Dzień tygodnia",
+        "openTime": "Godzina otwarcia",
+        "closeTime": "Godzina zamknięcia",
+        "libraryId": "ID biblioteki"
+      },
+      "labels": {
+        "regular_hours": "Godziny regularne",
+        "weekDay": {
+          "Monday": "Poniedziałek",
+          "Tuesday": "Wtorek",
+          "Wednesday": "Środa",
+          "Thursday": "Czwartek",
+          "Friday": "Piątek",
+          "Saturday": "Sobota",
+          "Sunday": "Niedziela"
+        }
+      }
+    },
+    "special_hours": {
+      "properties": {
+        "specialDate": "Data szczególna",
+        "openTime": "Godzina otwarcia",
+        "closeTime": "Godzina zamknięcia",
+        "libraryId": "ID biblioteki"
+      },
+      "labels": {
+        "special_hours": "Godziny specjalne"
+      }
+    },
+    "users": {
+      "properties": {
+        "email": "Email",
+        "fullName": "Pełne imię"
+      },
+      "labels": {
+        "users": "Użytkownicy"
+      }
+    },
+    "academic_calendars": {
+      "properties": {
+        "semesterStartDate": "Data rozpoczęcia semestru",
+        "examSessionStartDate": "Data rozpoczęcia sesji",
+        "examSessionLastDate": "Data zakończenia sesji",
+        "isFirstWeekEven": "Czy pierwszy tydzień jest parzysty"
+      },
+      "labels": {
+        "academic_calendars": "Kalendarze akademickie",
+        "isFirstWeekEven": {
+          "true": "Tak",
+          "false": "Nie"
+        }
+      }
+    },
+    "day_swaps": {
+      "properties": {
+        "academicCalendarId": "ID kalendarza akademickiego",
+        "changedWeekday": "Zmiana na jaki dzień tygodnia",
+        "changedDayIsEven": "Czy zmieniono na dzień parzysty"
+      },
+      "labels": {
+        "day_swaps": "Zmiany dni tygodnia",
+        "changedDayIsEven": {
+          "true": "Tak",
+          "false": "Nie"
+        },
+        "changedWeekday": {
+          "Monday": "Poniedziałek",
+          "Tuesday": "Wtorek",
+          "Wednesday": "Środa",
+          "Thursday": "Czwartek",
+          "Friday": "Piątek",
+          "Saturday": "Sobota",
+          "Sunday": "Niedziela"
+        }
+      }
+    },
+    "holidays": {
+      "properties": {
+        "academicCalendarId": "ID kalendarza akademickiego",
+        "startDate": "Data rozpoczęcia",
+        "lastDate": "Data zakończenia"
+      },
+      "labels": {
+        "holidays": "Dni wolne"
+      }
+    },
+    "guide_authors": {
+      "properties": {
+        "name": "Imię i nazwisko"
+      },
+      "labels": {
+        "guide_authors": "Autorzy przewodnika"
+      }
+    },
+    "guide_questions": {
+      "properties": {
+        "answer": "Odpowiedź",
+        "articleId": "ID artykułu"
+      },
+      "labels": {
+        "guide_questions": "Pytania przewodnika"
+      }
+    },
+    "guide_articles": {
+      "properties": {
+        "shortDesc": "Krótki opis"
+      },
+      "labels": {
+        "guide_articles": "Artykuły przewodnika"
+      }
+    },
+    "about_us_general_links": {
+      "properties": {},
+      "labels": {
+        "about_us_general_links": "O nas - linki społecznościowe"
+      }
+    },
+    "about_us_general": {
+      "labels": {
+        "about_us_general": "O nas"
+      }
+    },
+    "fields_of_studies": {
+      "properties": {
+        "departmentId": "ID wydziału",
+        "url": "Link",
+        "semesterCount": "Liczba semestrów",
+        "isEnglish": "Język wykładowy",
+        "is2ndDegree": "Stopień studiów",
+        "hasWeekendOption": "Tryb studiów"
+      },
+      "labels": {
+        "fields_of_studies": "Kierunki studiów",
+        "isEnglish": {
+          "true": "Angielski",
+          "false": "Polski"
+        },
+        "is2ndDegree": {
+          "false": "Inżynierskie",
+          "false": "Magisterskie"
+        },
+        "hasWeekendOption": {
+          "true": "Dzienne lub zaoczne",
+          "false": "Dzienne"
+        }
+      }
+    },
+    "department_links": {
+      "properties": {
+        "departmentId": "ID wydziału"
+      },
+      "labels": {
+        "department_links": "Linki wydziałów"
+      }
+    },
+    "departments": {
+      "properties": {
+        "code": "Kod",
+        "betterCode": "Kod uzupełniający",
+        "gradientStart": "Początek gradientu",
+        "gradientStop": "Koniec gradientu"
+      },
+      "labels": {
+        "departments": "Wydziały"
+      }
+    },
+    "student_organizations": {
+      "properties": {
+        "departmentId": "ID wydziału",
+        "shortDescription": "Krótki opis",
+        "coverPreview": "Podgląd grafiki",
+        "source": "Źródło",
+        "organizationType": "Typ Organizacji",
+        "organizationStatus": "Status wpisu organizacji w aplikacji"
+      },
+      "labels": {
+        "student_organizations": "Organizacje studenckie",
+        "source": {
+          "student_department": "Samorząd studencki",
+          "manual": "Własne",
+          "pwr_active": "PWR active"
+        },
+        "organizationType": {
+          "scientific_club": "Koło naukowe",
+          "student_organization": "Organizacja studencka",
+          "student_medium": "Medium studenckie",
+          "culture_agenda": "Agenda kultury",
+          "student_council": "Samorząd studencki"
+        },
+        "organizationStatus": {
+          "active": "Aktywna",
+          "inactive": "Nieaktywna",
+          "unknown": "Nieznany"
+        }
+      }
+    },
+    "student_organization_links": {
+      "properties": {
+        "studentOrganizationId": "ID organizacji studenckiej"
+      },
+      "labels": {
+        "student_organization_links": "Linki organizacji studenckich"
+      }
+    },
+    "student_organization_tags": {
+      "properties": {
+        "tag": "Tag"
+      },
+      "labels": {
+        "student_organization_tags": "Tagi organizacji studenckich"
+      }
+    },
+    "changes": {
+      "properties": {
+        "versionId": "ID wersji",
+        "type": "Typ zmiany"
+      },
+      "labels": {
+        "changes": "Zmiany",
+        "type": {
+          "feature": "Funkcjonalność",
+          "fix": "Poprawka"
+        }
+      }
+    },
+    "contributor_social_links": {
+      "properties": {
+        "contributorId": "ID kontrybutora"
+      },
+      "labels": {
+        "contributor_social_links": "Media społecznościowe kontrybutorów"
+      }
+    },
+    "change_screenshots": {
+      "properties": {
+        "changeId": "ID zmiany",
+        "subtitle": "Podtytuł"
+      },
+      "labels": {
+        "change_screenshots": "Ilustracje zmian"
+      }
+    },
+    "contributors": {
+      "properties": {
+        "name": "Imię i nazwisko"
+      },
+      "labels": {
+        "contributors": "Kontrybutorzy"
+      }
+    },
+    "milestones": {
+      "labels": {
+        "milestones": "Kamienie milowe"
+      }
+    },
+    "roles": {
+      "labels": {
+        "roles": "Role"
+      }
+    },
+    "versions": {
+      "properties": {
+        "milestoneId": "ID kamienia milowego",
+        "releaseDate": "Data publikacji"
+      },
+      "labels": {
+        "versions": "Wersje"
+      }
+    },
+    "version_screenshots": {
+      "properties": {
+        "versionId": "ID wersji",
+        "subtitle": "Podtytuł"
+      },
+      "labels": {
+        "version_screenshots": "Ilustracje wersji"
+      }
+    }
+  }
+}

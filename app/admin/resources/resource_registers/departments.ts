@@ -6,7 +6,7 @@ import FieldsOfStudy from "#models/field_of_study";
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Departments",
+  name: "departmentsNavigation",
   icon: "Book",
 };
 
