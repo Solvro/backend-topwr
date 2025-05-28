@@ -320,12 +320,12 @@
         }
       }
     },
-    "departments_links": {
+    "department_links": {
       "properties": {
         "departmentId": "ID wydziału"
       },
       "labels": {
-        "departments_links": "Linki wydziałów"
+        "department_links": "Linki wydziałów"
       }
     },
     "departments": {

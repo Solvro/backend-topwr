@@ -321,12 +321,12 @@
         }
       }
     },
-    "departments_links": {
+    "department_links": {
       "properties": {
         "departmentId": "Department ID"
       },
       "labels": {
-        "departments_links": "Department links"
+        "department_links": "Department links"
       }
     },
     "departments": {
