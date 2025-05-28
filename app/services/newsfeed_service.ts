@@ -13,11 +13,30 @@ interface NewsfeedArticle {
   categories: string[];
 }
 
+interface ArticleCache {
+  articles: NewsfeedArticle[];
+  completeArticles: NewsfeedArticle[];
+}
+
+const isCompleteArticle = (article: NewsfeedArticle): boolean => {
+  return (
+    article.url !== undefined &&
+    article.imageLink !== undefined &&
+    article.title !== undefined &&
+    article.previewText !== undefined &&
+    article.date !== undefined
+  );
+};
+
+const CACHE_TTL = 60 * 30; //1800 seconds
+
 export default class NewsfeedService {
   private readonly logger: Logger;
+  private articleCache?: ArticleCache;
 
   constructor(logger: Logger) {
     this.logger = logger;
+    void this.startNewsfeedUpdate();
   }
 
   private parseNewsfeedItem = (newsfeedItem: HTMLElement): NewsfeedArticle => {
@@ -65,19 +84,50 @@ export default class NewsfeedService {
   }
 
   private async scrapeNewsfeed(): Promise<NewsfeedArticle[] | null> {
-    return fetch(PWR_URL)
-      .then(async (res: Response) => {
-        if (res.status !== 200) {
-          this.logger.warn(
-            `Scraping newsfeed failed. Details: ${await res.text()}`,
-          );
-          return null;
-        }
-        return this.extractNewsfeedItems(await res.text());
-      })
-      .catch((err) => {
-        this.logger.warn(`Scraping newsfeed failed. Details: ${err}`);
+    try {
+      const res = await fetch(PWR_URL);
+      if (res.status !== 200) {
+        this.logger.warn(
+          `Scraping newsfeed failed. Details: ${await res.text()}`,
+        );
         return null;
-      });
+      }
+      return this.extractNewsfeedItems(await res.text());
+    } catch (err) {
+      this.logger.warn(`Scraping newsfeed failed. Details: ${err}`);
+      return null;
+    }
+  }
+
+  private async startNewsfeedUpdate() {
+    await this.updateArticles();
+    setInterval(() => {
+      void this.updateArticles();
+    }, CACHE_TTL * 1000);
+  }
+
+  private async updateArticles() {
+    const articles = await this.scrapeNewsfeed();
+    if (articles === null) {
+      return;
+    }
+    if (this.articleCache === undefined) {
+      this.articleCache = {
+        articles,
+        completeArticles: articles.filter(isCompleteArticle),
+      };
+    } else {
+      this.articleCache.articles = articles;
+      this.articleCache.completeArticles = articles.filter(isCompleteArticle);
+    }
+  }
+
+  getLatestNewsfeedArticles(completeOnly = false): NewsfeedArticle[] | null {
+    if (this.articleCache === undefined) {
+      return null;
+    }
+    return completeOnly
+      ? this.articleCache.completeArticles
+      : this.articleCache.articles;
   }
 }
