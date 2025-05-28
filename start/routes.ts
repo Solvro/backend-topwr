@@ -58,6 +58,11 @@ router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
 });
 
+router.get("/metrics", async () => {
+  const { emitMetrics } = await import("#middleware/metrics_middleware");
+  return emitMetrics();
+});
+
 router
   .group(() => {
     router
