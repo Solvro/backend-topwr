@@ -22,6 +22,7 @@ const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
+const NewsfeedController = () => import("#controllers/newsfeed_controller");
 
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
@@ -96,3 +97,5 @@ router
     configureBaseRoutes();
   })
   .prefix("/api/v1");
+
+router.get("/latest", [NewsfeedController, "latest"]).prefix("/newsfeed");
