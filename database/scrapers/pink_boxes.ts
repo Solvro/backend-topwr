@@ -52,9 +52,7 @@ export default class PinkBoxScraper extends BaseScraperModule {
         }
         return data;
       });
-    for (const data of pinkBoxesData.data) {
-      const pinkBox = await PinkBox.create(data);
-    }
+    await PinkBox.createMany(pinkBoxesData.data);
     task.update("Pink boxes created!");
   }
 }
