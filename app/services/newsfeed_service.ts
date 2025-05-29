@@ -1,8 +1,14 @@
+import { DateTime } from "luxon";
 import { HTMLElement, parse } from "node-html-parser";
 
 import logger from "@adonisjs/core/services/logger";
 
 const PWR_URL = "https://pwr.edu.pl/uczelnia/aktualnosci/page1.html";
+
+export interface NewsfeedUpdate {
+  articles: NewsfeedArticle[];
+  updateTime: DateTime;
+}
 
 interface NewsfeedArticle {
   url: string | undefined;
@@ -16,6 +22,7 @@ interface NewsfeedArticle {
 interface ArticleCache {
   articles: NewsfeedArticle[];
   completeArticles: NewsfeedArticle[];
+  lastUpdate: DateTime;
 }
 
 const isCompleteArticle = (article: NewsfeedArticle): boolean => {
@@ -28,21 +35,19 @@ const isCompleteArticle = (article: NewsfeedArticle): boolean => {
   );
 };
 
-const CACHE_TTL = 1 * 3; //1800 seconds
+const CACHE_TTL = 60 * 30; //1800 seconds
 
 export default class NewsfeedService {
-  private articleCache?: ArticleCache;
-  private interval?: NodeJS.Timeout;
-
-  constructor() {
-    void this.startNewsfeedUpdate();
-  }
+  private static articleCache?: ArticleCache;
+  private static interval?: NodeJS.Timeout;
 
   private static addURLPrefix(url: string | undefined): string | undefined {
     return url !== undefined ? `https://pwr.edu.pl${url}` : undefined;
   }
 
-  private parseNewsfeedItem = (newsfeedItem: HTMLElement): NewsfeedArticle => {
+  private static parseNewsfeedItem = (
+    newsfeedItem: HTMLElement,
+  ): NewsfeedArticle => {
     const article = {
       imageLink: NewsfeedService.addURLPrefix(
         newsfeedItem
@@ -58,7 +63,7 @@ export default class NewsfeedService {
     article.url = NewsfeedService.addURLPrefix(titleDiv?.getAttribute("href"));
     const pDivs = newsfeedItem.querySelectorAll("p");
     if (pDivs.length >= 1) {
-      const dateMatcher = pDivs[0].text.trim().match(/Data:\s*([\d.]+)/);
+      const dateMatcher = /Data:\s*([\d.]+)/.exec(pDivs[0].text.trim());
       article.date = dateMatcher !== null ? dateMatcher[1] : undefined;
       article.categories = pDivs[0].textContent
         .split("Kategoria:")[1]
@@ -73,13 +78,13 @@ export default class NewsfeedService {
     return article;
   };
 
-  private extractNewsfeedItems(html: string): NewsfeedArticle[] {
+  private static extractNewsfeedItems(html: string): NewsfeedArticle[] {
     const root: HTMLElement = parse(html);
     const newsfeedItems = root.querySelectorAll(".news-box");
     return newsfeedItems.map(this.parseNewsfeedItem);
   }
 
-  private async scrapeNewsfeed(): Promise<NewsfeedArticle[] | null> {
+  private static async scrapeNewsfeed(): Promise<NewsfeedArticle[] | null> {
     try {
       const res = await fetch(PWR_URL);
       if (res.status !== 200) {
@@ -93,23 +98,22 @@ export default class NewsfeedService {
     }
   }
 
-  private async updateArticles() {
+  private static async updateArticles() {
     const articles = await this.scrapeNewsfeed();
     if (articles === null) {
       return;
     }
-    if (this.articleCache === undefined) {
-      this.articleCache = {
-        articles,
-        completeArticles: articles.filter(isCompleteArticle),
-      };
-    } else {
-      this.articleCache.articles = articles;
-      this.articleCache.completeArticles = articles.filter(isCompleteArticle);
-    }
+    this.articleCache = {
+      articles,
+      completeArticles: articles.filter(isCompleteArticle),
+      lastUpdate: DateTime.now(),
+    };
+    logger.info(
+      `Newsfeed articles updated. Currently storing ${articles.length} articles. Time to next update: ${CACHE_TTL} seconds.`,
+    );
   }
 
-  async startNewsfeedUpdate(): Promise<boolean> {
+  static async startNewsfeedUpdate(): Promise<boolean> {
     if (this.interval !== undefined) {
       return false;
     }
@@ -120,7 +124,7 @@ export default class NewsfeedService {
     return true;
   }
 
-  stopNewsfeedUpdates(): boolean {
+  static stopNewsfeedUpdates(): boolean {
     if (this.interval !== undefined) {
       clearInterval(this.interval);
       this.interval = undefined;
@@ -129,12 +133,25 @@ export default class NewsfeedService {
     return false;
   }
 
-  getLatestNewsfeedArticles(completeOnly = false): NewsfeedArticle[] | null {
+  static getLatestNewsfeedArticles(
+    completeOnly = false,
+  ): NewsfeedUpdate | null {
     if (this.articleCache === undefined) {
       return null;
     }
-    return completeOnly
-      ? this.articleCache.completeArticles
-      : this.articleCache.articles;
+    return {
+      updateTime: this.articleCache.lastUpdate,
+      articles: completeOnly
+        ? this.articleCache.completeArticles
+        : this.articleCache.articles,
+    };
+  }
+
+  static isInitialized(): boolean {
+    return this.articleCache !== undefined && this.interval !== undefined;
+  }
+
+  static isUpdating(): boolean {
+    return this.interval !== undefined;
   }
 }
