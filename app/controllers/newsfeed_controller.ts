@@ -1,5 +1,6 @@
 import { HttpContext } from "@adonisjs/core/http";
 
+import { ServiceUnavailableException } from "#exceptions/http_exceptions";
 import NewsfeedService from "#services/newsfeed_service";
 
 export default class NewsfeedController {
@@ -17,8 +18,8 @@ export default class NewsfeedController {
       ? NewsfeedService.getLatestNewsfeedArticles(true)
       : NewsfeedService.getLatestNewsfeedArticles();
     if (update === null) {
-      return response.serviceUnavailable(
-        "Couldn't fetch newsfeed articles. Please try again later.",
+      throw new ServiceUnavailableException(
+        "Could not get latest newsfeed articles. Please try again later.",
       );
     }
     return response.ok(update);

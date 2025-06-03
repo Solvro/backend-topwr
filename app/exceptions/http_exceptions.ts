@@ -69,3 +69,13 @@ export class InternalServerException extends BaseError {
     });
   }
 }
+
+export class ServiceUnavailableException extends BaseError {
+  constructor(message?: string, options?: BaseErrorOptions) {
+    super(message ?? "Service unavailable", {
+      code: "E_SERVICE_UNAVAILABLE",
+      ...options,
+      status: 503,
+    });
+  }
+}
