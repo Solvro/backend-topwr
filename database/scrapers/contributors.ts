@@ -1,3 +1,4 @@
+import { zip } from "@solvro/utils/arrays";
 import { DateTime } from "luxon";
 import assert from "node:assert";
 import { Readable } from "node:stream";
@@ -9,7 +10,6 @@ import Milestone from "#models/milestone";
 import Role from "#models/role";
 import Version from "#models/version";
 import FilesService from "#services/files_service";
-import { zip } from "#utils/arrays";
 
 interface DirectusResponse<T> {
   data: T[];

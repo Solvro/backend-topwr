@@ -1,5 +1,6 @@
 import { Logger } from "@poppinss/cliui";
 import { TaskCallback } from "@poppinss/cliui/types";
+import { Semaphore } from "@solvro/utils/semaphore";
 import * as fs from "node:fs/promises";
 import path from "node:path";
 
@@ -7,7 +8,6 @@ import { BaseCommand, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 
 import { LinkType, detectLinkType } from "#enums/link_type";
-import { Semaphore } from "#utils/semaphore";
 
 /*
  * The scraper framework

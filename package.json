@@ -60,6 +60,7 @@
     "@adonisjs/mail": "^9.2.2",
     "@adonisjs/session": "^7.5.0",
     "@adonisjs/static": "^1.1.1",
+    "@solvro/utils": "^1.1.2",
     "@vinejs/vine": "^2.1.0",
     "adminjs": "^7.8.13",
     "argon2": "^0.41.1",
