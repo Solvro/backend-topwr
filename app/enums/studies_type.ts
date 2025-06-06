@@ -1,7 +1,7 @@
 export enum StudiesType {
   FirstDegree = "1DEGREE",
   SecondDegree = "2DEGREE",
-  Uniform = "UNIFORM",
+  LongCycle = "LONG_CYCLE",
 }
 
 export function mapToStudiesType(value: string): StudiesType | undefined {
@@ -10,8 +10,8 @@ export function mapToStudiesType(value: string): StudiesType | undefined {
       return StudiesType.FirstDegree;
     case "2DEGREE":
       return StudiesType.SecondDegree;
-    case "UNIFORM":
-      return StudiesType.Uniform;
+    case "LONG_CYCLE":
+      return StudiesType.LongCycle;
     default:
       return undefined;
   }
