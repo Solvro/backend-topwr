@@ -21,6 +21,7 @@ const { default: BaseController } = await (() =>
 const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
+const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
 
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
@@ -58,10 +59,7 @@ router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
 });
 
-router.get("/metrics", async () => {
-  const { emitMetrics } = await import("#middleware/metrics_middleware");
-  return emitMetrics();
-});
+router.get("/metrics", [MetricsMiddleware, "emitMetrics"]);
 
 router
   .group(() => {
