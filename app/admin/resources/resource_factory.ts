@@ -19,9 +19,11 @@ import {
   ResourceOptions,
   ResourceWithOptions,
 } from "adminjs";
+import { DateTime } from "luxon";
 
 import logger from "@adonisjs/core/services/logger";
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
+import { BaseModel } from "@adonisjs/lucid/orm";
 import { LucidModel, ModelColumnOptions } from "@adonisjs/lucid/types/model";
 
 import { AdminPanelErrorReporter } from "#exceptions/admin_panel_error_reporter";
@@ -32,6 +34,7 @@ import {
   anyCaseToPlural_camelCase,
   anyCaseToPlural_snake_case,
   anyCaseToSingular_camelCase,
+  getManyToManyRelationJoinKey,
   getOneToManyRelationForeignKey,
 } from "#utils/model_utils";
 
@@ -104,15 +107,19 @@ export interface OneToManyTargetRelationDefinition {
   ownerModelSingular_camelCase?: string;
 }
 
-//this will be finished in m-n relations branch - it's just a placeholder for now
 export interface ManyToManyOwnedRelationDefinition {
   targetModel: LucidModel;
-  throughResourceId: string;
+  targetModelPlural_snake_case?: string;
+  targetModelPlural_camelCase?: string;
+  additionalRelationColumnDefinition?: ManyToManyRelationAdditionalColumn[];
+  joinKeyType: string;
+  inverseJoinKeyType: string;
 }
 
 const isManyToMany = (
   relDef: OneToManyRelationDefinition | ManyToManyOwnedRelationDefinition,
-): relDef is ManyToManyOwnedRelationDefinition => "throughResourceId" in relDef;
+): relDef is ManyToManyOwnedRelationDefinition =>
+  "additionalRelationColumnDefinition" in relDef;
 
 export interface ResourceInfo {
   forModel: LucidModel;
@@ -122,6 +129,7 @@ export interface ResourceInfo {
   addImageHandlingForProperties?: string[];
   ownedRelations?: OwnedRelationDefinition[]; //if owns (is parent of) any relations
   targetedByModels?: OneToManyTargetRelationDefinition[]; //if belongs to any models (is child of)
+  isInManyToMany?: boolean;
 }
 
 type LucidColumnDefinition = Omit<ModelColumnOptions, "meta"> & {
@@ -161,11 +169,100 @@ const readOnlyTimestamps = {
   },
 } as const;
 
+export interface ManyToManyRelationAdditionalColumn {
+  columnName: string;
+  type: string;
+}
+
+interface DummyColumnDef {
+  columnName: string;
+  isPrimary: boolean;
+  type: string;
+}
+
+function createLucidDummy(
+  dummyName: string,
+  tableName: string,
+  columnDefs: DummyColumnDef[],
+) {
+  const dummyModel = class extends BaseModel {
+    static table = tableName;
+    static name = dummyName;
+    declare createdAt: DateTime;
+    declare updatedAt: DateTime;
+  } as LucidModel;
+  dummyModel.$columnsDefinitions = new Map();
+  columnDefs.forEach((columnDef) => {
+    dummyModel.$columnsDefinitions.set(columnDef.columnName, {
+      isPrimary: columnDef.isPrimary,
+      serializeAs: null,
+      columnName: columnDef.columnName,
+      hasGetter: false,
+      hasSetter: false,
+      meta: {
+        typing: {
+          booted: false,
+          options: {
+            isPrimary: columnDef.isPrimary,
+            type: columnDef.type,
+          },
+        },
+      },
+    });
+  });
+  dummyModel.$columnsDefinitions.set("createdAt", {
+    isPrimary: false,
+    columnName: "created_at",
+    serializeAs: "created_at",
+    hasGetter: false,
+    hasSetter: false,
+    meta: {
+      type: "datetime",
+      autoCreate: true,
+      typing: {
+        booted: false,
+        options: {
+          columnName: "created_at",
+          type: "datetime",
+          autoCreate: true,
+        },
+      },
+    },
+  });
+
+  dummyModel.$columnsDefinitions.set("updatedAt", {
+    isPrimary: false,
+    columnName: "updated_at",
+    serializeAs: "updated_at",
+    hasGetter: false,
+    hasSetter: false,
+    meta: {
+      type: "datetime",
+      autoCreate: true,
+      autoUpdate: true,
+      typing: {
+        booted: false,
+        options: {
+          columnName: "updated_at",
+          type: "datetime",
+          autoCreate: true,
+          autoUpdate: true,
+        },
+      },
+    },
+  });
+
+  dummyModel.boot();
+  return dummyModel;
+}
+
 export class ResourceFactory {
   private registeredResources: ResourceBuilder[];
+  private static resourceDummies: ResourceWithOptions[];
 
   constructor(registeredResources?: ResourceBuilder[]) {
     this.registeredResources = registeredResources ?? [];
+    ResourceFactory.resourceDummies = [];
   }
 
   public registerResource(resourceBuilder: ResourceBuilder) {
@@ -173,9 +270,11 @@ export class ResourceFactory {
   }
 
   public buildResources(): ResourceWithOptions[] {
-    return this.registeredResources
+    const buildResult = this.registeredResources
       .map((resourceBuilder) => this.createResources(resourceBuilder))
       .flat(1);
+    buildResult.push(...ResourceFactory.resourceDummies);
+    return buildResult;
   }
 
   public createResources(
@@ -411,26 +510,100 @@ export class ResourceFactory {
   }
 
   private static addOwnedManyToManyRelation(
-    _: LucidModel,
-    __: ManyToManyOwnedRelationDefinition,
+    parentModel: LucidModel,
+    relationDefinition: ManyToManyOwnedRelationDefinition,
   ): ManyToManyRelationOptions {
-    throw new Error("Not implemented"); //just a placeholder; will be done in m-n branch after this gets merged
+    const keys = getManyToManyRelationJoinKey(
+      parentModel,
+      relationDefinition.targetModelPlural_camelCase ??
+        anyCaseToPlural_camelCase(relationDefinition.targetModel),
+    );
+
+    const columnDefs: DummyColumnDef[] = [
+      {
+        columnName: keys.joinKey,
+        isPrimary: true,
+        type: relationDefinition.joinKeyType,
+      },
+      {
+        columnName: keys.inverseJoinKey,
+        isPrimary: true,
+        type: relationDefinition.inverseJoinKeyType,
+      },
+    ];
+
+    if (relationDefinition.additionalRelationColumnDefinition !== undefined) {
+      relationDefinition.additionalRelationColumnDefinition.forEach(
+        (columnDef) => {
+          columnDefs.push({
+            columnName: columnDef.columnName,
+            isPrimary: false,
+            type: columnDef.type,
+          });
+        },
+      );
+    }
+    this.createAndRegisterLucidModelDummy(
+      keys.pivotTableName,
+      keys.pivotTableName,
+      columnDefs,
+    );
+    return {
+      type: RelationType.ManyToMany,
+      junction: {
+        joinKey: keys.joinKey,
+        inverseJoinKey: keys.inverseJoinKey,
+        throughResourceId: keys.pivotTableName,
+      },
+      target: {
+        resourceId:
+          relationDefinition.targetModelPlural_snake_case ??
+          anyCaseToPlural_snake_case(relationDefinition.targetModel),
+      },
+    };
+  }
+
+  private static createAndRegisterLucidModelDummy(
+    tableName: string,
+    dummyName: string,
+    columnDefs: DummyColumnDef[],
+  ) {
+    const dummy = createLucidDummy(dummyName, tableName, columnDefs);
+    const newResource: ResourceWithProperties = {
+      resource: new LucidResource(dummy, DB_DRIVER),
+      options: {
+        navigation: false,
+        properties: {},
+      },
+      features: [targetRelationSettingsFeature()],
+    };
+    this.resourceDummies.push(newResource);
   }
 
   private static addTargetRelations(
     resource: ResourceWithProperties,
     resourceInfo: ResourceInfo,
   ) {
+    if (resource.features === undefined) {
+      resource.features = [];
+    }
+    let pushedTarget = false;
+    if (
+      resourceInfo.isInManyToMany !== undefined &&
+      resourceInfo.isInManyToMany
+    ) {
+      resource.features.push(targetRelationSettingsFeature());
+      pushedTarget = true;
+    }
     if (
       resourceInfo.targetedByModels === undefined ||
       resourceInfo.targetedByModels.length === 0
     ) {
       return;
     }
-    if (resource.features === undefined) {
-      resource.features = [];
+    if (!pushedTarget) {
+      resource.features.push(targetRelationSettingsFeature());
     }
-    resource.features.push(targetRelationSettingsFeature());
     this.addRelationReferenceProperty(
       resource,
       resourceInfo.forModel,
