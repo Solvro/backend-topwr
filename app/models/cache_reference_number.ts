@@ -5,10 +5,10 @@ import { BaseModel } from "@adonisjs/lucid/orm";
 import { typedColumn } from "#decorators/typed_model";
 
 export default class CacheReferenceNumber extends BaseModel {
-  @typedColumn({ isPrimary: true, type: "number" })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "integer" })
   declare referenceNumber: number;
 
   @typedColumn.dateTime({ autoCreate: true })
