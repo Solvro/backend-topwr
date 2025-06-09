@@ -95,10 +95,18 @@ router
 
     router.get("/about_us", [AboutUsController, "index"]);
 
-    router.get("/cache_reference_number", [
-      CacheReferenceNumberController,
-      "index",
-    ]);
+    router.group(() => {
+      router.get("/cache_reference_number", [
+        CacheReferenceNumberController,
+        "index",
+      ]);
+      router
+        .patch("/cache_reference_number/bump", [
+          CacheReferenceNumberController,
+          "bump",
+        ])
+        .use(middleware.auth());
+    });
 
     configureBaseRoutes();
   })
