@@ -8,7 +8,7 @@ export default class extends BaseSchema {
     this.schema.createTable(this.tableName, (table) => {
       table.increments("id");
       table.string("identifier", 10).notNullable();
-      table.text("special_name").nullable();
+      //table.text("special_name").nullable();
       table
         .enum("icon_type", this.polinkaIcons, {
           useNative: true,
@@ -28,8 +28,8 @@ export default class extends BaseSchema {
       table.text("address_line2").nullable();
       table.decimal("latitude").notNullable();
       table.decimal("longitude").notNullable();
-      table.boolean("have_food").defaultTo(false);
-      table.text("cover").nullable();
+      //table.boolean("have_food").defaultTo(false);
+      table.text("photo_key").nullable();
       table.text("external_digital_guide_mode").nullable();
       table.text("external_digital_guide_id_or_url").nullable();
       table.check(
