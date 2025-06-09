@@ -8,8 +8,8 @@ export default class extends BaseSchema {
       table.increments("id");
       table.integer("reference_number").unsigned().notNullable();
 
-      table.timestamp("created_at");
-      table.timestamp("updated_at");
+      table.timestamp("created_at").notNullable();
+      table.timestamp("updated_at").notNullable();
     });
 
     this.schema.raw(
