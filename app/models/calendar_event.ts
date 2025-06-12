@@ -29,11 +29,14 @@ export default class CalendarEvent extends BaseModel {
   })
   declare endTime: DateTime;
 
-  @typedColumn({ type: "string" })
-  declare location: string;
+  @typedColumn({ type: "string", optional: true })
+  declare location: string | null;
 
   @typedColumn({ type: "string" })
   declare name: string;
+
+  @typedColumn({ type: "string", optional: true })
+  declare description: string | null;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

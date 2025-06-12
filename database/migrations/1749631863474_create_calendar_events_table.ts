@@ -10,7 +10,8 @@ export default class extends BaseSchema {
       table.text("name").notNullable();
       table.timestamp("start_time").notNullable();
       table.timestamp("end_time").notNullable();
-      table.text("location").notNullable();
+      table.text("location").nullable();
+      table.text("description").nullable();
       table.timestamp("created_at");
       table.timestamp("updated_at");
     });
