@@ -8,6 +8,8 @@
 */
 import router from "@adonisjs/core/services/router";
 
+import EventCalendarController from "#controllers/event_calendar_controller";
+import EventCalendarService from "#services/event_calendar_service";
 import env from "#start/env";
 
 import { middleware } from "./kernel.js";
@@ -92,7 +94,15 @@ router
       .prefix("/files");
 
     router.get("/about_us", [AboutUsController, "index"]);
-
+    router
+      .group(() => {
+        router.get("/", [EventCalendarController, "index"]);
+        router.get("/:event_id", [EventCalendarController, "find"]);
+        router.put("/:event_id", [EventCalendarController, "edit"]);
+        router.delete("/:event_id", [EventCalendarController, "remove"]);
+        router.post("/", [EventCalendarController, "create"]);
+      })
+      .prefix("/events");
     configureBaseRoutes();
   })
   .prefix("/api/v1");
