@@ -8,14 +8,14 @@
 */
 import router from "@adonisjs/core/services/router";
 
-import EventCalendarController from "#controllers/event_calendar_controller";
-import EventCalendarService from "#services/event_calendar_service";
 import env from "#start/env";
 
 import { middleware } from "./kernel.js";
 import { resetPasswordThrottle } from "./limiter.js";
 
 const AboutUsController = () => import("#controllers/about_us_controller");
+const EventCalendarController = () =>
+  import("#controllers/event_calendar_controller");
 
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();

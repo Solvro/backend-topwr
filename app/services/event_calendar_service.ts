@@ -12,13 +12,13 @@ import CalendarEvent from "#models/calendar_event";
 const FETCH_LIMIT_DAYS = 30;
 const CALENDAR_ID = "9ke30hbjjke60u5jbii42g2rpo@group.calendar.google.com";
 const FIELD_LABELS = [
-  "UID",
   "DTSTART",
   "DTEND",
-  "SUMMARY",
-  "LOCATION",
+  "UID",
   "DESCRIPTION",
-];
+  "LOCATION",
+  "SUMMARY",
+]; //do not reorder the labels - the order must match the .isc file order
 
 interface GoogleCalendarEventDto {
   googleCalId: string;
@@ -51,7 +51,7 @@ class CalendarParser {
   private cursor: number;
 
   constructor(private calendarString: string) {
-    if (this.calendarString.length < 14) {
+    if (!this.calendarString.endsWith("END:VCALENDAR")) {
       throw new Error("Calendar invalid");
     }
     this.cursor = calendarString.length - 14;
@@ -97,26 +97,26 @@ class CalendarParser {
         currentIndex = result[1];
       }
     }
-    const googleCalId = labelValues[0];
+    const startDate = labelValues[0];
+    const endDate = labelValues[1];
+    if (startDate === null || endDate === null) {
+      logger.warn("Invalid calendar event, missing date labels. Skipping...");
+      return undefined;
+    }
+    const googleCalId = labelValues[2];
     if (googleCalId === null) {
       logger.warn(
         "Invalid calendar event, missing label GoogleCalId. Skipping...",
       );
       return undefined;
     }
-    const startDate = labelValues[1];
-    const endDate = labelValues[2];
-    if (startDate === null || endDate === null) {
-      logger.warn("Invalid calendar event, missing date labels. Skipping...");
-      return undefined;
-    }
-    const name = labelValues[3];
+    const description = labelValues[3];
+    const location = labelValues[4];
+    const name = labelValues[5];
     if (name === null) {
       logger.warn("Invalid calendar event, missing name. Skipping...");
       return undefined;
     }
-    const location = labelValues[4];
-    const description = labelValues[5];
     return {
       googleCalId,
       startTime: this.extractDateTime(startDate),
@@ -157,11 +157,7 @@ const EVENT_FETCH_INTERVAL_S = 3600;
 export default class EventCalendarService {
   private static timerHandle?: NodeJS.Timeout;
 
-  constructor() {
-    void EventCalendarService.startUpdatingEvents();
-  }
-
-  private static async startUpdatingEvents(): Promise<boolean> {
+  public static async startUpdatingEvents(): Promise<boolean> {
     if (this.timerHandle !== undefined) {
       return false;
     }
@@ -243,6 +239,7 @@ export default class EventCalendarService {
     const bound = DateTime.now().minus({ days: FETCH_LIMIT_DAYS });
     await CalendarEvent.query()
       .where("start_time", "<", bound.toISO())
+      .whereNotNull("google_cal_id")
       .delete();
   }
 

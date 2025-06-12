@@ -19,6 +19,7 @@ export default class EventCalendarController {
   }
 
   async index({ request }: HttpContext) {
+    await EventCalendarService.startUpdatingEvents();
     const qs = request.qs();
     const excludeGoogleEvents = qs.excludeGoogleEvents === "true";
     const dateFrom: DateTime<true> | undefined =
@@ -37,6 +38,7 @@ export default class EventCalendarController {
   }
 
   async find({ params }: HttpContext): Promise<CalendarEvent> {
+    await EventCalendarService.startUpdatingEvents();
     const eventId = params.event_id as string;
     return await EventCalendarService.getEvent(eventId);
   }
