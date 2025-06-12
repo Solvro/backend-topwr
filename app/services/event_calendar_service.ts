@@ -51,10 +51,13 @@ class CalendarParser {
   private cursor: number;
 
   constructor(private calendarString: string) {
-    if (!this.calendarString.endsWith("END:VCALENDAR")) {
+    if (
+      !this.calendarString.startsWith("BEGIN:VCALENDAR") ||
+      !this.calendarString.trimEnd().endsWith("END:VCALENDAR")
+    ) {
       throw new Error("Calendar invalid");
     }
-    this.cursor = calendarString.length - 14;
+    this.cursor = calendarString.length - 16;
   }
 
   public getLastEvent(): GoogleCalendarEventDto | null {
@@ -171,8 +174,12 @@ export default class EventCalendarService {
 
   private static async updateEvents(): Promise<void> {
     try {
+      logger.info("Updating event calendar.");
       await EventCalendarService.removeOutdatedEvents();
       await EventCalendarService.upsertDatabaseEvents();
+      logger.info(
+        `Event calendar updated. Next update in ${EVENT_FETCH_INTERVAL_S} seconds.`,
+      );
     } catch (error) {
       logger.error(error);
     }
