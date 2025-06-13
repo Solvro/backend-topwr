@@ -109,7 +109,7 @@ export default class NewsfeedService {
       lastUpdate: DateTime.now(),
     };
     logger.info(
-      `Newsfeed articles updated. Currently storing ${articles.length} articles. Time to next update: ${CACHE_TTL} seconds.`,
+      `Newsfeed articles updated. Currently storing ${articles.length} articles.`,
     );
   }
 

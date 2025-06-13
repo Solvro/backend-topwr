@@ -1,7 +1,15 @@
+import vine from "@vinejs/vine";
+
 import { HttpContext } from "@adonisjs/core/http";
 
 import { ServiceUnavailableException } from "#exceptions/http_exceptions";
 import NewsfeedService from "#services/newsfeed_service";
+
+const completeOnlyValidator = vine.compile(
+  vine.object({
+    completeOnly: vine.boolean(),
+  }),
+);
 
 export default class NewsfeedController {
   /**
@@ -13,7 +21,7 @@ export default class NewsfeedController {
    */
   async latest({ request, response }: HttpContext) {
     await NewsfeedService.startNewsfeedUpdate();
-    const completeOnly = request.qs().completeOnly === "true";
+    const { completeOnly } = await request.validateUsing(completeOnlyValidator);
     const update = completeOnly
       ? NewsfeedService.getLatestNewsfeedArticles(true)
       : NewsfeedService.getLatestNewsfeedArticles();

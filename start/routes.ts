@@ -94,7 +94,7 @@ router
 
     router.get("/about_us", [AboutUsController, "index"]);
 
-    router.get("/latest", [NewsfeedController, "latest"]).prefix("/newsfeed");
+    router.get("/newsfeed/latest", [NewsfeedController, "latest"]);
 
     configureBaseRoutes();
   })
