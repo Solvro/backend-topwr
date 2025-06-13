@@ -1,0 +1,28 @@
+{
+  "data": [
+    {
+      "identifier": "POLINKA A",
+      "iconType": "ICON",
+      "campusId": 7,
+      "addressLine1": "Wyb. Wyspiańskiego 23",
+      "addressLine2": " 50-370 Wrocław",
+      "latitude": 51.107296,
+      "longitude": 17.058377,
+      "photoKey": "f5515c45-29a9-4b3a-8a94-aebb6978b66c",
+      "externalDigitalGuideMode": "other_digital_guide_place",
+      "externalDigitalGuideIdOrUrl": "102"
+    },
+    {
+      "identifier": "POLINKA B",
+      "iconType": "ICON",
+      "campusId": 6,
+      "addressLine1": "ul. Na Grobli 2",
+      "addressLine2": " 50-421 Wrocław",
+      "latitude": 51.105959,
+      "longitude": 17.053359,
+      "photoKey": "507ba7a7-baf2-4b28-aed3-b346424e9631",
+      "externalDigitalGuideMode": "other_digital_guide_place",
+      "externalDigitalGuideIdOrUrl": "103"
+    }
+  ]
+}
