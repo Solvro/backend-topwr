@@ -4,7 +4,7 @@ import { Semaphore } from "@solvro/utils/semaphore";
 import * as fs from "node:fs/promises";
 import path from "node:path";
 
-import { BaseCommand, flags } from "@adonisjs/core/ace";
+import { BaseCommand, args, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 
 import { LinkType, detectLinkType } from "#enums/link_type";
@@ -193,12 +193,25 @@ export default class DbScrape extends BaseCommand {
   })
   declare force: boolean;
 
+  @args.spread({
+    required: false,
+    description: "Names or filenames of modules to run",
+  })
+  declare modules: string[] | undefined;
+
   async run() {
     this.logger.info("Loading modules...");
     const modules = await this.loadModules();
 
     if (Object.keys(modules).length === 0) {
       this.logger.warning("No modules found");
+      return;
+    }
+
+    if (this.modules !== undefined && this.runAll) {
+      this.logger.error(
+        "Conflicting command arguments: --run-all cannot be used with module names!",
+      );
       return;
     }
 
@@ -214,6 +227,23 @@ export default class DbScrape extends BaseCommand {
       this.logger.info(
         `runAll flag is set - running all ${selectedModules.length} modules.`,
       );
+    } else if (this.modules !== undefined) {
+      selectedModules = [];
+      for (const name of this.modules) {
+        let module = modules[name] as ScraperModuleEntry | undefined;
+        module ??= Object.entries(modules).find(
+          ([_, entry]) => entry.file === name,
+        )?.[1];
+        if (module === undefined) {
+          this.logger.error(`Could not find the "${name}" module`);
+          return;
+        }
+        if (selectedModules.includes(module)) {
+          this.logger.error(`Module "${module.file}" was specified twice!`);
+          return;
+        }
+        selectedModules.push(module);
+      }
     } else {
       const selected = await this.prompt.multiple(
         "Select scraper modules to run",
