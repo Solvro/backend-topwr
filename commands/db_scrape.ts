@@ -200,7 +200,6 @@ export default class DbScrape extends BaseCommand {
     const tasks = this.ui.tasks({ verbose: true });
 
     for (const { Module, instance } of selectedModules) {
-      // @ts-expect-error https://github.com/poppinss/cliui/issues/22
       tasks.add(Module.taskTitle ?? Module.description, async (task) => {
         try {
           return ((await instance.run(task)) as string | undefined) ?? "Done";
