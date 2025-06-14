@@ -366,6 +366,30 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
   };
 }
 
+interface PrepareErrorOptions {
+  includeCodeAndStatus: boolean;
+}
+
+const defaultPrepareErrorOptions: PrepareErrorOptions = {
+  includeCodeAndStatus: true,
+};
+
+export function prepareReportForLogging(
+  report: ErrorReport,
+  opts = defaultPrepareErrorOptions,
+): string {
+  return [
+    report.message,
+    ...(opts.includeCodeAndStatus
+      ? [`Error code: ${report.code}, status: ${report.status}`]
+      : []),
+    "Cause stack:",
+    ...report.causeStack.map((c) => `    ${c}`),
+    "Root stack trace:",
+    ...report.rootStackTrace.map((f) => `    ${f}`),
+  ].join("\n");
+}
+
 export interface ErrorResponse {
   error: SerializedErrorReport;
 }
