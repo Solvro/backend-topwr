@@ -101,6 +101,10 @@ export default class FaqSectionScrapper extends BaseScraperModule {
     return file.id;
   }
 
+  async shouldRun(): Promise<boolean> {
+    return await this.modelHasNoRows(GuideArticle, GuideQuestion);
+  }
+
   async run(task: TaskHandle) {
     task.update("Fetching data...");
     const [articlesResponse, questionsResponse, pivotTableResponse] =

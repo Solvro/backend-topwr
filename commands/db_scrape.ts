@@ -6,6 +6,7 @@ import path from "node:path";
 
 import { BaseCommand, args, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
+import { LucidModel } from "@adonisjs/lucid/types/model";
 
 import { LinkType, detectLinkType } from "#enums/link_type";
 import {
@@ -13,6 +14,7 @@ import {
   prepareReportForLogging,
   toIBaseError,
 } from "#exceptions/base_error";
+import { modelCount } from "#utils/db";
 
 /*
  * The scraper framework
@@ -139,6 +141,20 @@ export abstract class BaseScraperModule {
       this.logger.warning(warning);
     }
     return type;
+  }
+
+  /**
+   * Convienience method for checking whether tables for models are empty
+   *
+   * Probably useful for implementing shouldRun()
+   * @param models the lucidjs models to check
+   * @returns true if all tables for all the given models are empty
+   */
+  protected async modelHasNoRows(...models: LucidModel[]): Promise<boolean> {
+    return Promise.all(
+      models.map(async (m) => (await modelCount(m)) === 0),
+      // "then get the list, and ensure that every boolean value is true"
+    ).then((l) => l.every((b) => b));
   }
 }
 

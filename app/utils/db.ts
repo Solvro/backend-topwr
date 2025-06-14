@@ -1,6 +1,7 @@
 import { QueryResult } from "pg";
 
 import db from "@adonisjs/lucid/services/db";
+import { LucidModel } from "@adonisjs/lucid/types/model";
 
 /**
  * Advances the sequence for the given column to never conflict with existing rows.
@@ -26,4 +27,16 @@ export async function fixSequence(
   );
   const nextVal = result.rows[0].next_val;
   return BigInt(nextVal);
+}
+
+/**
+ * Returns the amount of rows for a given model.
+ *
+ * Created because model.query().count() is a useless piece of crap, with bad TS typings.
+ * @param model a lucidjs model
+ * @returns the number of rows for a given model
+ */
+export async function modelCount(model: LucidModel): Promise<number> {
+  const res = (await model.query().knexQuery.count()) as [{ count: string }];
+  return Number.parseInt(res[0].count);
 }
