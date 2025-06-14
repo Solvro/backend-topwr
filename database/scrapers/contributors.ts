@@ -5,6 +5,7 @@ import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import { ChangeType } from "#enums/change_type";
+import Change from "#models/change";
 import Contributor from "#models/contributor";
 import Milestone from "#models/milestone";
 import Role from "#models/role";
@@ -92,6 +93,10 @@ export default class ContributorsScraper extends BaseScraperModule {
     "Changelog_Change",
     "Changelog_Screenshots",
   ];
+
+  async shouldRun(): Promise<boolean> {
+    return await this.modelHasNoRows(Milestone, Contributor, Version, Change);
+  }
 
   async run(task: TaskHandle) {
     task.update("Fetching all schema objects");

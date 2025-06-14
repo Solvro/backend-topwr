@@ -38,6 +38,10 @@ export default class PinkBoxScraper extends BaseScraperModule {
     'Scrapes pink boxes from local file: "./assets/pink_boxes.json"';
   static taskTitle = "Scrape pink boxes";
 
+  async shouldRun(): Promise<boolean> {
+    return await this.modelHasNoRows(PinkBox);
+  }
+
   async run(task: TaskHandle) {
     task.update("starting reading pink boxes file...");
     const pinkBoxesData = await fs
