@@ -346,6 +346,7 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
     }
     currentError = currentError.cause;
   }
+  const toRemove = `file://${process.cwd()}`;
   return {
     message: topError.message,
     status: result.status ?? 500,
@@ -360,7 +361,15 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
         if (!line.startsWith("at ")) {
           return [];
         }
-        return line.replace(/^at\s+/, "");
+        return (
+          line
+            // each stack trace line starts with "at", trim that
+            .replace(/^at\s+/, "")
+            // cwd + node_modules => external dependency, trim out the path leaving the package name at the start
+            .replace(`${toRemove}/node_modules/`, "")
+            // replace cwd with . to make the path relative
+            .replace(toRemove, ".")
+        );
       }) ?? [],
     extraResponseFields: result.extraResponseFields,
   };
