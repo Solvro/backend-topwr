@@ -8,6 +8,11 @@ import { BaseCommand, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 
 import { LinkType, detectLinkType } from "#enums/link_type";
+import {
+  analyzeErrorStack,
+  prepareReportForLogging,
+  toIBaseError,
+} from "#exceptions/base_error";
 
 /*
  * The scraper framework
@@ -200,8 +205,11 @@ export default class DbScrape extends BaseCommand {
         try {
           return ((await instance.run(task)) as string | undefined) ?? "Done";
         } catch (e) {
-          console.error(e);
-          return task.error("Module threw an error");
+          const report = analyzeErrorStack(toIBaseError(e));
+          const errorString = prepareReportForLogging(report, {
+            includeCodeAndStatus: false,
+          }).replaceAll("\n", "\n│ "); // a lil bit of formatting
+          return task.error(`Module threw an error: ${errorString}`);
         }
       });
     }
