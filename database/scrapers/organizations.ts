@@ -68,6 +68,13 @@ export default class OrganizationsScraper extends BaseScraperModule {
       "https://admin.topwr.solvro.pl/items/Scientific_Circles_Links?limit=-1",
   };
 
+  async shouldRun(): Promise<boolean> {
+    return await this.modelHasNoRows(
+      StudentOrganization,
+      StudentOrganizationTag,
+    );
+  }
+
   public async run(task: TaskHandle) {
     const [orgs, tags, links, tagsPivot] = (await Promise.all([
       this.fetchJSON(this.urls.orgs, "organizations"),
