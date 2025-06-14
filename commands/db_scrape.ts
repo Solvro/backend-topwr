@@ -36,6 +36,8 @@ import {
  *   - the method may use `this.logger` for logging
  *   - the method should use `this.semaphore` for limiting the amount of parallel requests (if such are made)
  *   - the method may use utility methods inherited from the BaseScraperModule class
+ * - if your scraper script is expected to only run once, override the `shouldRun` method
+ *   - for example check whether entries already exist in the database
  */
 
 const LOADABLE_EXTENSIONS = [".js", ".cjs", ".mjs", ".ts"];
@@ -54,6 +56,24 @@ export abstract class BaseScraperModule {
     this.semaphore = semaphore;
   }
 
+  /**
+   * Checks whether the scraper module should be run.
+   *
+   * This function should not modify the database or filesystem!
+   * Default implementation always returns true.
+   * @param _task the task handle, should you want to do status updates here
+   * @returns true if the run() method should be called
+   */
+  async shouldRun(_task: TaskHandle): Promise<boolean> {
+    return true;
+  }
+
+  /**
+   * The main function of a scraper module
+   *
+   * Fetch external data and modify the database entries here.
+   * @param task the task handle, for updating the task status
+   */
   abstract run(task: TaskHandle): Promise<string> | Promise<void>;
 
   /**
@@ -168,6 +188,11 @@ export default class DbScrape extends BaseCommand {
   })
   declare maxJobs: number;
 
+  @flags.boolean({
+    description: "Skip shouldRun() checks on modules and run them anyway",
+  })
+  declare force: boolean;
+
   async run() {
     this.logger.info("Loading modules...");
     const modules = await this.loadModules();
@@ -175,6 +200,12 @@ export default class DbScrape extends BaseCommand {
     if (Object.keys(modules).length === 0) {
       this.logger.warning("No modules found");
       return;
+    }
+
+    if (this.force) {
+      this.logger.warning(
+        "Force flag passed - modules will be run even if shouldRun() would return false!",
+      );
     }
 
     let selectedModules: ScraperModuleEntry[];
@@ -202,13 +233,28 @@ export default class DbScrape extends BaseCommand {
     for (const { Module, instance } of selectedModules) {
       tasks.add(Module.taskTitle ?? Module.description, async (task) => {
         try {
+          if (!this.force && !(await instance.shouldRun(task))) {
+            return "Skipped";
+          }
+        } catch (e) {
+          const report = analyzeErrorStack(toIBaseError(e));
+          const errorString = prepareReportForLogging(report, {
+            includeCodeAndStatus: false,
+          }).replaceAll("\n", "\n│ "); // a lil bit of formatting
+          return task.error(
+            `Module's shouldRun() method threw an error: ${errorString}`,
+          );
+        }
+        try {
           return ((await instance.run(task)) as string | undefined) ?? "Done";
         } catch (e) {
           const report = analyzeErrorStack(toIBaseError(e));
           const errorString = prepareReportForLogging(report, {
             includeCodeAndStatus: false,
           }).replaceAll("\n", "\n│ "); // a lil bit of formatting
-          return task.error(`Module threw an error: ${errorString}`);
+          return task.error(
+            `Module's run() method threw an error: ${errorString}`,
+          );
         }
       });
     }
