@@ -4,10 +4,17 @@ import { Semaphore } from "@solvro/utils/semaphore";
 import * as fs from "node:fs/promises";
 import path from "node:path";
 
-import { BaseCommand, flags } from "@adonisjs/core/ace";
+import { BaseCommand, args, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
+import { LucidModel } from "@adonisjs/lucid/types/model";
 
 import { LinkType, detectLinkType } from "#enums/link_type";
+import {
+  analyzeErrorStack,
+  prepareReportForLogging,
+  toIBaseError,
+} from "#exceptions/base_error";
+import { modelCount } from "#utils/db";
 
 /*
  * The scraper framework
@@ -31,6 +38,8 @@ import { LinkType, detectLinkType } from "#enums/link_type";
  *   - the method may use `this.logger` for logging
  *   - the method should use `this.semaphore` for limiting the amount of parallel requests (if such are made)
  *   - the method may use utility methods inherited from the BaseScraperModule class
+ * - if your scraper script is expected to only run once, override the `shouldRun` method
+ *   - for example check whether entries already exist in the database
  */
 
 const LOADABLE_EXTENSIONS = [".js", ".cjs", ".mjs", ".ts"];
@@ -49,6 +58,24 @@ export abstract class BaseScraperModule {
     this.semaphore = semaphore;
   }
 
+  /**
+   * Checks whether the scraper module should be run.
+   *
+   * This function should not modify the database or filesystem!
+   * Default implementation always returns true.
+   * @param _task the task handle, should you want to do status updates here
+   * @returns true if the run() method should be called
+   */
+  async shouldRun(_task: TaskHandle): Promise<boolean> {
+    return true;
+  }
+
+  /**
+   * The main function of a scraper module
+   *
+   * Fetch external data and modify the database entries here.
+   * @param task the task handle, for updating the task status
+   */
   abstract run(task: TaskHandle): Promise<string> | Promise<void>;
 
   /**
@@ -115,6 +142,20 @@ export abstract class BaseScraperModule {
     }
     return type;
   }
+
+  /**
+   * Convienience method for checking whether tables for models are empty
+   *
+   * Probably useful for implementing shouldRun()
+   * @param models the lucidjs models to check
+   * @returns true if all tables for all the given models are empty
+   */
+  protected async modelHasNoRows(...models: LucidModel[]): Promise<boolean> {
+    return Promise.all(
+      models.map(async (m) => (await modelCount(m)) === 0),
+      // "then get the list, and ensure that every boolean value is true"
+    ).then((l) => l.every((b) => b));
+  }
 }
 
 type ScraperModuleClass = (new (
@@ -163,6 +204,17 @@ export default class DbScrape extends BaseCommand {
   })
   declare maxJobs: number;
 
+  @flags.boolean({
+    description: "Skip shouldRun() checks on modules and run them anyway",
+  })
+  declare force: boolean;
+
+  @args.spread({
+    required: false,
+    description: "Names or filenames of modules to run",
+  })
+  declare modules: string[] | undefined;
+
   async run() {
     this.logger.info("Loading modules...");
     const modules = await this.loadModules();
@@ -172,12 +224,42 @@ export default class DbScrape extends BaseCommand {
       return;
     }
 
+    if (this.modules !== undefined && this.runAll) {
+      this.logger.error(
+        "Conflicting command arguments: --run-all cannot be used with module names!",
+      );
+      return;
+    }
+
+    if (this.force) {
+      this.logger.warning(
+        "Force flag passed - modules will be run even if shouldRun() would return false!",
+      );
+    }
+
     let selectedModules: ScraperModuleEntry[];
     if (this.runAll) {
       selectedModules = Object.values(modules);
       this.logger.info(
         `runAll flag is set - running all ${selectedModules.length} modules.`,
       );
+    } else if (this.modules !== undefined) {
+      selectedModules = [];
+      for (const name of this.modules) {
+        let module = modules[name] as ScraperModuleEntry | undefined;
+        module ??= Object.entries(modules).find(
+          ([_, entry]) => entry.file === name,
+        )?.[1];
+        if (module === undefined) {
+          this.logger.error(`Could not find the "${name}" module`);
+          return;
+        }
+        if (selectedModules.includes(module)) {
+          this.logger.error(`Module "${module.file}" was specified twice!`);
+          return;
+        }
+        selectedModules.push(module);
+      }
     } else {
       const selected = await this.prompt.multiple(
         "Select scraper modules to run",
@@ -195,13 +277,30 @@ export default class DbScrape extends BaseCommand {
     const tasks = this.ui.tasks({ verbose: true });
 
     for (const { Module, instance } of selectedModules) {
-      // @ts-expect-error https://github.com/poppinss/cliui/issues/22
       tasks.add(Module.taskTitle ?? Module.description, async (task) => {
+        try {
+          if (!this.force && !(await instance.shouldRun(task))) {
+            return "Skipped";
+          }
+        } catch (e) {
+          const report = analyzeErrorStack(toIBaseError(e));
+          const errorString = prepareReportForLogging(report, {
+            includeCodeAndStatus: false,
+          }).replaceAll("\n", "\n│ "); // a lil bit of formatting
+          return task.error(
+            `Module's shouldRun() method threw an error: ${errorString}`,
+          );
+        }
         try {
           return ((await instance.run(task)) as string | undefined) ?? "Done";
         } catch (e) {
-          console.error(e);
-          return task.error("Module threw an error");
+          const report = analyzeErrorStack(toIBaseError(e));
+          const errorString = prepareReportForLogging(report, {
+            includeCodeAndStatus: false,
+          }).replaceAll("\n", "\n│ "); // a lil bit of formatting
+          return task.error(
+            `Module's run() method threw an error: ${errorString}`,
+          );
         }
       });
     }

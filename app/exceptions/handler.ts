@@ -5,6 +5,7 @@ import logger from "@adonisjs/core/services/logger";
 import {
   ErrorResponse,
   analyzeErrorStack,
+  prepareReportForLogging,
   toIBaseError,
 } from "./base_error.js";
 
@@ -71,12 +72,7 @@ export default class HttpExceptionHandler extends ExceptionHandler {
       return;
     }
     logger.error(
-      [
-        `Error thrown while handling route ${ctx.route?.name ?? ctx.route?.pattern ?? "<unknown>"}: ${report.message}`,
-        `Error code: ${report.code}, status: ${report.status}`,
-        `Cause stack:\n${report.causeStack.map((c) => `    ${c}`).join("\n")}`,
-        `Root stack trace:\n${report.rootStackTrace.map((f) => `    ${f}`).join("\n")}`,
-      ].join("\n"),
+      `Error thrown while handling route ${ctx.route?.name ?? ctx.route?.pattern ?? "<unknown>"}: ${prepareReportForLogging(report)}`,
     );
   }
 }

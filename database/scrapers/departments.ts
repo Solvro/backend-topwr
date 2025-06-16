@@ -57,6 +57,10 @@ export default class DepartmentsScraper extends BaseScraperModule {
   private readonly addressRegex =
     /\b\d{2}-\d{3}\s+[A-ZĄĆĘŁŃÓŚŹŻa-ząćęłńóśźż-]+$/;
 
+  async shouldRun(): Promise<boolean> {
+    return await this.modelHasNoRows(DepartmentModel, FieldOfStudyModel);
+  }
+
   async run(task: TaskHandle) {
     task.update("Starting fetching all schema objects");
 
