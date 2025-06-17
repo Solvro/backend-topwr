@@ -1,7 +1,5 @@
 import { DateTime } from "luxon";
 
-import logger from "@adonisjs/core/services/logger";
-
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import CalendarEvent from "#models/calendar_event";
 
@@ -38,16 +36,18 @@ class CalendarParser {
     this.cursor = calendarString.length - 16;
   }
 
-  public getLastEvent(): GoogleCalendarEventDto | null {
-    let event = this.extractLastEvent();
+  public getLastEvent(task: TaskHandle): GoogleCalendarEventDto | null {
+    let event = this.extractLastEvent(task);
     while (event === undefined) {
-      event = this.extractLastEvent();
+      event = this.extractLastEvent(task);
     }
     return event;
   }
 
   //null - none left, undefined - malformed event
-  private extractLastEvent(): GoogleCalendarEventDto | null | undefined {
+  private extractLastEvent(
+    task: TaskHandle,
+  ): GoogleCalendarEventDto | null | undefined {
     const eventEnd = this.calendarString.lastIndexOf("END:VEVENT", this.cursor);
     if (eventEnd === -1) {
       return null;
@@ -61,11 +61,12 @@ class CalendarParser {
     }
     const eventBlock = this.calendarString.substring(eventBegin, eventEnd + 10);
     this.cursor = eventBegin;
-    return CalendarParser.parseEvent(eventBlock);
+    return CalendarParser.parseEvent(eventBlock, task);
   }
 
   private static parseEvent(
     eventBlock: string,
+    task: TaskHandle,
   ): GoogleCalendarEventDto | undefined {
     let currentIndex = 0;
     const labelValues: (string | null)[] = [];
@@ -81,12 +82,12 @@ class CalendarParser {
     const startDate = labelValues[0];
     const endDate = labelValues[1];
     if (startDate === null || endDate === null) {
-      logger.warn("Invalid calendar event, missing date labels. Skipping...");
+      task.update("Invalid calendar event, missing date labels. Skipping...");
       return undefined;
     }
     const googleCalId = labelValues[2];
     if (googleCalId === null) {
-      logger.warn(
+      task.update(
         "Invalid calendar event, missing label GoogleCalId. Skipping...",
       );
       return undefined;
@@ -95,7 +96,7 @@ class CalendarParser {
     const location = labelValues[4];
     const name = labelValues[5];
     if (name === null) {
-      logger.warn("Invalid calendar event, missing name. Skipping...");
+      task.update("Invalid calendar event, missing name. Skipping...");
       return undefined;
     }
     return {
@@ -152,23 +153,26 @@ export default class EventCalendarUpdater extends BaseScraperModule {
     return calendarResponse.text();
   }
 
-  private static async getEventsInTimeframe(): Promise<
-    GoogleCalendarEventDto[]
-  > {
+  private static async getEventsInTimeframe(
+    task: TaskHandle,
+  ): Promise<GoogleCalendarEventDto[]> {
     const calendarString = await EventCalendarUpdater.fetchGoogleEvents();
     const parser: CalendarParser = new CalendarParser(calendarString);
     const bound = DateTime.now().minus({ days: FETCH_LIMIT_DAYS });
     const events: GoogleCalendarEventDto[] = [];
-    let event = parser.getLastEvent();
+    let event = parser.getLastEvent(task);
     while (event !== null && event.startTime >= bound) {
       events.push(event);
-      event = parser.getLastEvent();
+      event = parser.getLastEvent(task);
     }
+    task.update(
+      `Total of ${events.length} events found in the given timeframe (${FETCH_LIMIT_DAYS} days).`,
+    );
     return events;
   }
 
-  private static async upsertDatabaseEvents() {
-    const newEvents = await EventCalendarUpdater.getEventsInTimeframe();
+  private static async upsertDatabaseEvents(task: TaskHandle) {
+    const newEvents = await EventCalendarUpdater.getEventsInTimeframe(task);
     for (const event of newEvents) {
       const existingEvent = await CalendarEvent.findBy(
         "google_cal_id",
@@ -181,8 +185,10 @@ export default class EventCalendarUpdater extends BaseScraperModule {
         existingEvent.location = event.location;
         existingEvent.description = event.description;
         await existingEvent.save();
+        task.update(`Updated event ${event.name}`);
       } else {
         await CalendarEvent.create({ ...event });
+        task.update(`Added new event ${event.name}`);
       }
     }
   }
@@ -199,7 +205,7 @@ export default class EventCalendarUpdater extends BaseScraperModule {
     try {
       task.update("Updating event calendar.");
       await EventCalendarUpdater.removeOutdatedEvents();
-      await EventCalendarUpdater.upsertDatabaseEvents();
+      await EventCalendarUpdater.upsertDatabaseEvents(task);
       task.update(`Event calendar updated.`);
     } catch (error) {
       task.error(error);
