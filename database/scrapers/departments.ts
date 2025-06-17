@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
-import { StudiesType, mapToStudiesType } from "#enums/studies_type";
+import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
 import FieldOfStudyModel from "#models/field_of_study";
@@ -31,7 +31,8 @@ interface FieldOfStudyDraft {
   name: string;
   url: string | null;
   isEnglish: boolean;
-  studiesType: string;
+  is2ndDegree: boolean;
+  isLongCycleStudies: boolean;
   hasWeekendModeOption: boolean;
 }
 
@@ -150,13 +151,6 @@ export default class DepartmentsScraper extends BaseScraperModule {
           );
           return [];
         }
-        let studiesType = mapToStudiesType(data.studiesType);
-        if (studiesType === undefined) {
-          this.logger.warning(
-            `Unknown studies type received - received "${studiesType}" (without quotes). Replacing with default value.`,
-          );
-          studiesType = StudiesType.FirstDegree;
-        }
         return [
           {
             id: data.id,
@@ -164,7 +158,10 @@ export default class DepartmentsScraper extends BaseScraperModule {
             name: data.name,
             url: data.url,
             isEnglish: data.isEnglish,
-            studiesType,
+            studiesType: mapToStudiesType(
+              data.isLongCycleStudies,
+              data.is2ndDegree,
+            ),
             hasWeekendOption: data.hasWeekendModeOption,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
