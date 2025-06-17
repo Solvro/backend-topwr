@@ -30,6 +30,10 @@ export default class AcademicCalendarScraper extends BaseScraperModule {
   static description = "Import data about academic calendars and day swaps";
   static taskTitle = "Fetching academic calendar and day swaps data";
 
+  async shouldRun(): Promise<boolean> {
+    return await this.modelHasNoRows(AcademicCalendar);
+  }
+
   async run(): Promise<void> {
     const [academicCalendarResponse, daySwapsResponse] = await Promise.all([
       fetch("https://admin.topwr.solvro.pl/items/AcademicCalendarData"),

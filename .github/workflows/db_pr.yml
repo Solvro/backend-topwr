@@ -259,3 +259,104 @@ jobs:
           echo "::stop-commands::$STOP_MARKER"
           diff topwr1.sql topwr2.sql || (echo "Detected behaviour changes in existing migrations!" && exit 1)
           echo "::$STOP_MARKER::"
+
+  dry-runs:
+    # this job verifies that migrations don't modify the database on dry runs
+    name: Verify migrations on dry runs
+    runs-on: ubuntu-latest
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_DATABASE: postgres
+      PGPASSWORD: postgres
+      ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Check out the base branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Run existing AdonisJS migrations
+        run: node ace migration:run
+
+      - name: Check out the PR branch
+        uses: actions/checkout@v4
+
+      - name: Reinstall dependencies
+        run: npm ci
+
+      - name: Set up AdonisJS environment (again)
+        run: |
+          cp .env.example .env
+          node ace generate:key
+
+      - name: Take a database snapshot
+        run: |
+          PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > before.sql
+
+      - name: Dry-run new AdonisJS migrations
+        run: |
+          STOP_MARKER=`uuidgen`
+          echo "::stop-commands::$STOP_MARKER"
+          node ace migration:run --dry-run
+          echo "::$STOP_MARKER::"
+
+      - name: Diff the database
+        run: |
+          PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > after.sql
+          echo "Diffing schemas - any output below means failure!"
+          STOP_MARKER=`uuidgen`
+          echo "::stop-commands::$STOP_MARKER"
+          diff before.sql after.sql || (echo "Detected database changes during dry runs!" && exit 1)
+          echo "::$STOP_MARKER::"
+
+      - name: Run new AdonisJS migrations (for real this time)
+        run: node ace migration:run
+
+      - name: Take a database snapshot
+        run: |
+          PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > before.sql
+
+      - name: Rollback new migrations as a dry run
+        run: |
+          STOP_MARKER=`uuidgen`
+          echo "::stop-commands::$STOP_MARKER"
+          node ace migration:rollback --dry-run
+          echo "::$STOP_MARKER::"
+
+      - name: Diff the database
+        run: |
+          PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > after.sql
+          echo "Diffing schemas - any output below means failure!"
+          STOP_MARKER=`uuidgen`
+          echo "::stop-commands::$STOP_MARKER"
+          diff before.sql after.sql || (echo "Detected database changes during dry runs!" && exit 1)
+          echo "::$STOP_MARKER::"

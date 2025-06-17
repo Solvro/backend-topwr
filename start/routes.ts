@@ -24,6 +24,7 @@ const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
+const NewsfeedController = () => import("#controllers/newsfeed_controller");
 
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
@@ -94,6 +95,7 @@ router
       .prefix("/files");
 
     router.get("/about_us", [AboutUsController, "index"]);
+    
     router
       .group(() => {
         router.get("/", [EventCalendarController, "index"]);
@@ -103,6 +105,8 @@ router
         router.post("/", [EventCalendarController, "create"]);
       })
       .prefix("/events");
+    
+    router.get("/newsfeed/latest", [NewsfeedController, "latest"]);
     configureBaseRoutes();
   })
   .prefix("/api/v1");
