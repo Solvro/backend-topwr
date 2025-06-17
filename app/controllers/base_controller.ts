@@ -1,7 +1,7 @@
 import adonisString from "@poppinss/utils/string";
 import assert from "node:assert";
 
-import type { HttpContext } from "@adonisjs/core/http";
+import { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
 import router from "@adonisjs/core/services/router";
 import { Constructor } from "@adonisjs/core/types/container";
@@ -83,6 +83,26 @@ function smuggleScopes(model: LucidModel): Promise<SmuggledScopes> {
   );
 }
 
+export type PartialModel<T extends LucidModel> = Partial<
+  ModelAttributes<InstanceType<T>>
+>;
+
+export interface HookContext<T extends LucidModel> {
+  http: HttpContext;
+  model: T;
+  record: InstanceType<T>;
+  request: PartialModel<T>;
+}
+
+export type CreateHookContext<T extends LucidModel> = Omit<
+  HookContext<T>,
+  "record"
+>;
+export type DeleteHookContext<T extends LucidModel> = Omit<
+  HookContext<T>,
+  "request"
+>;
+
 export default abstract class BaseController<
   T extends LucidModel & Scopes<LucidModel>,
 > {
@@ -101,6 +121,51 @@ export default abstract class BaseController<
    */
   protected abstract readonly crudRelations: string[];
   protected abstract readonly model: T;
+
+  /**
+   * Apply extra checks to create requests
+   *
+   * This function will be called just before inserting data into the database.
+   * This is the place to ensure this object is actually mutable, or apply any last-minute modifications to the request.
+   * You may throw an error here to abort a request, modify & return a request to change it before committing, or return undefined to do nothing.
+   * @param ctx the hook context - contains the request.
+   * @returns a modified request or undefined
+   */
+  protected async storeHook(
+    ctx: CreateHookContext<T>,
+  ): Promise<PartialModel<T> | undefined | void> {
+    void ctx;
+    return undefined;
+  }
+
+  /**
+   * Apply extra checks to edit requests
+   *
+   * This function will be called just before applying any edits.
+   * This is the place to ensure this object is actually mutable, or apply any last-minute modifications to the request.
+   * You may throw an error here to abort a request, modify & return a request to change it before committing, or return undefined to do nothing.
+   * @param ctx the hook context - contains the request and the existing model instance
+   * @returns a modified request or undefined
+   */
+  protected async updateHook(
+    ctx: HookContext<T>,
+  ): Promise<PartialModel<T> | undefined | void> {
+    void ctx;
+    return undefined;
+  }
+
+  /**
+   * Apply extra checks to delete requests
+   *
+   * This function will be called just before applying any edits.
+   * This is the place to ensure this object is actually mutable, or apply any last-minute modifications to the request.
+   * You may throw an error here to abort a request, or return undefined to do nothing.
+   * @param ctx the hook context - contains the existing model instance
+   */
+  protected async destroyHook(ctx: DeleteHookContext<T>): Promise<void> {
+    void ctx;
+  }
+
   #modelCacheEntry?: AutogenCacheEntry;
 
   private get modelCacheEntry(): AutogenCacheEntry {
@@ -460,23 +525,29 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async store({ request, auth }: HttpContext): Promise<unknown> {
+  async store(httpCtx: HttpContext): Promise<unknown> {
+    const { request, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
     await this.selfValidate();
 
-    const result = await this.model
-      .create(
-        (await request.validateUsing(this.storeValidator)) as Partial<
-          ModelAttributes<InstanceType<T>>
-        >,
-      )
-      .addErrorContext({
-        message: "Failed to store object",
-        code: "E_DB_ERROR",
-        status: 500,
-      });
+    let toStore = (await request.validateUsing(
+      this.storeValidator,
+    )) as PartialModel<T>;
+
+    toStore =
+      (await this.storeHook({
+        http: httpCtx,
+        model: this.model,
+        request: toStore,
+      })) ?? toStore;
+
+    const result = await this.model.create(toStore).addErrorContext({
+      message: "Failed to store object",
+      code: "E_DB_ERROR",
+      status: 500,
+    });
 
     await result.refresh().addErrorContext({
       message: "Failed to fetch updated object",
@@ -495,7 +566,8 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async update({ request, auth }: HttpContext): Promise<unknown> {
+  async update(httpCtx: HttpContext): Promise<unknown> {
+    const { request, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
@@ -506,9 +578,9 @@ export default abstract class BaseController<
     } = (await request.validateUsing(this.pathIdValidator)) as {
       params: { id: string | number };
     };
-    const updates = (await request.validateUsing(
+    let updates = (await request.validateUsing(
       this.updateValidator,
-    )) as Partial<ModelAttributes<InstanceType<T>>>;
+    )) as PartialModel<T>;
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
     const row = await this.model
@@ -519,6 +591,14 @@ export default abstract class BaseController<
         () =>
           `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
+
+    updates =
+      (await this.updateHook({
+        http: httpCtx,
+        model: this.model,
+        record: row,
+        request: updates,
+      })) ?? updates;
 
     row.merge(updates);
     await row.save().addErrorContext({
@@ -543,7 +623,8 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async destroy({ request, auth }: HttpContext): Promise<unknown> {
+  async destroy(httpCtx: HttpContext): Promise<unknown> {
+    const { request, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
@@ -556,18 +637,43 @@ export default abstract class BaseController<
     };
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    const result = await this.model
-      .query()
-      .where(primaryColumnName, id)
-      .delete()
-      .limit(1)
-      .returning(primaryColumnName);
 
-    if (result.length === 0) {
-      throw new NotFoundException(
-        `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-        { code: "E_ROW_NOT_FOUND", cause: "Row not found" },
-      );
+    // smol opt: we know the base destroyHook does nothing, so just don't fetch the model if noone overwrote it
+    if (this.destroyHook !== BaseController.prototype.destroyHook) {
+      const record = await this.model
+        .query()
+        .where(primaryColumnName, id)
+        .firstOrFail()
+        .addErrorContext(
+          () =>
+            `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
+        );
+
+      await this.destroyHook({
+        http: httpCtx,
+        model: this.model,
+        record,
+      });
+
+      await record.delete().addErrorContext({
+        message: "Failed to delete object",
+        code: "E_DB_ERROR",
+        status: 500,
+      });
+    } else {
+      const result = await this.model
+        .query()
+        .where(primaryColumnName, id)
+        .delete()
+        .limit(1)
+        .returning(primaryColumnName);
+
+      if (result.length === 0) {
+        throw new NotFoundException(
+          `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
+          { code: "E_ROW_NOT_FOUND", cause: "Row not found" },
+        );
+      }
     }
 
     return {
