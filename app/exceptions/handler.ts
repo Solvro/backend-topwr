@@ -37,10 +37,14 @@ export default class HttpExceptionHandler extends ExceptionHandler {
   ) {
     const report = analyzeErrorStack(toIBaseError(error));
     if (!report.code.startsWith("E_")) {
-      logger.warn(
-        `Found error stack with a code that does not start with 'E_' ('${report.code}'). Replacing with 'E_UNEXPECTED_ERROR' in the response!`,
-      );
-      report.code = "E_UNEXPECTED_ERROR";
+      if (report.code.startsWith("ERR_")) {
+        report.code = `E_${report.code.substring(4)}`;
+      } else {
+        logger.warn(
+          `Found error stack with a code that does not start with 'E_' ('${report.code}'). Replacing with 'E_UNEXPECTED_ERROR' in the response!`,
+        );
+        report.code = "E_UNEXPECTED_ERROR";
+      }
     }
     const sensitive =
       ctx.extras?.sensitive ??
