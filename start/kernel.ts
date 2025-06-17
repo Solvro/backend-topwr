@@ -12,6 +12,7 @@ import server from "@adonisjs/core/services/server";
 
 // sneakily do a side-effect load of our Promise extension
 import "#exceptions/context";
+import "#validators/luxon_datetime";
 
 /**
  * The error handler is used to convert an exception
