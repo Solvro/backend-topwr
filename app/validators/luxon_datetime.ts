@@ -134,7 +134,7 @@ export class VineLuxonDateTime extends BaseLiteralType<
   DateTime<true>
 > {
   constructor(
-    options?: FieldOptions & { dateOpts?: DateTimeOptions },
+    options?: Partial<FieldOptions> & { dateOpts?: DateTimeOptions },
     validations?: Validation<unknown>[],
   ) {
     super(options, validations ?? [luxonDateTimeRule(options?.dateOpts ?? {})]);
@@ -251,9 +251,6 @@ export class VineLuxonDateTime extends BaseLiteralType<
 Vine.macro("luxonDateTime", function (dateOpts?: DateTimeOptions) {
   return new VineLuxonDateTime({
     dateOpts,
-    allowNull: false,
-    isOptional: false,
-    bail: false,
   });
 });
 
