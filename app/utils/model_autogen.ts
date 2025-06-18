@@ -327,21 +327,13 @@ const relationValidatorCache = new Map<string, RelationValidator>();
 const modelAutogenCache = new Map<LucidModel, AutogenCacheEntry>();
 
 export function relationValidator(relations: string[]): RelationValidator {
-  // check cache
-  const cacheKey = JSON.stringify(relations);
-  const cachedEntry = relationValidatorCache.get(cacheKey);
-  if (cachedEntry !== undefined) {
-    return cachedEntry;
-  }
-
-  // construct validator
-  const validator = vine.compile(
-    vine.object(
-      Object.fromEntries(
-        relations.map((rel) => [rel, vine.boolean().optional()]),
+  return relationValidatorCache.getOrInsertWith(JSON.stringify(relations), () =>
+    vine.compile(
+      vine.object(
+        Object.fromEntries(
+          relations.map((rel) => [rel, vine.boolean().optional()]),
+        ),
       ),
     ),
   );
-  relationValidatorCache.set(cacheKey, validator);
-  return validator;
 }
