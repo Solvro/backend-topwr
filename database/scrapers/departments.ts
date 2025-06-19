@@ -2,6 +2,7 @@ import { DateTime } from "luxon";
 import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
 import FieldOfStudyModel from "#models/field_of_study";
@@ -161,8 +162,10 @@ export default class DepartmentsScraper extends BaseScraperModule {
             name: data.name,
             url: data.url,
             isEnglish: data.isEnglish,
-            is2ndDegree: data.is2ndDegree,
-            semesterCount: data.isLongCycleStudies ? 12 : 7,
+            studiesType: mapToStudiesType(
+              data.isLongCycleStudies,
+              data.is2ndDegree,
+            ),
             hasWeekendOption: data.hasWeekendModeOption,
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
