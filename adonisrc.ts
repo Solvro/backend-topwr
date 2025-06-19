@@ -1,5 +1,9 @@
 import { defineConfig } from "@adonisjs/core/app";
 
+// sneakily do a side-effect load of our Promise extension
+import "#exceptions/context";
+import "#validators/luxon_datetime";
+
 export default defineConfig({
   /*
   |--------------------------------------------------------------------------

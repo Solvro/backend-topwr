@@ -36,4 +36,6 @@ export default class GuideAuthor extends BaseModel {
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
   static handleSortQuery = handleSortQuery();
+
+  serializeExtras = true;
 }

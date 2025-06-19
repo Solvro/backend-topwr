@@ -10,9 +10,6 @@
 import router from "@adonisjs/core/services/router";
 import server from "@adonisjs/core/services/server";
 
-// sneakily do a side-effect load of our Promise extension
-import "#exceptions/context";
-
 /**
  * The error handler is used to convert an exception
  * to a HTTP response.

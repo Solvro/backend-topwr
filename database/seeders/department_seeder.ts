@@ -1,6 +1,7 @@
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
 import { LinkType } from "#enums/link_type";
+import { StudiesType } from "#enums/studies_type";
 import Department from "#models/department";
 import DepartmentLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
@@ -64,36 +65,32 @@ export default class extends BaseSeeder {
         departmentId: 1,
         name: "Architektura",
         url: "https://rekrutacja.pwr.edu.pl/wyszukiwarka-kierunkow-studiow/architektura/",
-        semesterCount: 8,
+        studiesType: StudiesType.LongCycle,
         isEnglish: false,
-        is2ndDegree: false,
         hasWeekendOption: false,
       },
       {
         departmentId: 1,
         name: "Architektura w j. angielskim",
         url: "https://rekrutacja.pwr.edu.pl/wyszukiwarka-kierunkow-studiow/architektura-w-j-angielskim/",
-        semesterCount: 3,
+        studiesType: StudiesType.SecondDegree,
         isEnglish: true,
-        is2ndDegree: true,
         hasWeekendOption: false,
       },
       {
         departmentId: 2,
         name: "Budownictwo",
         url: "https://rekrutacja.pwr.edu.pl/wyszukiwarka-kierunkow-studiow/budownictwo/",
-        semesterCount: 5,
+        studiesType: StudiesType.FirstDegree,
         isEnglish: false,
-        is2ndDegree: false,
         hasWeekendOption: true,
       },
       {
         departmentId: 2,
         name: "Budownictwo",
         url: "https://rekrutacja.pwr.edu.pl/wyszukiwarka-kierunkow-studiow/budownictwo-2/",
-        semesterCount: 3,
+        studiesType: StudiesType.SecondDegree,
         isEnglish: false,
-        is2ndDegree: true,
         hasWeekendOption: true,
       },
     ]);

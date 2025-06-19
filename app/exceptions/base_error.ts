@@ -346,7 +346,7 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
     }
     currentError = currentError.cause;
   }
-  const toRemove = `file://${process.cwd()}`;
+  const cwd = process.cwd();
   return {
     message: topError.message,
     status: result.status ?? 500,
@@ -365,10 +365,12 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
           line
             // each stack trace line starts with "at", trim that
             .replace(/^at\s+/, "")
+            // strip the file:// protocol in file paths
+            .replace("file://", "")
             // cwd + node_modules => external dependency, trim out the path leaving the package name at the start
-            .replace(`${toRemove}/node_modules/`, "")
+            .replace(`${cwd}/node_modules/`, "")
             // replace cwd with . to make the path relative
-            .replace(toRemove, ".")
+            .replace(cwd, ".")
         );
       }) ?? [],
     extraResponseFields: result.extraResponseFields,
