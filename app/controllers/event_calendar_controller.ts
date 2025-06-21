@@ -1,3 +1,5 @@
+import { ModelAttributes } from "@adonisjs/lucid/types/model";
+
 import BaseController, {
   CreateHookContext,
   DeleteHookContext,
@@ -17,12 +19,7 @@ export default class EventCalendarController extends BaseController<
   protected async storeHook(
     ctx: CreateHookContext<typeof CalendarEvent>,
   ): Promise<PartialModel<typeof CalendarEvent> | void | undefined> {
-    const event = ctx.request as Partial<InstanceType<typeof CalendarEvent>>;
-    if (event.startTime === undefined || event.endTime === undefined) {
-      throw new BadRequestException(
-        "Malformed request. Start and end time missing",
-      );
-    }
+    const event = ctx.request as ModelAttributes<CalendarEvent>;
     if (event.endTime.diff(event.startTime).milliseconds <= 0) {
       throw new BadRequestException("End time must be after start time");
     }
@@ -32,7 +29,7 @@ export default class EventCalendarController extends BaseController<
   protected async updateHook(
     ctx: HookContext<typeof CalendarEvent>,
   ): Promise<PartialModel<typeof CalendarEvent> | void | undefined> {
-    const changes = ctx.request as Partial<InstanceType<typeof CalendarEvent>>;
+    const changes = ctx.request;
     const current = ctx.record;
     if (current.isGoogleEvent) {
       throw new BadRequestException("Cannot edit Google calendar events");

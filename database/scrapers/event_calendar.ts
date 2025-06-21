@@ -2,17 +2,18 @@ import { DateTime } from "luxon";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import CalendarEvent from "#models/calendar_event";
+import { ICSRoot, ICSValue, parseICS } from "#utils/ics";
 
 const FETCH_LIMIT_DAYS = 30;
 const CALENDAR_ID = "9ke30hbjjke60u5jbii42g2rpo@group.calendar.google.com";
-const FIELD_LABELS = [
-  "DTSTART",
-  "DTEND",
-  "UID",
-  "DESCRIPTION",
-  "LOCATION",
-  "SUMMARY",
-]; //do not reorder the labels - the order must match the .isc file order
+const FIELD_LABELS = {
+  startDate: "DTSTART",
+  endDate: "DTEND",
+  googleCalId: "UID",
+  desc: "DESCRIPTION",
+  location: "LOCATION",
+  name: "SUMMARY",
+};
 
 interface GoogleCalendarEventDto {
   googleCalId: string;
@@ -24,113 +25,136 @@ interface GoogleCalendarEventDto {
 }
 
 class CalendarParser {
-  private cursor: number;
+  private events: ICSValue[];
 
-  constructor(private calendarString: string) {
+  constructor(
+    private calendarString: string,
+    private task: TaskHandle,
+  ) {
     if (
       !this.calendarString.startsWith("BEGIN:VCALENDAR") ||
       !this.calendarString.trimEnd().endsWith("END:VCALENDAR")
     ) {
       throw new Error("Calendar invalid");
     }
-    this.cursor = calendarString.length - 16;
+    const calendarRoot = parseICS(calendarString, (message) =>
+      task.update(message),
+    ).VCALENDAR;
+    if (calendarRoot === undefined) {
+      throw new Error("Calendar invalid - missing calendar root");
+    }
+    const eventArray = (calendarRoot as ICSRoot).VEVENT;
+    if (eventArray === undefined || !Array.isArray(eventArray)) {
+      throw new Error("Calendar invalid - missing event array");
+    }
+    this.events = eventArray;
   }
 
-  public getLastEvent(task: TaskHandle): GoogleCalendarEventDto | null {
-    let event = this.extractLastEvent(task);
+  public getLastEvent(): GoogleCalendarEventDto | null {
+    let event = this.extractLastEvent();
     while (event === undefined) {
-      event = this.extractLastEvent(task);
+      event = this.extractLastEvent();
     }
     return event;
   }
 
   //null - none left, undefined - malformed event
-  private extractLastEvent(
-    task: TaskHandle,
-  ): GoogleCalendarEventDto | null | undefined {
-    const eventEnd = this.calendarString.lastIndexOf("END:VEVENT", this.cursor);
-    if (eventEnd === -1) {
+  private extractLastEvent(): GoogleCalendarEventDto | null | undefined {
+    if (this.events.length === 0) {
       return null;
     }
-    const eventBegin = this.calendarString.lastIndexOf(
-      "BEGIN:VEVENT",
-      eventEnd,
-    );
-    if (eventBegin === -1) {
+    const eventBlock = this.events.pop();
+    if (eventBlock === undefined) {
       return undefined;
     }
-    const eventBlock = this.calendarString.substring(eventBegin, eventEnd + 10);
-    this.cursor = eventBegin;
-    return CalendarParser.parseEvent(eventBlock, task);
-  }
-
-  private static parseEvent(
-    eventBlock: string,
-    task: TaskHandle,
-  ): GoogleCalendarEventDto | undefined {
-    let currentIndex = 0;
-    const labelValues: (string | null)[] = [];
-    for (const fieldLabel of FIELD_LABELS) {
-      const result = this.extractField(eventBlock, fieldLabel, currentIndex);
-      if (result === null) {
-        labelValues.push(null);
-      } else {
-        labelValues.push(result[0]);
-        currentIndex = result[1];
-      }
-    }
-    const startDate = labelValues[0];
-    const endDate = labelValues[1];
-    if (startDate === null || endDate === null) {
-      task.update("Invalid calendar event, missing date labels. Skipping...");
-      return undefined;
-    }
-    const googleCalId = labelValues[2];
-    if (googleCalId === null) {
-      task.update(
-        "Invalid calendar event, missing label GoogleCalId. Skipping...",
+    if (typeof eventBlock === "string" || Array.isArray(eventBlock)) {
+      this.task.update(
+        "Invalid calendar event - block is not an ICSObject. Skipping...",
       );
       return undefined;
     }
-    const description = labelValues[3];
-    const location = labelValues[4];
-    const name = labelValues[5];
-    if (name === null) {
-      task.update("Invalid calendar event, missing name. Skipping...");
+    return this.parseEvent(eventBlock);
+  }
+
+  private static assertValidDateTime(
+    dateValue: ICSValue | undefined,
+  ): DateTime<true> | null {
+    if (dateValue === undefined || Array.isArray(dateValue)) {
+      return null;
+    }
+    if (typeof dateValue === "string") {
+      //timestamp: dateValue = 20180424T00:13:21
+      const dateTime = DateTime.fromISO(dateValue);
+      if (dateTime.isValid) {
+        return dateTime;
+      }
+      return null;
+    }
+    const nestedDate = dateValue.VALUE; //full day date:  dateValue = { "VALUE": "DATE:20180421" }
+    if (
+      nestedDate === undefined ||
+      typeof nestedDate !== "string" ||
+      nestedDate.length !== 13
+    ) {
+      return null;
+    }
+    const dateTime = DateTime.fromISO(nestedDate.substring(5));
+    if (dateTime.isValid) {
+      return dateTime;
+    }
+    return null;
+  }
+
+  private static assertString(value: ICSValue | undefined): string | null {
+    if (value === undefined || typeof value !== "string") {
+      return null;
+    }
+    return value;
+  }
+
+  private parseEvent(eventBlock: ICSRoot): GoogleCalendarEventDto | undefined {
+    const startTime = CalendarParser.assertValidDateTime(
+      eventBlock[FIELD_LABELS.startDate],
+    );
+    const endTime = CalendarParser.assertValidDateTime(
+      eventBlock[FIELD_LABELS.endDate],
+    );
+    if (startTime === null || endTime === null) {
+      this.task.update(
+        `Invalid calendar event ${this.events.length + 1}, missing date labels. Skipping...`,
+      );
       return undefined;
     }
+    const googleCalId = CalendarParser.assertString(
+      eventBlock[FIELD_LABELS.googleCalId],
+    );
+    if (googleCalId === null) {
+      this.task.update(
+        `Invalid calendar event ${this.events.length + 1}, missing googleCalId. Skipping...`,
+      );
+      return undefined;
+    }
+    const name = CalendarParser.assertString(eventBlock[FIELD_LABELS.name]);
+    if (name === null) {
+      this.task.update(
+        `Invalid calendar event ${this.events.length + 1}, missing name. Skipping...`,
+      );
+      return undefined;
+    }
+    const description = CalendarParser.assertString(
+      eventBlock[FIELD_LABELS.desc],
+    );
+    const location = CalendarParser.assertString(
+      eventBlock[FIELD_LABELS.location],
+    );
     return {
       googleCalId,
-      startTime: this.extractDateTime(startDate),
-      endTime: this.extractDateTime(endDate),
+      startTime,
+      endTime,
       name,
       location,
       description,
     };
-  }
-
-  private static extractDateTime(dateValue: string): DateTime {
-    if (dateValue.includes("VALUE=DATE:")) {
-      dateValue = dateValue.substring(11);
-    }
-    return DateTime.fromISO(dateValue);
-  }
-
-  private static extractField(
-    eventBlock: string,
-    fieldName: string,
-    startFrom: number,
-  ): [string, number] | null {
-    const fieldIndex = eventBlock.indexOf(fieldName, startFrom);
-    if (fieldIndex === -1) {
-      return null;
-    }
-    const startIndex = fieldIndex + fieldName.length + 1;
-    const endIndex = eventBlock.indexOf("\n", startIndex);
-    if (endIndex === -1) {
-      return [eventBlock.substring(startIndex).trim(), eventBlock.length];
-    }
-    return [eventBlock.substring(startIndex, endIndex).trim(), endIndex + 1];
   }
 }
 
@@ -141,29 +165,25 @@ export default class EventCalendarUpdater extends BaseScraperModule {
   static taskTitle =
     "Update event calendar with latest events from Student Council Google calendar";
 
-  private static async fetchGoogleEvents(): Promise<string> {
-    const calendarResponse = await fetch(
+  private async fetchGoogleEvents(): Promise<string> {
+    const response = await this.fetchAndCheckStatus(
       `https://calendar.google.com/calendar/ical/${CALENDAR_ID}/public/basic.ics`,
+      "Event calendar ICS file",
     );
-    if (!calendarResponse.ok) {
-      throw new Error(
-        `Failed to fetch calendar events - got response status code ${calendarResponse.status}`,
-      );
-    }
-    return calendarResponse.text();
+    return response.text();
   }
 
-  private static async getEventsInTimeframe(
+  private async getEventsInTimeframe(
     task: TaskHandle,
   ): Promise<GoogleCalendarEventDto[]> {
-    const calendarString = await EventCalendarUpdater.fetchGoogleEvents();
-    const parser: CalendarParser = new CalendarParser(calendarString);
+    const calendarString = await this.fetchGoogleEvents();
+    const parser: CalendarParser = new CalendarParser(calendarString, task);
     const bound = DateTime.now().minus({ days: FETCH_LIMIT_DAYS });
     const events: GoogleCalendarEventDto[] = [];
-    let event = parser.getLastEvent(task);
+    let event = parser.getLastEvent();
     while (event !== null && event.startTime >= bound) {
       events.push(event);
-      event = parser.getLastEvent(task);
+      event = parser.getLastEvent();
     }
     task.update(
       `Total of ${events.length} events found in the given timeframe (${FETCH_LIMIT_DAYS} days).`,
@@ -171,8 +191,8 @@ export default class EventCalendarUpdater extends BaseScraperModule {
     return events;
   }
 
-  private static async upsertDatabaseEvents(task: TaskHandle) {
-    const newEvents = await EventCalendarUpdater.getEventsInTimeframe(task);
+  private async upsertDatabaseEvents(task: TaskHandle) {
+    const newEvents = await this.getEventsInTimeframe(task);
     for (const event of newEvents) {
       const existingEvent = await CalendarEvent.findBy(
         "google_cal_id",
@@ -204,7 +224,7 @@ export default class EventCalendarUpdater extends BaseScraperModule {
   async run(task: TaskHandle): Promise<void> {
     task.update("Updating event calendar.");
     await EventCalendarUpdater.removeOutdatedEvents();
-    await EventCalendarUpdater.upsertDatabaseEvents(task);
+    await this.upsertDatabaseEvents(task);
     task.update(`Event calendar updated.`);
   }
 }
