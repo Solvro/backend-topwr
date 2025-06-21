@@ -196,19 +196,15 @@ export default class EventCalendarUpdater extends BaseScraperModule {
   private static async removeOutdatedEvents() {
     const bound = DateTime.now().minus({ days: FETCH_LIMIT_DAYS });
     await CalendarEvent.query()
-      .where("start_time", "<", bound.toISO())
+      .where("end_time", "<", bound.toISO())
       .whereNotNull("google_cal_id")
       .delete();
   }
 
   async run(task: TaskHandle): Promise<void> {
-    try {
-      task.update("Updating event calendar.");
-      await EventCalendarUpdater.removeOutdatedEvents();
-      await EventCalendarUpdater.upsertDatabaseEvents(task);
-      task.update(`Event calendar updated.`);
-    } catch (error) {
-      task.error(error);
-    }
+    task.update("Updating event calendar.");
+    await EventCalendarUpdater.removeOutdatedEvents();
+    await EventCalendarUpdater.upsertDatabaseEvents(task);
+    task.update(`Event calendar updated.`);
   }
 }
