@@ -1,0 +1,230 @@
+import { DateTime } from "luxon";
+
+import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import CalendarEvent from "#models/calendar_event";
+import { ICSRoot, ICSValue, parseICS } from "#utils/ics";
+
+const FETCH_LIMIT_DAYS = 30;
+const CALENDAR_ID = "9ke30hbjjke60u5jbii42g2rpo@group.calendar.google.com";
+const FIELD_LABELS = {
+  startDate: "DTSTART",
+  endDate: "DTEND",
+  googleCalId: "UID",
+  desc: "DESCRIPTION",
+  location: "LOCATION",
+  name: "SUMMARY",
+};
+
+interface GoogleCalendarEventDto {
+  googleCalId: string;
+  startTime: DateTime<true>;
+  endTime: DateTime<true>;
+  name: string;
+  location: string | null;
+  description: string | null;
+}
+
+class CalendarParser {
+  private events: ICSValue[];
+
+  constructor(
+    private calendarString: string,
+    private task: TaskHandle,
+  ) {
+    if (
+      !this.calendarString.startsWith("BEGIN:VCALENDAR") ||
+      !this.calendarString.trimEnd().endsWith("END:VCALENDAR")
+    ) {
+      throw new Error("Calendar invalid");
+    }
+    const calendarRoot = parseICS(calendarString, (message) =>
+      task.update(message),
+    ).VCALENDAR;
+    if (calendarRoot === undefined) {
+      throw new Error("Calendar invalid - missing calendar root");
+    }
+    const eventArray = (calendarRoot as ICSRoot).VEVENT;
+    if (eventArray === undefined || !Array.isArray(eventArray)) {
+      throw new Error("Calendar invalid - missing event array");
+    }
+    this.events = eventArray;
+  }
+
+  public getLastEvent(): GoogleCalendarEventDto | null {
+    let event = this.extractLastEvent();
+    while (event === undefined) {
+      event = this.extractLastEvent();
+    }
+    return event;
+  }
+
+  //null - none left, undefined - malformed event
+  private extractLastEvent(): GoogleCalendarEventDto | null | undefined {
+    if (this.events.length === 0) {
+      return null;
+    }
+    const eventBlock = this.events.pop();
+    if (eventBlock === undefined) {
+      return undefined;
+    }
+    if (typeof eventBlock === "string" || Array.isArray(eventBlock)) {
+      this.task.update(
+        "Invalid calendar event - block is not an ICSObject. Skipping...",
+      );
+      return undefined;
+    }
+    return this.parseEvent(eventBlock);
+  }
+
+  private static assertValidDateTime(
+    dateValue: ICSValue | undefined,
+  ): DateTime<true> | null {
+    if (dateValue === undefined || Array.isArray(dateValue)) {
+      return null;
+    }
+    if (typeof dateValue === "string") {
+      //timestamp: dateValue = 20180424T00:13:21
+      const dateTime = DateTime.fromISO(dateValue);
+      if (dateTime.isValid) {
+        return dateTime;
+      }
+      return null;
+    }
+    const nestedDate = dateValue.VALUE; //full day date:  dateValue = { "VALUE": "DATE:20180421" }
+    if (
+      nestedDate === undefined ||
+      typeof nestedDate !== "string" ||
+      nestedDate.length !== 13
+    ) {
+      return null;
+    }
+    const dateTime = DateTime.fromISO(nestedDate.substring(5));
+    if (dateTime.isValid) {
+      return dateTime;
+    }
+    return null;
+  }
+
+  private static assertString(value: ICSValue | undefined): string | null {
+    if (value === undefined || typeof value !== "string") {
+      return null;
+    }
+    return value;
+  }
+
+  private parseEvent(eventBlock: ICSRoot): GoogleCalendarEventDto | undefined {
+    const startTime = CalendarParser.assertValidDateTime(
+      eventBlock[FIELD_LABELS.startDate],
+    );
+    const endTime = CalendarParser.assertValidDateTime(
+      eventBlock[FIELD_LABELS.endDate],
+    );
+    if (startTime === null || endTime === null) {
+      this.task.update(
+        `Invalid calendar event ${this.events.length + 1}, missing date labels. Skipping...`,
+      );
+      return undefined;
+    }
+    const googleCalId = CalendarParser.assertString(
+      eventBlock[FIELD_LABELS.googleCalId],
+    );
+    if (googleCalId === null) {
+      this.task.update(
+        `Invalid calendar event ${this.events.length + 1}, missing googleCalId. Skipping...`,
+      );
+      return undefined;
+    }
+    const name = CalendarParser.assertString(eventBlock[FIELD_LABELS.name]);
+    if (name === null) {
+      this.task.update(
+        `Invalid calendar event ${this.events.length + 1}, missing name. Skipping...`,
+      );
+      return undefined;
+    }
+    const description = CalendarParser.assertString(
+      eventBlock[FIELD_LABELS.desc],
+    );
+    const location = CalendarParser.assertString(
+      eventBlock[FIELD_LABELS.location],
+    );
+    return {
+      googleCalId,
+      startTime,
+      endTime,
+      name,
+      location,
+      description,
+    };
+  }
+}
+
+export default class EventCalendarUpdater extends BaseScraperModule {
+  static name = "Event calendar";
+  static description =
+    "Update and push to the database events from the Student Council Google calendar as Google events (non-editable, removable)";
+  static taskTitle =
+    "Update event calendar with latest events from Student Council Google calendar";
+
+  private async fetchGoogleEvents(): Promise<string> {
+    const response = await this.fetchAndCheckStatus(
+      `https://calendar.google.com/calendar/ical/${CALENDAR_ID}/public/basic.ics`,
+      "Event calendar ICS file",
+    );
+    return response.text();
+  }
+
+  private async getEventsInTimeframe(
+    task: TaskHandle,
+  ): Promise<GoogleCalendarEventDto[]> {
+    const calendarString = await this.fetchGoogleEvents();
+    const parser: CalendarParser = new CalendarParser(calendarString, task);
+    const bound = DateTime.now().minus({ days: FETCH_LIMIT_DAYS });
+    const events: GoogleCalendarEventDto[] = [];
+    let event = parser.getLastEvent();
+    while (event !== null && event.startTime >= bound) {
+      events.push(event);
+      event = parser.getLastEvent();
+    }
+    task.update(
+      `Total of ${events.length} events found in the given timeframe (${FETCH_LIMIT_DAYS} days).`,
+    );
+    return events;
+  }
+
+  private async upsertDatabaseEvents(task: TaskHandle) {
+    const newEvents = await this.getEventsInTimeframe(task);
+    for (const event of newEvents) {
+      const existingEvent = await CalendarEvent.findBy(
+        "google_cal_id",
+        event.googleCalId,
+      );
+      if (existingEvent !== null) {
+        existingEvent.startTime = event.startTime;
+        existingEvent.endTime = event.endTime;
+        existingEvent.name = event.name;
+        existingEvent.location = event.location;
+        existingEvent.description = event.description;
+        await existingEvent.save();
+        task.update(`Updated event ${event.name}`);
+      } else {
+        await CalendarEvent.create({ ...event });
+        task.update(`Added new event ${event.name}`);
+      }
+    }
+  }
+
+  private static async removeOutdatedEvents() {
+    const bound = DateTime.now().minus({ days: FETCH_LIMIT_DAYS });
+    await CalendarEvent.query()
+      .where("end_time", "<", bound.toISO())
+      .whereNotNull("google_cal_id")
+      .delete();
+  }
+
+  async run(task: TaskHandle): Promise<void> {
+    task.update("Updating event calendar.");
+    await EventCalendarUpdater.removeOutdatedEvents();
+    await this.upsertDatabaseEvents(task);
+    task.update(`Event calendar updated.`);
+  }
+}

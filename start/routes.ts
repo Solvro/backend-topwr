@@ -54,6 +54,7 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "student_organizations",
   "version_screenshots",
   "versions",
+  "event_calendar",
 ]);
 
 router.get("/", async () => {
