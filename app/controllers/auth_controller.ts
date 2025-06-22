@@ -1,5 +1,3 @@
-import assert from "node:assert";
-
 import { HttpContext } from "@adonisjs/core/http";
 
 import User from "#models/user";
@@ -7,8 +5,7 @@ import { loginValidator } from "#validators/auth";
 
 export default class AuthController {
   async login({ request, auth }: HttpContext) {
-    const { email, password, rememberMe } =
-      await request.validateUsing(loginValidator);
+    const { email, password } = await request.validateUsing(loginValidator);
 
     const user = await User.verifyCredentials(email, password);
 
@@ -24,7 +21,7 @@ export default class AuthController {
     return auth.getUserOrFail();
   }
 
-  async logout({ auth }: HttpContext) {
+  async logout() {
     // Cant invalidate jwt, maybe do sth  later
     // await auth.use().invalidateToken()
     return { success: true, message: "Logged out" };

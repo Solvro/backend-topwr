@@ -28,7 +28,12 @@ const authConfig = defineConfig({
       }),
     }),
     jwt: (ctx) => {
-      return new JwtGuard(ctx, userProvider, jwtConfig);
+      return new JwtGuard(
+        ctx,
+        // @ts-expect-error compatibility with the JwtGuard
+        userProvider,
+        jwtConfig,
+      );
     },
   },
 });

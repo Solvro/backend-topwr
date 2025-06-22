@@ -4,9 +4,9 @@ import { errors, symbols } from "@adonisjs/auth";
 import { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
 import type { HttpContext } from "@adonisjs/core/http";
 
-export type JwtGuardOptions = {
+export interface JwtGuardOptions {
   secret: string;
-};
+}
 
 /**
  * The bridge between the User provider and the
@@ -74,19 +74,19 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   /**
    * A unique name for the guard driver
    */
-  driverName: "jwt" = "jwt";
+  driverName = "jwt" as const;
 
   /**
    * A flag to know if the authentication was an attempt
    * during the current HTTP request
    */
-  authenticationAttempted: boolean = false;
+  authenticationAttempted = false;
 
   /**
    * A boolean to know if the current request has
    * been authenticated
    */
-  isAuthenticated: boolean = false;
+  isAuthenticated = false;
 
   /**
    * Reference to the currently authenticated user
@@ -136,7 +136,8 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
      * Ensure the auth header exists
      */
     const authHeader = this.#ctx.request.header("authorization");
-    if (!authHeader) {
+    if (authHeader === undefined) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       });
@@ -147,6 +148,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
      */
     const [, token] = authHeader.split("Bearer ");
     if (!token) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       });
@@ -157,6 +159,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
      */
     const payload = jwt.verify(token, this.#options.secret);
     if (typeof payload !== "object" || !("userId" in payload)) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       });
@@ -165,8 +168,10 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     /**
      * Fetch the user by user ID and save a reference to it
      */
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const providerUser = await this.#userProvider.findById(payload.userId);
-    if (!providerUser) {
+    if (providerUser === null) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       });
@@ -192,7 +197,9 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
    * Returns the authenticated user or throws an error
    */
   getUserOrFail(): UserProvider[typeof symbols.PROVIDER_REAL_USER] {
+    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
     if (!this.user) {
+      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       });
@@ -208,6 +215,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   async authenticateAsClient(
     user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
   ): Promise<AuthClientResponse> {
+    // @ts-ignore
     const token = await this.generate(user);
     return {
       headers: {
