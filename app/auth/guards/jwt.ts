@@ -96,7 +96,12 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   /**
    * Generate a JWT token for a given user.
    */
-  async generate(user: UserProvider[typeof symbols.PROVIDER_REAL_USER]) {
+  async generate(
+    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
+    p0: {
+      properties: { name: string | null; email: string };
+    },
+  ) {
     const providerUser = await this.#userProvider.createUserForGuard(user);
     const token = jwt.sign(
       { userId: providerUser.getId() },
@@ -106,6 +111,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     return {
       type: "bearer",
       token,
+      payload: p0.properties,
     };
   }
 

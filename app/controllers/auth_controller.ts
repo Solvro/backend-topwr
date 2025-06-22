@@ -12,7 +12,12 @@ export default class AuthController {
 
     const user = await User.verifyCredentials(email, password);
 
-    return await auth.use("jwt").generate(user);
+    return await auth.use("jwt").generate(user, {
+      properties: {
+        name: user.fullName,
+        email: user.email,
+      },
+    });
   }
 
   async me({ auth }: HttpContext) {
