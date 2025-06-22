@@ -100,7 +100,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
     p0: {
       properties: { name: string | null; email: string };
-    },
+    } | null,
   ) {
     const providerUser = await this.#userProvider.createUserForGuard(user);
     const token = jwt.sign(
@@ -111,7 +111,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     return {
       type: "bearer",
       token,
-      payload: p0.properties,
+      payload: p0?.properties,
     };
   }
 
@@ -215,8 +215,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   async authenticateAsClient(
     user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
   ): Promise<AuthClientResponse> {
-    // @ts-expect-error useleess
-    const token = await this.generate(user);
+    const token = await this.generate(user, null);
     return {
       headers: {
         authorization: `Bearer ${token.token}`,
