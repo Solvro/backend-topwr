@@ -215,7 +215,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   async authenticateAsClient(
     user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
   ): Promise<AuthClientResponse> {
-    // @ts-ignore
+    // @ts-expect-error useleess
     const token = await this.generate(user);
     return {
       headers: {
