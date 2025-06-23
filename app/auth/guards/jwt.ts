@@ -96,22 +96,21 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   /**
    * Generate a JWT token for a given user.
    */
-  async generate(
-    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
-    p0: {
-      properties: { name: string | null; email: string };
-    } | null,
-  ) {
+  async generate(user: UserProvider[typeof symbols.PROVIDER_REAL_USER]) {
     const providerUser = await this.#userProvider.createUserForGuard(user);
+    const { name, email, role } = user as {
+      name?: string;
+      email?: string;
+      role?: string;
+    };
     const token = jwt.sign(
-      { userId: providerUser.getId() },
+      { userId: providerUser.getId(), name, email, role },
       this.#options.secret,
     );
 
     return {
       type: "bearer",
       token,
-      payload: p0?.properties,
     };
   }
 
@@ -210,7 +209,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   async authenticateAsClient(
     user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
   ): Promise<AuthClientResponse> {
-    const token = await this.generate(user, null);
+    const token = await this.generate(user);
     return {
       headers: {
         authorization: `Bearer ${token.token}`,
