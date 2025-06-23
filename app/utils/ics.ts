@@ -2,7 +2,7 @@ import { zip } from "@solvro/utils/arrays";
 import assert from "node:assert";
 
 // eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- ts gets angy otherwise
-interface ICSObject {
+export interface ICSObject {
   [K: string]: ICSValue | undefined;
 }
 export type ICSValue = string | ICSObject | ICSObject[];
