@@ -7,9 +7,10 @@ import type {
   InferAuthenticators,
 } from "@adonisjs/auth/types";
 
+import User from "#models/user";
 import env from "#start/env";
 
-import { JwtGuard } from "../app/auth/guards/jwt.js";
+import { JwtGuard, JwtUserProviderContract } from "../app/auth/guards/jwt.js";
 
 const jwtConfig = {
   secret: env.get("APP_KEY"),
@@ -30,8 +31,7 @@ const authConfig = defineConfig({
     jwt: (ctx) => {
       return new JwtGuard(
         ctx,
-        // @ts-expect-error compatibility with the JwtGuard
-        userProvider,
+        userProvider as unknown as JwtUserProviderContract<typeof User>,
         jwtConfig,
       );
     },

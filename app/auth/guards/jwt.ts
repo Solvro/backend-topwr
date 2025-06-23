@@ -137,10 +137,9 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
      */
     const authHeader = this.#ctx.request.header("authorization");
     if (authHeader === undefined) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
-      });
+      }) as Error;
     }
 
     /**
@@ -148,10 +147,9 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
      */
     const [, token] = authHeader.split("Bearer ");
     if (!token) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
-      });
+      }) as Error;
     }
 
     /**
@@ -159,22 +157,21 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
      */
     const payload = jwt.verify(token, this.#options.secret);
     if (typeof payload !== "object" || !("userId" in payload)) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
-      });
+      }) as Error;
     }
 
     /**
      * Fetch the user by user ID and save a reference to it
      */
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    const providerUser = await this.#userProvider.findById(payload.userId);
+    const providerUser = await this.#userProvider.findById(
+      payload.userId as string | number | bigint,
+    );
     if (providerUser === null) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
-      });
+      }) as Error;
     }
 
     this.user = providerUser.getOriginal();
@@ -197,12 +194,10 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
    * Returns the authenticated user or throws an error
    */
   getUserOrFail(): UserProvider[typeof symbols.PROVIDER_REAL_USER] {
-    // eslint-disable-next-line @typescript-eslint/strict-boolean-expressions
-    if (!this.user) {
-      // eslint-disable-next-line @typescript-eslint/only-throw-error
+    if (this.user === undefined) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
-      });
+      }) as Error;
     }
 
     return this.user;
@@ -210,7 +205,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
 
   /**
    * This method is called by Japa during testing when "loginAs"
-   * method is used to login the user.
+   * method is used to log in the user.
    */
   async authenticateAsClient(
     user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
