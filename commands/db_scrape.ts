@@ -216,6 +216,9 @@ export default class DbScrape extends BaseCommand {
   declare modules: string[] | undefined;
 
   async run() {
+    // just exit with error by default
+    this.exitCode = 1;
+
     this.logger.info("Loading modules...");
     const modules = await this.loadModules();
 
