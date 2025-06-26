@@ -181,6 +181,17 @@ function isScraperModule(module: unknown): module is ScraperModuleClass {
   );
 }
 
+function trimModuleExtension(filename: string): string {
+  for (const ext of LOADABLE_EXTENSIONS) {
+    if (!filename.endsWith(ext)) {
+      continue;
+    }
+    filename = filename.substring(0, filename.length - ext.length);
+    break;
+  }
+  return filename;
+}
+
 export default class DbScrape extends BaseCommand {
   static commandName = "db:scrape";
   static description =
@@ -249,10 +260,17 @@ export default class DbScrape extends BaseCommand {
     } else if (this.modules !== undefined) {
       selectedModules = [];
       for (const name of this.modules) {
+        const trimmedName = trimModuleExtension(name);
         let module = modules[name] as ScraperModuleEntry | undefined;
         module ??= Object.entries(modules).find(
-          ([_, entry]) => entry.file === name,
+          ([_, entry]) =>
+            // basically: compare unmodified name if provided name had no valid extension, otherwise trim the ext before comparing
+            trimmedName ===
+            (name === trimmedName
+              ? entry.file
+              : trimModuleExtension(entry.file)),
         )?.[1];
+
         if (module === undefined) {
           this.logger.error(`Could not find the "${name}" module`);
           return;
