@@ -1,5 +1,4 @@
 import { HttpContext } from "@adonisjs/core/http";
-import db from "@adonisjs/lucid/services/db";
 
 import CacheReferenceNumber from "#models/cache_reference_number";
 
@@ -17,15 +16,6 @@ export default class CacheReferenceNumberController {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await db.transaction(
-      async (trx) => {
-        const crn = await CacheReferenceNumber.query({
-          client: trx,
-        }).firstOrFail();
-        crn.referenceNumber++;
-        await crn.save();
-      },
-      { isolationLevel: "read committed" },
-    );
+    await CacheReferenceNumber.query().increment("reference_number", 1);
   }
 }
