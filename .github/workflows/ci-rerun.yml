@@ -1,0 +1,128 @@
+name: Rerun CI workflow
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  rerun-ci:
+    if: |
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/rerun-ci-please')
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Trigger CI workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.issue.number;
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+            const ref = pullRequest.head.ref;
+            const sha = pullRequest.head.sha;
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: sha,
+              state: 'pending',
+              context: 'CI (re-run)',
+              description: 'CI invoked again'
+            });
+            const result = await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: "ci.yml",
+              ref: ref,
+              inputs: {
+                pr: prNumber.toString()
+              }
+            });
+
+      - name: Wait for and check workflow status
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.issue.number
+            });
+            const ref = pullRequest.head.ref;
+            const sha = pullRequest.head.sha;
+            const currentTime = new Date().getTime();
+            const lowerBound = currentTime - (15 * 1000); //workflow started no sooner than 15 seconds ago
+            const upperBound = currentTime + (5 * 60 * 1000); //workflow started no later than 5 minutes from now
+            const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            //checks workflow status for 5 minutes (10 * 30 sec)
+            async function checkWorkflowStatus() {
+              console.log('Checking workflow status');
+              for (let i = 0; i < 10; i++) {
+                const { data: runs } = await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: 'ci.yml',
+                  branch: ref,
+                  status: 'completed'
+                });
+                console.log(`Found ${runs.total_count} completed CI workflows for ${ref}`);
+                const relevantRuns = runs.workflow_runs.filter(run => {
+                    const runCreatedTime = new Date(run.created_at).getTime();
+                    return (lowerBound < runCreatedTime) && (runCreatedTime < upperBound);
+                });
+                console.log(`Found ${relevantRuns.length} run in the correct timeframe`);
+                if (relevantRuns.length > 0) {
+                  relevantRuns.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                  const run = relevantRuns[0];
+                  //newest workflow that has started in the given timeframe
+                  console.log(`Using a completed workflow run: ${run.html_url}`);
+                  let state = 'success';
+                  let desc = 'CI re-run succeeded';
+                  if(run.conclusion !== 'success') {
+                    state = 'failure';
+                    desc = 'CI re-run failed';
+                  }
+                  await github.rest.repos.createCommitStatus({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    sha: sha,
+                    state: state,
+                    context: 'CI (re-run)',
+                    description: desc,
+                    target_url: run.html_url
+                  });
+                  console.log(`Updated status to: ${state}`);
+                  return true;
+                }
+
+                console.log(`No completed workflow run found yet. Waiting... (attempt ${i+1}/10)`);
+                await wait(30000); // 30 seconds
+              }
+
+              //timeout reached
+              console.log("Timeout reached while waiting for workflow completion");
+              await github.rest.repos.createCommitStatus({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                sha: sha,
+                state: 'error',
+                context: 'CI (re-run)',
+                description: 'Timed out waiting for CI re-run to complete'
+              });
+              return false;
+            }
+            return await checkWorkflowStatus();
+        env:
+          SHA: ${{ steps.trigger-workflow.outputs.sha }}
+          PR_NUMBER: ${{ steps.trigger-workflow.outputs.prNumber }}
+          REF: ${{ steps.trigger-workflow.outputs.ref }}
