@@ -1,0 +1,63 @@
+name: Apply quick fixes to the code
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  applyfixes:
+    if: |
+      github.event.issue.pull_request != null &&
+      contains(github.event.comment.body, '/quickfix') &&
+      (github.event.comment.author_association == 'COLLABORATOR' ||
+       github.event.comment.author_association == 'MEMBER' ||
+      github.event.comment.user.login == github.event.issue.user.login)
+    # is a collaborator, member or PR (issue in API) author
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Get PR context
+        id: pr
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prUrl = context.payload.issue.pull_request.url;
+            const pr = await github.request(prUrl);
+            core.setOutput('headRef', pr.data.head.ref);
+            core.setOutput('headRepo', pr.data.head.repo.full_name);
+
+      - name: Checkout with PR context
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.pr.outputs.headRepo }}
+          ref: ${{ steps.pr.outputs.headRef }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Fix with lint
+        run: npm run lint:fix
+
+      - name: Fix with Prettier
+        run: npm run format
+
+      - name: Push changes if any made
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add .
+          git diff --quiet && git diff --staged --quiet || (
+            git commit -m "fix: /quickfix command"
+            git push origin HEAD:${{ steps.pr.outputs.headRef }}
+          )

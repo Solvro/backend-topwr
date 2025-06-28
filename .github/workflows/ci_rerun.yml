@@ -122,7 +122,3 @@ jobs:
               return false;
             }
             return await checkWorkflowStatus();
-        env:
-          SHA: ${{ steps.trigger-workflow.outputs.sha }}
-          PR_NUMBER: ${{ steps.trigger-workflow.outputs.prNumber }}
-          REF: ${{ steps.trigger-workflow.outputs.ref }}

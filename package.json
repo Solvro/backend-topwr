@@ -33,6 +33,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "prepare": "husky || true",
     "prettiercheck": "prettier --check .",
     "start": "node bin/server.js",
