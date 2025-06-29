@@ -53,11 +53,12 @@ jobs:
         run: npm run format
 
       - name: Push changes if any made
+        env:
+          HEAD_REF: ${{ steps.pr.outputs.headRef }}
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add .
-          HEAD_REF=${{ steps.pr.outputs.headRef }}
           git diff --quiet && git diff --staged --quiet || (
             git commit -m "fix: /quickfix command"
             git push origin HEAD:$HEAD_REF
