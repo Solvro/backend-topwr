@@ -1,4 +1,4 @@
-name: Apply quick fixes to the code
+name: Pull request commands
 
 on:
   issue_comment:
@@ -6,6 +6,7 @@ on:
 
 jobs:
   applyfixes:
+    name: Apply quick fixes
     if: |
       github.event.issue.pull_request != null &&
       contains(github.event.comment.body, '/quickfix') &&
