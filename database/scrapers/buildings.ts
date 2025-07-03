@@ -1,8 +1,13 @@
-import { DateTime } from "luxon";
 import * as fs from "node:fs/promises";
 import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+  isValidDataResponse,
+  resolveDate,
+} from "#commands/db_scrape";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Building from "#models/building";
 import Campus from "#models/campus";
@@ -13,10 +18,6 @@ const buildingsPath = "https://admin.topwr.solvro.pl/items/Buildings/";
 const assetsPath = "https://admin.topwr.solvro.pl/assets/";
 const filesMetaPath = (id: string) =>
   `https://admin.topwr.solvro.pl/files/${id}?fields=filename_disk`;
-
-interface SourceResponse<T> {
-  data: T[];
-}
 
 interface BuildingDraft {
   id: number;
@@ -173,22 +174,6 @@ export default class BuildingsScraper extends BaseScraperModule {
       throw new Error(`Failed to fetch extension for ${file}`, { cause: e });
     }
   }
-}
-
-function resolveDate(dateString: string): DateTime<true> {
-  const date = DateTime.fromISO(dateString);
-  return date.isValid ? date : DateTime.now();
-}
-
-function isValidDataResponse<T>(
-  response: unknown,
-): response is SourceResponse<T> {
-  return (
-    typeof response === "object" &&
-    response !== null &&
-    "data" in response &&
-    Array.isArray(response.data)
-  );
 }
 
 const isValidCampusesData = (

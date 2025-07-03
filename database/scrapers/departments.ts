@@ -1,17 +1,17 @@
 import { DateTime } from "luxon";
 import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
 import FieldOfStudyModel from "#models/field_of_study";
 import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
-
-interface SourceResponse<T> {
-  data: T[];
-}
 
 interface DepartmentsDraft {
   id: number;
