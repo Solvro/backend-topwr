@@ -18,9 +18,11 @@ export enum LinkType {
   Twitch = "twitch",
 }
 
-export function stringToLinkType(value: string): LinkType | undefined {
-  return Object.values(LinkType).find(
-    (enumValue) => enumValue.toString() === value,
+export function stringToLinkType(value: string): LinkType {
+  return (
+    Object.values(LinkType).find(
+      (enumValue) => enumValue.toString() === value,
+    ) ?? LinkType.Default
   );
 }
 
