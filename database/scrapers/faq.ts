@@ -1,5 +1,4 @@
 import { DateTime } from "luxon";
-import { Readable } from "node:stream";
 
 import {
   BaseScraperModule,
@@ -8,7 +7,6 @@ import {
 } from "#commands/db_scrape";
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
-import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
 
 interface GuideArticleOld {
@@ -38,66 +36,11 @@ interface PivotTable {
   sort: number | null;
 }
 
-interface ImageMetadata {
-  data: {
-    filename_disk: string | null;
-    filename_download: string | null;
-  };
-}
-
 export default class FaqSectionScrapper extends BaseScraperModule {
   static name = "FAQs";
   static description =
     "Articles, questions, answers, and authors of the FAQ section";
   static taskTitle = "Scrape the faq section";
-
-  async uploadImage(imageUrl: string): Promise<string> {
-    const [fetchedImage, fetchedImageMetadata] = await Promise.all([
-      fetch(`https://admin.topwr.solvro.pl/assets/${imageUrl}`),
-      fetch(`https://admin.topwr.solvro.pl/files/${imageUrl}`),
-    ]);
-
-    if (!fetchedImage.ok) {
-      throw new Error(
-        `Failed to fetch the image. HTTP status: ${fetchedImage.status}`,
-      );
-    }
-
-    if (!fetchedImageMetadata.ok) {
-      throw new Error(
-        `Failed to fetch the image metadata. HTTP status: ${fetchedImageMetadata.status}`,
-      );
-    }
-
-    const imageMetadata = (await fetchedImageMetadata.json()) as ImageMetadata;
-    let extension: string | undefined = "";
-    if (imageMetadata.data.filename_disk !== null) {
-      const filenameDiskParts = imageMetadata.data.filename_disk.split(".");
-      if (filenameDiskParts.length > 1) {
-        extension = filenameDiskParts.pop();
-      }
-    }
-    if (extension === "") {
-      if (imageMetadata.data.filename_download !== null) {
-        const filenameDownloadParts =
-          imageMetadata.data.filename_download.split(".");
-        if (filenameDownloadParts.length > 1) {
-          extension = filenameDownloadParts.pop();
-        }
-      }
-    }
-
-    if (extension === undefined || extension === "") {
-      this.logger.warning(
-        "Failed to determine image extension, using a .bin instead.",
-      );
-    }
-
-    const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
-
-    const file = await FilesService.uploadStream(stream, extension);
-    return file.id;
-  }
 
   async shouldRun(): Promise<boolean> {
     return await this.modelHasNoRows(GuideArticle, GuideQuestion);
@@ -165,22 +108,13 @@ export default class FaqSectionScrapper extends BaseScraperModule {
           updatedAt = questionUpdatedAt;
         }
       }
-
-      let imageKey = "";
-      try {
-        imageKey = await this.uploadImage(article.cover);
-      } catch (error) {
-        this.logger.error(
-          `Failed to upload article cover image for article: ${article.id}: ${error}`,
-        );
-      }
-
       await GuideArticle.create({
         id: article.id,
         title: article.name,
         shortDesc: article.short_description,
         description: article.description ?? "",
-        imageKey,
+        imageKey:
+          (await this.directusUploadFieldAndGetKey(article.cover)) ?? "",
         createdAt,
         updatedAt,
       });

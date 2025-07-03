@@ -1,16 +1,15 @@
 import { DateTime } from "luxon";
-import { Readable } from "node:stream";
 
 import {
   BaseScraperModule,
   SourceResponse,
   TaskHandle,
+  assertResponseStructure,
 } from "#commands/db_scrape";
 import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
 import FieldOfStudyModel from "#models/field_of_study";
-import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
 
 interface DepartmentsDraft {
@@ -68,46 +67,34 @@ export default class DepartmentsScraper extends BaseScraperModule {
     const [departmentsData, fieldOfStudyData, departmentLinkData] =
       (await Promise.all(
         this.directusSchemas.map((schema) =>
-          this.semaphore.runTask(() =>
-            this.fetchJSON(
-              `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
-              schema,
-            ),
-          ),
+          this.semaphore
+            .runTask(() =>
+              this.fetchJSON(
+                `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
+                schema,
+              ),
+            )
+            .then((response) => {
+              assertResponseStructure(response);
+              return response;
+            }),
         ),
       )) as [
         SourceResponse<DepartmentsDraft>,
         SourceResponse<FieldOfStudyDraft>,
         SourceResponse<DepartmentLinkDraft>,
       ];
-
     const departmentEntries = await Promise.all(
       departmentsData.data.map(async (departmentEntry) => {
         // Logo
-        const details = (await this.fetchJSON(
-          `https://admin.topwr.solvro.pl/files/${departmentEntry.logo}?fields=filename_disk`,
-          `details for file ${departmentEntry.logo}`,
-        )) as { data: { filename_disk: string } };
-        const extension = details.data.filename_disk
-          .split(".")
-          .pop()
-          ?.toLowerCase();
-
-        const fileResponse = await this.fetchAndCheckStatus(
-          `https://admin.topwr.solvro.pl/assets/${departmentEntry.logo}`,
-          `file ${departmentEntry.logo}`,
+        const fileId = await this.directusUploadFieldAndGetKey(
+          departmentEntry.logo,
         );
-
-        if (fileResponse.body === null) {
+        if (fileId === null) {
           throw new Error(
-            `Response body is null for department ${departmentEntry.id} with asset id ${departmentEntry.logo}`,
+            `Failed to upload logo for ${departmentEntry.id} with asset id ${departmentEntry.logo}`,
           );
         }
-        const logoFile = await FilesService.uploadStream(
-          Readable.fromWeb(fileResponse.body),
-          extension,
-        );
-
         // Address
         const match = this.addressRegex.exec(departmentEntry.address);
         if (match !== null) {
@@ -123,7 +110,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             addressLine2,
             code: departmentEntry.code,
             betterCode: departmentEntry.betterCode,
-            logoKey: logoFile.id,
+            logoKey: fileId,
             description: departmentEntry.description,
             gradientStart: departmentEntry.gradient_start,
             gradientStop: departmentEntry.gradient_end,

@@ -1,9 +1,8 @@
-import { Readable } from "node:stream";
-
 import {
   BaseScraperModule,
   SourceResponse,
   TaskHandle,
+  assertResponseStructure,
 } from "#commands/db_scrape";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
@@ -11,7 +10,6 @@ import { OrganizationType } from "#enums/organization_type";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
-import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
 
 interface DirectusTag {
@@ -44,10 +42,6 @@ interface DirectusOrganization {
   links: number[];
 }
 
-interface FileMetaResponse {
-  data: { filename_disk: string };
-}
-
 interface DirectusTagPivot {
   id: number;
   Scientific_Circles_id: number | null;
@@ -77,10 +71,22 @@ export default class OrganizationsScraper extends BaseScraperModule {
 
   public async run(task: TaskHandle) {
     const [orgs, tags, links, tagsPivot] = (await Promise.all([
-      this.fetchJSON(this.urls.orgs, "organizations"),
-      this.fetchJSON(this.urls.tags, "tags"),
-      this.fetchJSON(this.urls.links, "links"),
-      this.fetchJSON(this.urls.pivot_tags, "pivot tags"),
+      this.fetchJSON(this.urls.orgs, "organizations").then((response) => {
+        assertResponseStructure(response);
+        return response;
+      }),
+      this.fetchJSON(this.urls.tags, "tags").then((response) => {
+        assertResponseStructure(response);
+        return response;
+      }),
+      this.fetchJSON(this.urls.links, "links").then((response) => {
+        assertResponseStructure(response);
+        return response;
+      }),
+      this.fetchJSON(this.urls.pivot_tags, "pivot tags").then((response) => {
+        assertResponseStructure(response);
+        return response;
+      }),
     ])) as [
       SourceResponse<DirectusOrganization>,
       SourceResponse<DirectusTag>,
@@ -106,9 +112,14 @@ export default class OrganizationsScraper extends BaseScraperModule {
     );
     task.update("Creating organizations...");
     for (const org of orgs.data) {
-      const logoKey = org.logo !== null ? await this.newAsset(org.logo) : null;
+      const logoKey =
+        org.logo !== null
+          ? await this.directusUploadFieldAndGetKey(org.logo)
+          : null;
       const coverKey =
-        org.cover !== null ? await this.newAsset(org.cover) : null;
+        org.cover !== null
+          ? await this.directusUploadFieldAndGetKey(org.cover)
+          : null;
       const orgModel = await StudentOrganization.create({
         id: org.id,
         name: org.name,
@@ -194,33 +205,5 @@ export default class OrganizationsScraper extends BaseScraperModule {
       `Unknown type '${type}' - assigning the Student Organization type`,
     );
     return OrganizationType.StudentOrganization;
-  }
-  private async newAsset(directusId: string): Promise<string> {
-    const fileNameSplit = (
-      (await this.fetchJSON(
-        `https://admin.topwr.solvro.pl/files/${directusId}?fields=filename_disk`,
-        `Metadata for file with id ${directusId}`,
-      )) as FileMetaResponse
-    ).data.filename_disk.split(".");
-    let extension;
-    if (fileNameSplit.length === 1) {
-      this.logger.warning(
-        `Failed to get extension for asset ${directusId} - using default 'bin'`,
-      );
-    } else {
-      extension = fileNameSplit.pop();
-    }
-    const imageStream = await this.fetchAndCheckStatus(
-      `https://admin.topwr.solvro.pl/assets/${directusId}`,
-      `image file ${directusId}`,
-    ).then((response) => response.body);
-    if (imageStream === null) {
-      throw new Error(`Failed to get image stream for asset ${directusId}`);
-    }
-    const file = await FilesService.uploadStream(
-      Readable.fromWeb(imageStream),
-      extension,
-    );
-    return file.id;
   }
 }
