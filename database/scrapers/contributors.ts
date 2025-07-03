@@ -1,7 +1,6 @@
 import { zip } from "@solvro/utils/arrays";
 import { DateTime } from "luxon";
 import assert from "node:assert";
-import { Readable } from "node:stream";
 
 import {
   BaseScraperModule,
@@ -14,7 +13,6 @@ import Contributor from "#models/contributor";
 import Milestone from "#models/milestone";
 import Role from "#models/role";
 import Version from "#models/version";
-import FilesService from "#services/files_service";
 
 interface DirectusCommon {
   id: number;
@@ -142,26 +140,15 @@ export default class ContributorsScraper extends BaseScraperModule {
       await Promise.all(
         Array.from(imageIds).map((id) =>
           this.semaphore.runTask(async () => {
-            const details = (await this.fetchJSON(
-              `https://admin.topwr.solvro.pl/files/${id}?fields=filename_disk`,
-              `details for file ${id}`,
-            )) as { data: { filename_disk: string } };
-            const extension = details.data.filename_disk
-              .split(".")
-              .pop()
-              ?.toLowerCase();
-            const fileResponse = await this.fetchAndCheckStatus(
-              `https://admin.topwr.solvro.pl/assets/${id}`,
-              `file ${id}`,
-            );
-            if (fileResponse.body === null) {
-              throw new Error(`Response for file ${id} has no body, wtf`);
-            }
-            const file = await FilesService.uploadStream(
-              Readable.fromWeb(fileResponse.body),
-              extension,
-            ).addErrorContext(() => `Failed to upload file ${id} to storage`);
-            return [id, file.id] as [string, string];
+            return [
+              id,
+              await this.directusUploadFieldAndGetKey(id).then((fileId) => {
+                if (fileId === null) {
+                  throw new Error(`Failed to upload file ${id}`);
+                }
+                return fileId;
+              }),
+            ] as [string, string];
           }),
         ),
       ),

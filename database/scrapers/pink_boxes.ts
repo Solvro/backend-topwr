@@ -4,6 +4,7 @@ import {
   BaseScraperModule,
   SourceResponse,
   TaskHandle,
+  assertResponseStructure,
 } from "#commands/db_scrape";
 import PinkBox from "#models/pink_box";
 
@@ -15,22 +16,6 @@ interface PinkBoxDraft {
   buildingId: number;
   photoKey?: string | null;
 }
-
-function isValidDataResponse<T>(
-  response: unknown,
-): response is SourceResponse<T> {
-  return (
-    typeof response === "object" &&
-    response !== null &&
-    "data" in response &&
-    Array.isArray(response.data)
-  );
-}
-
-const isValidPinkBoxData = (
-  data: unknown,
-): data is SourceResponse<PinkBoxDraft> =>
-  isValidDataResponse<PinkBoxDraft>(data);
 
 export default class PinkBoxScraper extends BaseScraperModule {
   static name = "Pink boxes";
@@ -44,18 +29,13 @@ export default class PinkBoxScraper extends BaseScraperModule {
 
   async run(task: TaskHandle) {
     task.update("starting reading pink boxes file...");
-    const pinkBoxesData = await fs
+    const pinkBoxesData = (await fs
       .readFile("./assets/pink_boxes.json", { encoding: "utf-8" })
       .then(JSON.parse)
       .then((data) => {
-        if (!isValidPinkBoxData(data)) {
-          throw new Error(`
-                    Invalid JSON structure in ./assets/pink_boxes.json,
-                    expected type of Response<PinkBoxDraft>
-                    `);
-        }
+        assertResponseStructure(data);
         return data;
-      });
+      })) as SourceResponse<PinkBoxDraft>;
     await PinkBox.createMany(pinkBoxesData.data);
     task.update("Pink boxes created!");
   }
