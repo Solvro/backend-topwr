@@ -3,7 +3,6 @@ import * as fs from "node:fs/promises";
 import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
-import { BuildingIcon } from "#enums/building_icon";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Building from "#models/building";
 import Campus from "#models/campus";
@@ -90,7 +89,6 @@ export default class BuildingsScraper extends BaseScraperModule {
           id: data.id,
           identifier: data.name,
           specialName: data.naturalName,
-          iconType: BuildingIcon.Icon,
           addressLine1: addressArray.shift(),
           addressLine2: addressArray.shift(),
           latitude: data.latitude,
