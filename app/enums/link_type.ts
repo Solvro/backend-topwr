@@ -18,6 +18,12 @@ export enum LinkType {
   Twitch = "twitch",
 }
 
+export function stringToLinkType(value: string): LinkType | undefined {
+  return Object.values(LinkType).find(
+    (enumValue) => enumValue.toString() === value,
+  );
+}
+
 export const linkTypeOrder: LinkType[] = [
   LinkType.TopwrBuildings, // 1
   LinkType.Phone, // 2

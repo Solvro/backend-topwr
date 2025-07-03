@@ -3,7 +3,11 @@ import { DateTime } from "luxon";
 import assert from "node:assert";
 import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import { ChangeType } from "#enums/change_type";
 import Change from "#models/change";
 import Contributor from "#models/contributor";
@@ -11,10 +15,6 @@ import Milestone from "#models/milestone";
 import Role from "#models/role";
 import Version from "#models/version";
 import FilesService from "#services/files_service";
-
-interface DirectusResponse<T> {
-  data: T[];
-}
 
 interface DirectusCommon {
   id: number;
@@ -119,14 +119,14 @@ export default class ContributorsScraper extends BaseScraperModule {
         ),
       ),
     )) as [
-      DirectusResponse<TeamVersions>,
-      DirectusResponse<TeamVersionMembers>,
-      DirectusResponse<AboutUsTeam>,
-      DirectusResponse<AboutUsTeamSocialLinks>,
-      DirectusResponse<TeamVersionMembersAboutUsTeamSocialLinks>,
-      DirectusResponse<Changelog>,
-      DirectusResponse<ChangelogChange>,
-      DirectusResponse<ChangelogScreenshots>,
+      SourceResponse<TeamVersions>,
+      SourceResponse<TeamVersionMembers>,
+      SourceResponse<AboutUsTeam>,
+      SourceResponse<AboutUsTeamSocialLinks>,
+      SourceResponse<TeamVersionMembersAboutUsTeamSocialLinks>,
+      SourceResponse<Changelog>,
+      SourceResponse<ChangelogChange>,
+      SourceResponse<ChangelogScreenshots>,
     ];
 
     task.update("Migrating images");

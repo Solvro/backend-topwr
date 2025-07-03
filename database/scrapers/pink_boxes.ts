@@ -1,11 +1,11 @@
 import * as fs from "node:fs/promises";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import PinkBox from "#models/pink_box";
-
-interface SourceResponse<T> {
-  data: T[];
-}
 
 interface PinkBoxDraft {
   roomOrNearby: string | null;

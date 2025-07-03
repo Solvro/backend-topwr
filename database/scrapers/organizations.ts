@@ -1,6 +1,10 @@
 import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
@@ -9,10 +13,6 @@ import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
 import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
-
-interface DirectusResponse<T> {
-  data: T[];
-}
 
 interface DirectusTag {
   id: number;
@@ -82,10 +82,10 @@ export default class OrganizationsScraper extends BaseScraperModule {
       this.fetchJSON(this.urls.links, "links"),
       this.fetchJSON(this.urls.pivot_tags, "pivot tags"),
     ])) as [
-      DirectusResponse<DirectusOrganization>,
-      DirectusResponse<DirectusTag>,
-      DirectusResponse<DirectusLink>,
-      DirectusResponse<DirectusTagPivot>,
+      SourceResponse<DirectusOrganization>,
+      SourceResponse<DirectusTag>,
+      SourceResponse<DirectusLink>,
+      SourceResponse<DirectusTagPivot>,
     ];
     task.update("Fetching...");
     const tagsModels = new Map(

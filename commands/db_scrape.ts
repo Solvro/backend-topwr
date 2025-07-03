@@ -1,6 +1,7 @@
 import { Logger } from "@poppinss/cliui";
 import { TaskCallback } from "@poppinss/cliui/types";
 import { Semaphore } from "@solvro/utils/semaphore";
+import { DateTime } from "luxon";
 import * as fs from "node:fs/promises";
 import path from "node:path";
 
@@ -45,6 +46,26 @@ import { modelCount } from "#utils/db";
 const LOADABLE_EXTENSIONS = [".js", ".cjs", ".mjs", ".ts"];
 
 export type TaskHandle = Parameters<TaskCallback>[0];
+
+export function resolveDate(dateString: string): DateTime<true> {
+  const date = DateTime.fromISO(dateString);
+  return date.isValid ? date : DateTime.now();
+}
+
+export interface SourceResponse<T> {
+  data: T[];
+}
+
+export function isValidDataResponse<T>(
+  response: unknown,
+): response is SourceResponse<T> {
+  return (
+    typeof response === "object" &&
+    response !== null &&
+    "data" in response &&
+    Array.isArray(response.data)
+  );
+}
 
 export abstract class BaseScraperModule {
   static name: string;

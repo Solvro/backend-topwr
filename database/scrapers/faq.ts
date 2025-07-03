@@ -1,43 +1,41 @@
 import { DateTime } from "luxon";
 import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
 import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
 
-interface GuideArticlesOld {
-  data: {
-    id: number;
-    name: string;
-    cover: string;
-    short_description: string;
-    description: string | null;
-    order: number;
-    questions: number[];
-  }[];
+interface GuideArticleOld {
+  id: number;
+  name: string;
+  cover: string;
+  short_description: string;
+  description: string | null;
+  order: number;
+  questions: number[];
 }
 
-interface GuideQuestionsOld {
-  data: {
-    id: number;
-    status: string;
-    date_created: string;
-    date_updated: string;
-    question: string;
-    answer: string;
-    type: number;
-  }[];
+interface GuideQuestionOld {
+  id: number;
+  status: string;
+  date_created: string;
+  date_updated: string;
+  question: string;
+  answer: string;
+  type: number;
 }
 
 interface PivotTable {
-  data: {
-    id: number;
-    FAQ_Types_id: number | null;
-    FAQ_id: number;
-    sort: number | null;
-  }[];
+  id: number;
+  FAQ_Types_id: number | null;
+  FAQ_id: number;
+  sort: number | null;
 }
 
 interface ImageMetadata {
@@ -131,9 +129,9 @@ export default class FaqSectionScrapper extends BaseScraperModule {
     }
     const [articlesResult, questionsResult, pivotTableResult] =
       await Promise.all([
-        articlesResponse.json() as Promise<GuideArticlesOld>,
-        questionsResponse.json() as Promise<GuideQuestionsOld>,
-        pivotTableResponse.json() as Promise<PivotTable>,
+        articlesResponse.json() as Promise<SourceResponse<GuideArticleOld>>,
+        questionsResponse.json() as Promise<SourceResponse<GuideQuestionOld>>,
+        pivotTableResponse.json() as Promise<SourceResponse<PivotTable>>,
       ]);
 
     task.update("Migrating images & saving data...");
