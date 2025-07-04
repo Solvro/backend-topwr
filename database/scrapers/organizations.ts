@@ -2,11 +2,11 @@ import {
   BaseScraperModule,
   SourceResponse,
   TaskHandle,
-  assertResponseStructure,
 } from "#commands/db_scrape";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
+import Department from "#models/department";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationLink from "#models/student_organization_link";
 import StudentOrganizationTag from "#models/student_organization_tag";
@@ -63,30 +63,20 @@ export default class OrganizationsScraper extends BaseScraperModule {
   };
 
   async shouldRun(): Promise<boolean> {
-    return await this.modelHasNoRows(
-      StudentOrganization,
-      StudentOrganizationTag,
-    );
+    return (
+      (await this.modelHasNoRows(
+        StudentOrganization,
+        StudentOrganizationTag,
+      )) && !(await this.modelHasNoRows(Department))
+    ); //Cannot run without Departments
   }
 
   public async run(task: TaskHandle) {
     const [orgs, tags, links, tagsPivot] = (await Promise.all([
-      this.fetchJSON(this.urls.orgs, "organizations").then((response) => {
-        assertResponseStructure(response);
-        return response;
-      }),
-      this.fetchJSON(this.urls.tags, "tags").then((response) => {
-        assertResponseStructure(response);
-        return response;
-      }),
-      this.fetchJSON(this.urls.links, "links").then((response) => {
-        assertResponseStructure(response);
-        return response;
-      }),
-      this.fetchJSON(this.urls.pivot_tags, "pivot tags").then((response) => {
-        assertResponseStructure(response);
-        return response;
-      }),
+      this.fetchDirectusJSON(this.urls.orgs, "organizations"),
+      this.fetchDirectusJSON(this.urls.tags, "tags"),
+      this.fetchDirectusJSON(this.urls.links, "links"),
+      this.fetchDirectusJSON(this.urls.pivot_tags, "pivot tags"),
     ])) as [
       SourceResponse<DirectusOrganization>,
       SourceResponse<DirectusTag>,

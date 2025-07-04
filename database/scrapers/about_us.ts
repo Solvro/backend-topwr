@@ -47,16 +47,12 @@ export default class AboutUsScraper extends BaseScraperModule {
     };
     task.update("Filling the database...");
     const draft = body.data;
+    if (draft.cover === null) {
+      throw new Error("About Us cover photo is missing");
+    }
     const formattedAboutUsData = {
       description: draft.description,
-      coverPhotoKey: await this.semaphore.runTask(() =>
-        this.directusUploadFieldAndGetKey(draft.cover).then((value) => {
-          if (value === null) {
-            throw new Error("No cover photo provided");
-          }
-          return value;
-        }),
-      ),
+      coverPhotoKey: await this.directusUploadFieldAndGetKey(draft.cover),
       createdAt: convertDateOrFallbackToNow(draft.date_updated), //no date created provided in the response
       updatedAt: convertDateOrFallbackToNow(draft.date_updated),
     };
@@ -66,10 +62,9 @@ export default class AboutUsScraper extends BaseScraperModule {
     const linkData = (await fs
       .readFile(LINKS_JSON_PATH, { encoding: "utf-8" })
       .then(JSON.parse)
-      .then((data) => {
-        assertResponseStructure(data);
-        return data;
-      })) as SourceResponse<SocialLinkDraft>;
+      .then((data) =>
+        assertResponseStructure(data, "About Us links JSON"),
+      )) as SourceResponse<SocialLinkDraft>;
     await AboutUsGeneralLink.createMany(
       linkData.data.map((linkDraft) => {
         return {
