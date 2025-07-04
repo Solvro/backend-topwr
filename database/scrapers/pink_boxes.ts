@@ -6,6 +6,7 @@ import {
   TaskHandle,
   assertResponseStructure,
 } from "#commands/db_scrape";
+import Building from "#models/building";
 import PinkBox from "#models/pink_box";
 
 interface PinkBoxDraft {
@@ -24,7 +25,10 @@ export default class PinkBoxScraper extends BaseScraperModule {
   static taskTitle = "Scrape pink boxes";
 
   async shouldRun(): Promise<boolean> {
-    return await this.modelHasNoRows(PinkBox);
+    return (
+      (await this.modelHasNoRows(PinkBox)) &&
+      !(await this.modelHasNoRows(Building))
+    ); //Cannot run Pink Boxes without buildings
   }
 
   async run(task: TaskHandle) {
@@ -32,10 +36,9 @@ export default class PinkBoxScraper extends BaseScraperModule {
     const pinkBoxesData = (await fs
       .readFile("./assets/pink_boxes.json", { encoding: "utf-8" })
       .then(JSON.parse)
-      .then((data) => {
-        assertResponseStructure(data);
-        return data;
-      })) as SourceResponse<PinkBoxDraft>;
+      .then((data) =>
+        assertResponseStructure(data, "Pink boxes JSON"),
+      )) as SourceResponse<PinkBoxDraft>;
     await PinkBox.createMany(pinkBoxesData.data);
     task.update("Pink boxes created!");
   }

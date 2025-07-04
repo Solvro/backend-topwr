@@ -50,10 +50,9 @@ export default class BuildingsScraper extends BaseScraperModule {
     const campusesData = (await fs
       .readFile("./assets/campuses.json", { encoding: "utf-8" })
       .then(JSON.parse)
-      .then((response) => {
-        assertResponseStructure(response);
-        return response;
-      })) as SourceResponse<CampusDraft>;
+      .then((response) =>
+        assertResponseStructure(response, "Campuses JSON"),
+      )) as SourceResponse<CampusDraft>;
     const campusesMap = new Map<string, Campus>();
     for (const data of campusesData.data) {
       const campus = await Campus.create(data);
@@ -65,11 +64,10 @@ export default class BuildingsScraper extends BaseScraperModule {
     task.update("starting fetching buildings...");
     const buildingsData = (await this.fetchJSON(
       buildingsPath,
-      "list of buildings from directus",
-    ).then((response) => {
-      assertResponseStructure(response);
-      return response;
-    })) as SourceResponse<BuildingDraft>;
+      "list of buildings from Directus",
+    ).then((response) =>
+      assertResponseStructure(response, "Buildings from Directus"),
+    )) as SourceResponse<BuildingDraft>;
     const formattedBuildingData = await Promise.all(
       buildingsData.data.map(async (data) => {
         const addressArray = data.addres.split(",");
@@ -82,9 +80,10 @@ export default class BuildingsScraper extends BaseScraperModule {
           latitude: data.latitude,
           longitude: data.longitude,
           haveFood: data.food ?? false,
-          coverKey: await this.semaphore.runTask(() =>
-            this.directusUploadFieldAndGetKey(data.cover),
-          ),
+          coverKey:
+            data.cover === null
+              ? null
+              : await this.directusUploadFieldAndGetKey(data.cover),
           externalDigitalGuideMode: data.externalDigitalGuideMode,
           externalDigitalGuideIdOrUrl: data.externalDigitalGuideIdOrURL,
           createdAt: convertDateOrFallbackToNow(data.createdAt),

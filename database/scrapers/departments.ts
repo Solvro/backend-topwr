@@ -4,7 +4,6 @@ import {
   BaseScraperModule,
   SourceResponse,
   TaskHandle,
-  assertResponseStructure,
 } from "#commands/db_scrape";
 import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";
@@ -67,17 +66,12 @@ export default class DepartmentsScraper extends BaseScraperModule {
     const [departmentsData, fieldOfStudyData, departmentLinkData] =
       (await Promise.all(
         this.directusSchemas.map((schema) =>
-          this.semaphore
-            .runTask(() =>
-              this.fetchJSON(
-                `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
-                schema,
-              ),
-            )
-            .then((response) => {
-              assertResponseStructure(response);
-              return response;
-            }),
+          this.semaphore.runTask(() =>
+            this.fetchDirectusJSON(
+              `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
+              schema,
+            ).addErrorContext(`Failed for schema ${schema}`),
+          ),
         ),
       )) as [
         SourceResponse<DepartmentsDraft>,
@@ -87,14 +81,14 @@ export default class DepartmentsScraper extends BaseScraperModule {
     const departmentEntries = await Promise.all(
       departmentsData.data.map(async (departmentEntry) => {
         // Logo
+        if (departmentEntry.logo === null) {
+          throw new Error(
+            `Failed no logo for departmentEntry: ${departmentEntry.id}`,
+          );
+        }
         const fileId = await this.directusUploadFieldAndGetKey(
           departmentEntry.logo,
         );
-        if (fileId === null) {
-          throw new Error(
-            `Failed to upload logo for ${departmentEntry.id} with asset id ${departmentEntry.logo}`,
-          );
-        }
         // Address
         const match = this.addressRegex.exec(departmentEntry.address);
         if (match !== null) {

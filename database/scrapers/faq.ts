@@ -48,34 +48,25 @@ export default class FaqSectionScrapper extends BaseScraperModule {
 
   async run(task: TaskHandle) {
     task.update("Fetching data...");
-    const [articlesResponse, questionsResponse, pivotTableResponse] =
-      await Promise.all([
-        fetch("https://admin.topwr.solvro.pl/items/FAQ_Types"),
-        fetch("https://admin.topwr.solvro.pl/items/FAQ"),
-        fetch("https://admin.topwr.solvro.pl/items/FAQ_Types_FAQ"),
-      ]);
-
-    if (!articlesResponse.ok) {
-      throw new Error(
-        `Failed to fetch articles - got response status code ${articlesResponse.status}`,
-      );
-    }
-    if (!questionsResponse.ok) {
-      throw new Error(
-        `Failed to fetch questions - got response status code ${questionsResponse.status}`,
-      );
-    }
-    if (!pivotTableResponse.ok) {
-      throw new Error(
-        `Failed to fetch pivot table - got response status code ${pivotTableResponse.status}`,
-      );
-    }
     const [articlesResult, questionsResult, pivotTableResult] =
-      await Promise.all([
-        articlesResponse.json() as Promise<SourceResponse<GuideArticleOld>>,
-        questionsResponse.json() as Promise<SourceResponse<GuideQuestionOld>>,
-        pivotTableResponse.json() as Promise<SourceResponse<PivotTable>>,
-      ]);
+      (await Promise.all([
+        this.fetchDirectusJSON(
+          "https://admin.topwr.solvro.pl/items/FAQ_Types",
+          "FAQ types",
+        ),
+        this.fetchDirectusJSON(
+          "https://admin.topwr.solvro.pl/items/FAQ",
+          "FAQ",
+        ),
+        this.fetchDirectusJSON(
+          "https://admin.topwr.solvro.pl/items/FAQ_Types_FAQ",
+          "FAQ Types FAQ",
+        ),
+      ])) as [
+        SourceResponse<GuideArticleOld>,
+        SourceResponse<GuideQuestionOld>,
+        SourceResponse<PivotTable>,
+      ];
 
     task.update("Migrating images & saving data...");
     for (const article of articlesResult.data) {
@@ -113,8 +104,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         title: article.name,
         shortDesc: article.short_description,
         description: article.description ?? "",
-        imageKey:
-          (await this.directusUploadFieldAndGetKey(article.cover)) ?? "",
+        imageKey: await this.directusUploadFieldAndGetKey(article.cover),
         createdAt,
         updatedAt,
       });

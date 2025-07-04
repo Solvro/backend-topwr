@@ -52,7 +52,10 @@ export interface SourceResponse<T> {
   data: T[];
 }
 
-export function assertResponseStructure(response: unknown): void {
+export function assertResponseStructure(
+  response: unknown,
+  name: string,
+): SourceResponse<unknown> {
   if (
     !(
       typeof response === "object" &&
@@ -61,8 +64,9 @@ export function assertResponseStructure(response: unknown): void {
       Array.isArray(response.data)
     )
   ) {
-    throw new Error("Invalid response structure");
+    throw new Error(`Invalid response structure for ${name}`);
   }
+  return response as SourceResponse<unknown>;
 }
 
 export abstract class BaseScraperModule {
@@ -147,6 +151,14 @@ export abstract class BaseScraperModule {
     return result;
   }
 
+  protected async fetchDirectusJSON(
+    url: string,
+    item: string,
+  ): Promise<SourceResponse<unknown>> {
+    const response = await this.fetchJSON(url, item);
+    return assertResponseStructure(response, item);
+  }
+
   /**
    * Detect the link type of the given URL.
    *
@@ -177,27 +189,24 @@ export abstract class BaseScraperModule {
   }
 
   /**
-   * Method to download a file from Directus and save it using our FileService. The file extension will default to 'bin' if none found - will log if it happens.
+   * Download a file from Directus and save it using our FileService.
    *
+   * The file extension will default to 'bin' if none found - will log if it happens.
    * @param fileId Id under which the file is supposed to be on `https://admin.topwr.solvro.pl/assets/${fileId}`
    * @returns fileId if uploading was successful, null otherwise.
    */
   protected async directusUploadFieldAndGetKey(
-    fileId: unknown,
-  ): Promise<string | null> {
-    if (typeof fileId !== "string") {
-      this.logger.warning(
-        `Expected fileId to be a string, but got ${typeof fileId} instead`,
-      );
-      return null;
-    }
+    fileId: string,
+  ): Promise<string> {
     const extension = await this.findFileExtension(fileId);
     const imageStream = await this.fetchAndCheckStatus(
       `https://admin.topwr.solvro.pl/assets/${fileId}`,
-      `image file ${fileId}`,
+      `Directus image file ${fileId}`,
     ).then((response) => response.body);
     if (imageStream === null) {
-      return null;
+      throw new Error(
+        `Failed to fetch image file ${fileId} - empty response from Directus`,
+      );
     }
     const file = await FilesService.uploadStream(
       Readable.fromWeb(imageStream),
@@ -211,21 +220,14 @@ export abstract class BaseScraperModule {
       `https://admin.topwr.solvro.pl/files/${fileId}?fields=filename_disk`,
       `File metadata of ${fileId}`,
     )) as { data: { filename_disk: string } };
-    try {
-      const ext = extension.data.filename_disk.split(".").pop();
-      if (ext === undefined || ext === "") {
-        this.logger.warning(
-          `Failed to obtain file extension for ${fileId}. Fall back to the default "bin" extension. Cause: no extension present in the filename`,
-        );
-        return "bin";
-      }
-      return ext.toLowerCase();
-    } catch (e) {
+    const ext = extension.data.filename_disk.split(".").pop();
+    if (ext === undefined || ext === "") {
       this.logger.warning(
-        `Failed to obtain file extension for ${fileId}. Fall back to the default "bin" extension. Cause: ${e}`,
+        `Failed to obtain file extension for ${fileId}. Fall back to the default "bin" extension. Cause: no extension present in the filename`,
       );
       return "bin";
     }
+    return ext.toLowerCase();
   }
 }
 

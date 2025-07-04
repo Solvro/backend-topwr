@@ -110,7 +110,7 @@ export default class ContributorsScraper extends BaseScraperModule {
     ] = (await Promise.all(
       this.directusSchemas.map((schema) =>
         this.semaphore.runTask(() =>
-          this.fetchJSON(
+          this.fetchDirectusJSON(
             `https://admin.topwr.solvro.pl/items/${schema}`,
             schema,
           ),
@@ -142,12 +142,9 @@ export default class ContributorsScraper extends BaseScraperModule {
           this.semaphore.runTask(async () => {
             return [
               id,
-              await this.directusUploadFieldAndGetKey(id).then((fileId) => {
-                if (fileId === null) {
-                  throw new Error(`Failed to upload file ${id}`);
-                }
-                return fileId;
-              }),
+              await this.directusUploadFieldAndGetKey(id).addErrorContext(
+                "Images from Contributors imageIds",
+              ),
             ] as [string, string];
           }),
         ),
