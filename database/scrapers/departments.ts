@@ -70,7 +70,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             this.fetchDirectusJSON(
               `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
               schema,
-            ).addErrorContext(`Failed for schema ${schema}`),
+            ),
           ),
         ),
       )) as [
@@ -83,7 +83,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
         // Logo
         if (departmentEntry.logo === null) {
           throw new Error(
-            `Failed no logo for departmentEntry: ${departmentEntry.id}`,
+            `Logo for departmentEntry ${departmentEntry.id} is null - field is not nullable`,
           );
         }
         const fileId = await this.directusUploadFieldAndGetKey(
