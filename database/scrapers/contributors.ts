@@ -1,20 +1,18 @@
 import { zip } from "@solvro/utils/arrays";
 import { DateTime } from "luxon";
 import assert from "node:assert";
-import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import { ChangeType } from "#enums/change_type";
 import Change from "#models/change";
 import Contributor from "#models/contributor";
 import Milestone from "#models/milestone";
 import Role from "#models/role";
 import Version from "#models/version";
-import FilesService from "#services/files_service";
-
-interface DirectusResponse<T> {
-  data: T[];
-}
 
 interface DirectusCommon {
   id: number;
@@ -112,21 +110,21 @@ export default class ContributorsScraper extends BaseScraperModule {
     ] = (await Promise.all(
       this.directusSchemas.map((schema) =>
         this.semaphore.runTask(() =>
-          this.fetchJSON(
+          this.fetchDirectusJSON(
             `https://admin.topwr.solvro.pl/items/${schema}`,
             schema,
           ),
         ),
       ),
     )) as [
-      DirectusResponse<TeamVersions>,
-      DirectusResponse<TeamVersionMembers>,
-      DirectusResponse<AboutUsTeam>,
-      DirectusResponse<AboutUsTeamSocialLinks>,
-      DirectusResponse<TeamVersionMembersAboutUsTeamSocialLinks>,
-      DirectusResponse<Changelog>,
-      DirectusResponse<ChangelogChange>,
-      DirectusResponse<ChangelogScreenshots>,
+      SourceResponse<TeamVersions>,
+      SourceResponse<TeamVersionMembers>,
+      SourceResponse<AboutUsTeam>,
+      SourceResponse<AboutUsTeamSocialLinks>,
+      SourceResponse<TeamVersionMembersAboutUsTeamSocialLinks>,
+      SourceResponse<Changelog>,
+      SourceResponse<ChangelogChange>,
+      SourceResponse<ChangelogScreenshots>,
     ];
 
     task.update("Migrating images");
@@ -142,26 +140,12 @@ export default class ContributorsScraper extends BaseScraperModule {
       await Promise.all(
         Array.from(imageIds).map((id) =>
           this.semaphore.runTask(async () => {
-            const details = (await this.fetchJSON(
-              `https://admin.topwr.solvro.pl/files/${id}?fields=filename_disk`,
-              `details for file ${id}`,
-            )) as { data: { filename_disk: string } };
-            const extension = details.data.filename_disk
-              .split(".")
-              .pop()
-              ?.toLowerCase();
-            const fileResponse = await this.fetchAndCheckStatus(
-              `https://admin.topwr.solvro.pl/assets/${id}`,
-              `file ${id}`,
-            );
-            if (fileResponse.body === null) {
-              throw new Error(`Response for file ${id} has no body, wtf`);
-            }
-            const file = await FilesService.uploadStream(
-              Readable.fromWeb(fileResponse.body),
-              extension,
-            ).addErrorContext(() => `Failed to upload file ${id} to storage`);
-            return [id, file.id] as [string, string];
+            return [
+              id,
+              await this.directusUploadFieldAndGetKey(id).addErrorContext(
+                "Failed to upload images from Contributors imageIds",
+              ),
+            ] as [string, string];
           }),
         ),
       ),
