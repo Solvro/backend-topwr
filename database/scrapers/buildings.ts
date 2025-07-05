@@ -62,11 +62,9 @@ export default class BuildingsScraper extends BaseScraperModule {
     }
     task.update("campuses created!");
     task.update("starting fetching buildings...");
-    const buildingsData = (await this.fetchJSON(
+    const buildingsData = (await this.fetchDirectusJSON(
       buildingsPath,
       "list of buildings from Directus",
-    ).then((response) =>
-      assertResponseStructure(response, "Buildings from Directus"),
     )) as SourceResponse<BuildingDraft>;
     const formattedBuildingData = await Promise.all(
       buildingsData.data.map(async (data) => {
@@ -83,7 +81,11 @@ export default class BuildingsScraper extends BaseScraperModule {
           coverKey:
             data.cover === null
               ? null
-              : await this.directusUploadFieldAndGetKey(data.cover),
+              : await this.directusUploadFieldAndGetKey(
+                  data.cover,
+                ).addErrorContext(
+                  `Failed to upload the cover photo for building ${data.id}`,
+                ),
           externalDigitalGuideMode: data.externalDigitalGuideMode,
           externalDigitalGuideIdOrUrl: data.externalDigitalGuideIdOrURL,
           createdAt: convertDateOrFallbackToNow(data.createdAt),

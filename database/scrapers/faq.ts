@@ -60,7 +60,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         ),
         this.fetchDirectusJSON(
           "https://admin.topwr.solvro.pl/items/FAQ_Types_FAQ",
-          "FAQ Types FAQ",
+          "FAQ Pivot Table",
         ),
       ])) as [
         SourceResponse<GuideArticleOld>,
@@ -104,7 +104,11 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         title: article.name,
         shortDesc: article.short_description,
         description: article.description ?? "",
-        imageKey: await this.directusUploadFieldAndGetKey(article.cover),
+        imageKey: await this.directusUploadFieldAndGetKey(
+          article.cover,
+        ).addErrorContext(
+          `Cover upload for Guide Article ${article.id} failed.`,
+        ),
         createdAt,
         updatedAt,
       });

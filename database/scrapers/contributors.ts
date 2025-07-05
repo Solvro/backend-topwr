@@ -143,7 +143,7 @@ export default class ContributorsScraper extends BaseScraperModule {
             return [
               id,
               await this.directusUploadFieldAndGetKey(id).addErrorContext(
-                "Images from Contributors imageIds",
+                "Failed to upload images from Contributors imageIds",
               ),
             ] as [string, string];
           }),
