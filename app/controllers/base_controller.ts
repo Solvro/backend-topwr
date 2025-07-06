@@ -482,10 +482,10 @@ export default abstract class BaseController<
         scopes.preloadRelations(relations);
         scopes.handleSortQuery(request.input("sort"));
       });
-    if (page === undefined) {
+    if (page === undefined && limit === undefined) {
       return { data: await baseQuery };
     }
-    return await baseQuery.paginate(page, limit ?? 10);
+    return await baseQuery.paginate(page ?? 1, limit ?? 10);
   }
 
   /**
@@ -735,10 +735,10 @@ export default abstract class BaseController<
         }
       });
 
-    if (page === undefined) {
+    if (page === undefined && limit === undefined) {
       return { data: await relatedQuery };
     }
-    return await relatedQuery.paginate(page, limit ?? 10);
+    return await relatedQuery.paginate(page ?? 1, limit ?? 10);
   }
 
   /**
