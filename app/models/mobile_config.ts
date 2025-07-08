@@ -17,7 +17,7 @@ export default class MobileConfig extends BaseModel {
 
   @typedColumn({
     type: "integer",
-    validator: vine.number().withoutDecimals().positive(),
+    validator: vine.number().withoutDecimals().min(1),
   })
   declare daySwapLookahead: number;
 
