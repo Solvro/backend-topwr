@@ -23,8 +23,8 @@ const FilesController = () => import("#controllers/files_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
 const NewsfeedController = () => import("#controllers/newsfeed_controller");
-const CacheReferenceNumberController = () =>
-  import("#controllers/cache_reference_number_controller");
+const MobileConfigController = () =>
+  import("#controllers/mobile_config_controller");
 
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
@@ -98,18 +98,20 @@ router
     router.get("/about_us", [AboutUsController, "index"]);
 
     router.get("/newsfeed/latest", [NewsfeedController, "latest"]);
-    router.group(() => {
-      router.get("/cache_reference_number", [
-        CacheReferenceNumberController,
-        "index",
-      ]);
-      router
-        .patch("/cache_reference_number/bump", [
-          CacheReferenceNumberController,
-          "bump",
-        ])
-        .use(middleware.auth());
-    });
+    router
+      .group(() => {
+        router.get("/", [MobileConfigController, "index"]);
+        router
+          .patch("/bump", [MobileConfigController, "bump"])
+          .use(middleware.auth());
+        router
+          .patch("/update_lookahead/:new_value", [
+            MobileConfigController,
+            "updateCount",
+          ])
+          .use(middleware.auth());
+      })
+      .prefix("/mobile_config");
 
     configureBaseRoutes();
   })

@@ -1,7 +1,7 @@
 import { DateTime } from "luxon";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
-import CacheReferenceNumber from "#models/cache_reference_number";
+import MobileConfig from "#models/mobile_config";
 
 interface CacheReferenceData {
   data: {
@@ -25,11 +25,11 @@ export default class CacheReferenceNumberScraper extends BaseScraperModule {
     const lastUpdated = DateTime.fromISO(fetched.data.date_updated);
 
     task.update("Creating the cache reference number");
-    await CacheReferenceNumber.create({
+    await MobileConfig.create({
       referenceNumber: fetched.data.referenceNumber,
       createdAt: lastUpdated,
       updatedAt: lastUpdated,
-    });
+    }); //day swap lookahead defaults to 3
     task.update("Cache reference number migrated");
   }
 }

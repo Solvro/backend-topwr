@@ -1,18 +1,18 @@
 import { HrefContext } from "adminjs";
 
-import CacheReferenceNumber from "#models/cache_reference_number";
+import MobileConfig from "#models/mobile_config";
 
 import { ResourceBuilder } from "../resource_factory.js";
 
 const navigation = {
-  name: "Cache reference number",
+  name: "Mobile Config",
   icon: "Layers",
 };
 
-export const CacheRefNumberBuilder: ResourceBuilder = {
+export const MobileConfigBuilder: ResourceBuilder = {
   builders: [
     {
-      forModel: CacheReferenceNumber,
+      forModel: MobileConfig,
       additionalProperties: {
         id: {
           isVisible: false,
