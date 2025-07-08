@@ -27,6 +27,10 @@ export default class MobileConfig extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
+  public static async bumpCache() {
+    await MobileConfig.query().increment("reference_number", 1);
+  }
+
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
   static handleSortQuery = handleSortQuery();

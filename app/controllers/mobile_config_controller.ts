@@ -1,7 +1,9 @@
 import { HttpContext } from "@adonisjs/core/http";
+import router from "@adonisjs/core/services/router";
+import { Constructor } from "@adonisjs/core/types/container";
+import { LazyImport } from "@adonisjs/core/types/http";
 
 import BaseController from "#controllers/base_controller";
-import { BadRequestException } from "#exceptions/http_exceptions";
 import MobileConfig from "#models/mobile_config";
 
 export default class MobileConfigController extends BaseController<
@@ -11,18 +13,27 @@ export default class MobileConfigController extends BaseController<
   protected crudRelations: string[] = [];
   protected model: typeof MobileConfig = MobileConfig;
 
-  async store(_: HttpContext): Promise<unknown> {
-    throw new BadRequestException("Operation not supported for mobile config");
+  $configureRoutes(
+    controller: LazyImport<Constructor<BaseController<typeof MobileConfig>>>,
+  ) {
+    router.get("/", [controller, "index"]).as("index");
+    router.patch("/", [controller, "update"]).as("update");
+    router.post("/bump", [MobileConfigController, "bump"]).as("bump");
   }
 
-  async destroy(_: HttpContext): Promise<unknown> {
-    throw new BadRequestException("Operation not supported for mobile config");
+  async index() {
+    const mobileConfig = await MobileConfig.query().first();
+    return {
+      data: {
+        mobileConfig,
+      },
+    };
   }
 
   async bump({ auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await MobileConfig.query().increment("reference_number", 1);
+    await MobileConfig.bumpCache();
   }
 }
