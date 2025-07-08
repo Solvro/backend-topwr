@@ -1,16 +1,22 @@
 import { HttpContext } from "@adonisjs/core/http";
 
+import BaseController from "#controllers/base_controller";
 import { BadRequestException } from "#exceptions/http_exceptions";
 import MobileConfig from "#models/mobile_config";
 
-export default class MobileConfigController {
-  async index() {
-    const mobileConfigSingleton = await MobileConfig.query().first();
-    return {
-      data: {
-        mobileConfigSingleton,
-      },
-    };
+export default class MobileConfigController extends BaseController<
+  typeof MobileConfig
+> {
+  protected queryRelations: string[] = [];
+  protected crudRelations: string[] = [];
+  protected model: typeof MobileConfig = MobileConfig;
+
+  async store(_: HttpContext): Promise<unknown> {
+    throw new BadRequestException("Operation not supported for mobile config");
+  }
+
+  async destroy(_: HttpContext): Promise<unknown> {
+    throw new BadRequestException("Operation not supported for mobile config");
   }
 
   async bump({ auth }: HttpContext) {
@@ -18,17 +24,5 @@ export default class MobileConfigController {
       await auth.authenticate();
     }
     await MobileConfig.query().increment("reference_number", 1);
-  }
-
-  async updateCount({ request, auth }: HttpContext) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    const newCount = request.param("new_value") as string;
-    const value = Number.parseFloat(newCount);
-    if (Number.isNaN(value) || !Number.isInteger(value) || value <= 0) {
-      throw new BadRequestException("Count must be a positive integer");
-    }
-    await MobileConfig.query().update("day_swap_lookahead", value);
   }
 }

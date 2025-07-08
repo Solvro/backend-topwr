@@ -57,6 +57,7 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "version_screenshots",
   "versions",
   "event_calendar",
+  "mobile_config",
 ]);
 
 router.get("/", async () => {
@@ -100,15 +101,8 @@ router
     router.get("/newsfeed/latest", [NewsfeedController, "latest"]);
     router
       .group(() => {
-        router.get("/", [MobileConfigController, "index"]);
         router
-          .patch("/bump", [MobileConfigController, "bump"])
-          .use(middleware.auth());
-        router
-          .patch("/update_lookahead/:new_value", [
-            MobileConfigController,
-            "updateCount",
-          ])
+          .post("/bump", [MobileConfigController, "bump"])
           .use(middleware.auth());
       })
       .prefix("/mobile_config");

@@ -5,9 +5,7 @@ export default class extends BaseSchema {
   protected oldTableName = "cache_reference_numbers";
 
   async up() {
-    this.schema.raw(
-      `ALTER TABLE ${this.oldTableName} RENAME TO ${this.tableName}`,
-    );
+    void this.schema.renameTable(this.oldTableName, this.tableName);
     this.schema.alterTable(this.tableName, (table) => {
       table.integer("day_swap_lookahead").unsigned().notNullable().defaultTo(3);
     });
@@ -17,8 +15,6 @@ export default class extends BaseSchema {
     this.schema.alterTable(this.tableName, (table) => {
       table.dropColumn("day_swap_lookahead");
     });
-    this.schema.raw(
-      `ALTER TABLE ${this.tableName} RENAME TO ${this.oldTableName}`,
-    );
+    void this.schema.renameTable(this.tableName, this.oldTableName);
   }
 }
