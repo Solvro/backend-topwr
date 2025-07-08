@@ -7,7 +7,7 @@ export default class extends BaseSchema {
   async up() {
     void this.schema.renameTable(this.oldTableName, this.tableName);
     this.schema.alterTable(this.tableName, (table) => {
-      table.integer("day_swap_lookahead").unsigned().notNullable().defaultTo(3);
+      table.integer("day_swap_lookahead").unsigned().notNullable().defaultTo(7);
     });
   }
 

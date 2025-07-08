@@ -29,7 +29,7 @@ export default class CacheReferenceNumberScraper extends BaseScraperModule {
       referenceNumber: fetched.data.referenceNumber,
       createdAt: lastUpdated,
       updatedAt: lastUpdated,
-    }); //day swap lookahead defaults to 3
+    }); //day swap lookahead defaults to 7
     task.update("Cache reference number migrated");
   }
 }
