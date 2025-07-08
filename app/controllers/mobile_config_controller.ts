@@ -12,22 +12,13 @@ export default class MobileConfigController extends BaseController<
   protected queryRelations: string[] = [];
   protected crudRelations: string[] = [];
   protected model: typeof MobileConfig = MobileConfig;
+  protected singletonId = 1;
 
   $configureRoutes(
     controller: LazyImport<Constructor<BaseController<typeof MobileConfig>>>,
   ) {
-    router.get("/", [controller, "index"]).as("index");
-    router.patch("/", [controller, "update"]).as("update");
+    super.$configureRoutes(controller);
     router.post("/bump", [MobileConfigController, "bump"]).as("bump");
-  }
-
-  async index() {
-    const mobileConfig = await MobileConfig.query().first();
-    return {
-      data: {
-        mobileConfig,
-      },
-    };
   }
 
   async bump({ auth }: HttpContext) {
