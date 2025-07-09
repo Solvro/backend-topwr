@@ -13,26 +13,12 @@ export default class extends BaseSchema {
   }
 
   async down() {
-    this.defer(() =>
-      this.db.rawQuery(
-        `
-          DO $$
-          BEGIN
-            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'building_icon') THEN
-              CREATE TYPE building_icon AS ENUM ('ICON');
-            END IF;
-          END
-          $$;
-        `,
-      ),
-    );
-
     this.schema.alterTable(this.tableName, (table) => {
       table
         .enum("icon_type", this.buildingIcons, {
           useNative: true,
           enumName: "building_icon",
-          existingType: true,
+          existingType: false,
         })
         .notNullable()
         .defaultTo("ICON");
