@@ -3,11 +3,14 @@ import vine from "@vinejs/vine";
 import { HttpContext } from "@adonisjs/core/http";
 
 import { ServiceUnavailableException } from "#exceptions/http_exceptions";
-import NewsfeedService from "#services/newsfeed_service";
+import NewsfeedService, {
+  NEWSFEED_LANGAUGES,
+} from "#services/newsfeed_service";
 
-const completeOnlyValidator = vine.compile(
+const validator = vine.compile(
   vine.object({
-    completeOnly: vine.boolean(),
+    completeOnly: vine.boolean().optional(),
+    lang: vine.enum(NEWSFEED_LANGAUGES).optional(),
   }),
 );
 
@@ -20,11 +23,14 @@ export default class NewsfeedController {
    * @returns 200 NewsfeedUpdate or 503 with an error message
    */
   async latest({ request, response }: HttpContext) {
+    const { completeOnly, lang } = await request.validateUsing(validator);
+
     await NewsfeedService.startNewsfeedUpdate();
-    const { completeOnly } = await request.validateUsing(completeOnlyValidator);
-    const update = completeOnly
-      ? NewsfeedService.getLatestNewsfeedArticles(true)
-      : NewsfeedService.getLatestNewsfeedArticles();
+    const update = NewsfeedService.getLatestNewsfeedArticles(
+      lang ?? "pl",
+      completeOnly ?? true,
+    );
+
     if (update === null) {
       throw new ServiceUnavailableException(
         "Could not get latest newsfeed articles. Please try again later.",
