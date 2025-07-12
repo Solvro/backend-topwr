@@ -1,22 +1,18 @@
-import { DateTime } from "luxon";
 import * as fs from "node:fs/promises";
-import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+  assertResponseStructure,
+} from "#commands/db_scrape";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Building from "#models/building";
 import Campus from "#models/campus";
-import FilesService from "#services/files_service";
+import { convertDateOrFallbackToNow } from "#utils/date";
 import { fixSequence } from "#utils/db";
 
 const buildingsPath = "https://admin.topwr.solvro.pl/items/Buildings/";
-const assetsPath = "https://admin.topwr.solvro.pl/assets/";
-const filesMetaPath = (id: string) =>
-  `https://admin.topwr.solvro.pl/files/${id}?fields=filename_disk`;
-
-interface SourceResponse<T> {
-  data: T[];
-}
 
 interface BuildingDraft {
   id: number;
@@ -51,18 +47,12 @@ export default class BuildingsScraper extends BaseScraperModule {
 
   async run(task: TaskHandle) {
     task.update("starting reading campuses file...");
-    const campusesData = await fs
+    const campusesData = (await fs
       .readFile("./assets/campuses.json", { encoding: "utf-8" })
       .then(JSON.parse)
-      .then((data) => {
-        if (!isValidCampusesData(data)) {
-          throw new Error(`
-            Invalid JSON structure in ./assets/campuses.json,
-            expected type of Response<CampusDraft>
-            `);
-        }
-        return data;
-      });
+      .then((response) =>
+        assertResponseStructure(response, "Campuses JSON"),
+      )) as SourceResponse<CampusDraft>;
     const campusesMap = new Map<string, Campus>();
     for (const data of campusesData.data) {
       const campus = await Campus.create(data);
@@ -72,16 +62,10 @@ export default class BuildingsScraper extends BaseScraperModule {
     }
     task.update("campuses created!");
     task.update("starting fetching buildings...");
-    const buildingsData = await this.fetchJSON(
+    const buildingsData = (await this.fetchDirectusJSON(
       buildingsPath,
-      "list of buildings from directus",
-    );
-    if (!isValidBuildingsData(buildingsData)) {
-      throw new Error(`
-        Invalid data type fetched from ${buildingsPath},
-        expected type of Response<BuildingDraft>
-        `);
-    }
+      "list of buildings from Directus",
+    )) as SourceResponse<BuildingDraft>;
     const formattedBuildingData = await Promise.all(
       buildingsData.data.map(async (data) => {
         const addressArray = data.addres.split(",");
@@ -94,13 +78,18 @@ export default class BuildingsScraper extends BaseScraperModule {
           latitude: data.latitude,
           longitude: data.longitude,
           haveFood: data.food ?? false,
-          coverKey: await this.semaphore.runTask(() =>
-            this.uploadCoverAndGetKey(data),
-          ),
+          coverKey:
+            data.cover === null
+              ? null
+              : await this.directusUploadFieldAndGetKey(
+                  data.cover,
+                ).addErrorContext(
+                  `Failed to upload the cover photo for building ${data.id}`,
+                ),
           externalDigitalGuideMode: data.externalDigitalGuideMode,
           externalDigitalGuideIdOrUrl: data.externalDigitalGuideIdOrURL,
-          createdAt: resolveDate(data.createdAt),
-          updatedAt: resolveDate(data.updatedAt),
+          createdAt: convertDateOrFallbackToNow(data.createdAt),
+          updatedAt: convertDateOrFallbackToNow(data.updatedAt),
         };
       }),
     );
@@ -135,68 +124,4 @@ export default class BuildingsScraper extends BaseScraperModule {
     await Promise.all(updatedCampuses.map((campus) => campus.save()));
     task.update("campuses cover assigned !");
   }
-
-  private async uploadCoverAndGetKey(
-    data: BuildingDraft,
-  ): Promise<string | null> {
-    const imageKey = data.cover;
-    if (imageKey === null) {
-      this.logger.warning(`no image for building: [${data.id}]`);
-      return null;
-    }
-    const extension = await this.findFileExtension(imageKey);
-    const imageStream = await this.fetchAndCheckStatus(
-      `${assetsPath}${imageKey}`,
-      `image file ${imageKey}`,
-    ).then((response) => response.body);
-    if (imageStream === null) {
-      throw new Error(
-        `No file contents for ${imageKey} for building: [${data.id}] under
-      ${assetsPath}${imageKey}`,
-      );
-    }
-    const file = await FilesService.uploadStream(
-      Readable.fromWeb(imageStream),
-      extension,
-    ).addErrorContext(() => `Failed to upload file with key '${imageKey}'`);
-    return file.id;
-  }
-
-  private async findFileExtension(file: string): Promise<string | undefined> {
-    const extension = (await this.fetchJSON(
-      filesMetaPath(file),
-      `file meta of ${file}`,
-    )) as { data: { filename_disk: string } };
-    try {
-      return extension.data.filename_disk.split(".").pop()?.toLowerCase();
-    } catch (e) {
-      throw new Error(`Failed to fetch extension for ${file}`, { cause: e });
-    }
-  }
 }
-
-function resolveDate(dateString: string): DateTime<true> {
-  const date = DateTime.fromISO(dateString);
-  return date.isValid ? date : DateTime.now();
-}
-
-function isValidDataResponse<T>(
-  response: unknown,
-): response is SourceResponse<T> {
-  return (
-    typeof response === "object" &&
-    response !== null &&
-    "data" in response &&
-    Array.isArray(response.data)
-  );
-}
-
-const isValidCampusesData = (
-  data: unknown,
-): data is SourceResponse<CampusDraft> =>
-  isValidDataResponse<CampusDraft>(data);
-
-const isValidBuildingsData = (
-  data: unknown,
-): data is SourceResponse<BuildingDraft> =>
-  isValidDataResponse<BuildingDraft>(data);

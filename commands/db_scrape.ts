@@ -3,6 +3,7 @@ import { TaskCallback } from "@poppinss/cliui/types";
 import { Semaphore } from "@solvro/utils/semaphore";
 import * as fs from "node:fs/promises";
 import path from "node:path";
+import { Readable } from "node:stream";
 
 import { BaseCommand, args, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
@@ -14,6 +15,7 @@ import {
   prepareReportForLogging,
   toIBaseError,
 } from "#exceptions/base_error";
+import FilesService from "#services/files_service";
 import { modelCount } from "#utils/db";
 
 /*
@@ -45,6 +47,27 @@ import { modelCount } from "#utils/db";
 const LOADABLE_EXTENSIONS = [".js", ".cjs", ".mjs", ".ts"];
 
 export type TaskHandle = Parameters<TaskCallback>[0];
+
+export interface SourceResponse<T> {
+  data: T[];
+}
+
+export function assertResponseStructure(
+  response: unknown,
+  name: string,
+): SourceResponse<unknown> {
+  if (
+    !(
+      typeof response === "object" &&
+      response !== null &&
+      "data" in response &&
+      Array.isArray(response.data)
+    )
+  ) {
+    throw new Error(`Invalid response structure for ${name}`);
+  }
+  return response as SourceResponse<unknown>;
+}
 
 export abstract class BaseScraperModule {
   static name: string;
@@ -128,6 +151,14 @@ export abstract class BaseScraperModule {
     return result;
   }
 
+  protected async fetchDirectusJSON(
+    url: string,
+    item: string,
+  ): Promise<SourceResponse<unknown>> {
+    const response = await this.fetchJSON(url, item);
+    return assertResponseStructure(response, item);
+  }
+
   /**
    * Detect the link type of the given URL.
    *
@@ -155,6 +186,48 @@ export abstract class BaseScraperModule {
       models.map(async (m) => (await modelCount(m)) === 0),
       // "then get the list, and ensure that every boolean value is true"
     ).then((l) => l.every((b) => b));
+  }
+
+  /**
+   * Download a file from Directus and save it using our FileService.
+   *
+   * The file extension will default to 'bin' if none found - will log if it happens.
+   * @param fileId Id under which the file is supposed to be on `https://admin.topwr.solvro.pl/assets/${fileId}`
+   * @returns fileId if uploading was successful, null otherwise.
+   */
+  protected async directusUploadFieldAndGetKey(
+    fileId: string,
+  ): Promise<string> {
+    const extension = await this.findFileExtension(fileId);
+    const imageStream = await this.fetchAndCheckStatus(
+      `https://admin.topwr.solvro.pl/assets/${fileId}`,
+      `Directus image file ${fileId}`,
+    ).then((response) => response.body);
+    if (imageStream === null) {
+      throw new Error(
+        `Failed to fetch image file ${fileId} - empty response from Directus`,
+      );
+    }
+    const file = await FilesService.uploadStream(
+      Readable.fromWeb(imageStream),
+      extension,
+    ).addErrorContext(() => `Failed to upload file with key '${fileId}'`);
+    return file.id;
+  }
+
+  private async findFileExtension(fileId: string): Promise<string> {
+    const extension = (await this.fetchJSON(
+      `https://admin.topwr.solvro.pl/files/${fileId}?fields=filename_disk`,
+      `File metadata of ${fileId}`,
+    )) as { data: { filename_disk: string } };
+    const ext = extension.data.filename_disk.split(".").pop();
+    if (ext === undefined || ext === "") {
+      this.logger.warning(
+        `Failed to obtain file extension for ${fileId}. Fall back to the default "bin" extension. Cause: no extension present in the filename`,
+      );
+      return "bin";
+    }
+    return ext.toLowerCase();
   }
 }
 

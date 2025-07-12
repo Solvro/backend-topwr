@@ -1,17 +1,15 @@
 import { DateTime } from "luxon";
-import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
 import FieldOfStudyModel from "#models/field_of_study";
-import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
-
-interface SourceResponse<T> {
-  data: T[];
-}
 
 interface DepartmentsDraft {
   id: number;
@@ -69,7 +67,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
       (await Promise.all(
         this.directusSchemas.map((schema) =>
           this.semaphore.runTask(() =>
-            this.fetchJSON(
+            this.fetchDirectusJSON(
               `https://admin.topwr.solvro.pl/items/${schema}?limit=-1`,
               schema,
             ),
@@ -80,34 +78,17 @@ export default class DepartmentsScraper extends BaseScraperModule {
         SourceResponse<FieldOfStudyDraft>,
         SourceResponse<DepartmentLinkDraft>,
       ];
-
     const departmentEntries = await Promise.all(
       departmentsData.data.map(async (departmentEntry) => {
         // Logo
-        const details = (await this.fetchJSON(
-          `https://admin.topwr.solvro.pl/files/${departmentEntry.logo}?fields=filename_disk`,
-          `details for file ${departmentEntry.logo}`,
-        )) as { data: { filename_disk: string } };
-        const extension = details.data.filename_disk
-          .split(".")
-          .pop()
-          ?.toLowerCase();
-
-        const fileResponse = await this.fetchAndCheckStatus(
-          `https://admin.topwr.solvro.pl/assets/${departmentEntry.logo}`,
-          `file ${departmentEntry.logo}`,
-        );
-
-        if (fileResponse.body === null) {
+        if (departmentEntry.logo === null) {
           throw new Error(
-            `Response body is null for department ${departmentEntry.id} with asset id ${departmentEntry.logo}`,
+            `Logo for departmentEntry ${departmentEntry.id} is null - field is not nullable`,
           );
         }
-        const logoFile = await FilesService.uploadStream(
-          Readable.fromWeb(fileResponse.body),
-          extension,
+        const fileId = await this.directusUploadFieldAndGetKey(
+          departmentEntry.logo,
         );
-
         // Address
         const match = this.addressRegex.exec(departmentEntry.address);
         if (match !== null) {
@@ -123,7 +104,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             addressLine2,
             code: departmentEntry.code,
             betterCode: departmentEntry.betterCode,
-            logoKey: logoFile.id,
+            logoKey: fileId,
             description: departmentEntry.description,
             gradientStart: departmentEntry.gradient_start,
             gradientStop: departmentEntry.gradient_end,
