@@ -44,6 +44,17 @@ const isCompleteArticle = (article: NewsfeedArticle): boolean => {
   );
 };
 
+export interface LanguageStats {
+  language: NewsfeedLanguage;
+  stats: NewsfeedStats | undefined;
+}
+
+export interface NewsfeedStats {
+  completeCount: number;
+  totalCount: number;
+  lastUpdate: DateTime;
+}
+
 const CACHE_TTL = 60 * 30; //1800 seconds
 
 export default class NewsfeedService {
@@ -154,15 +165,33 @@ export default class NewsfeedService {
     language: NewsfeedLanguage,
     completeOnly = false,
   ): NewsfeedUpdate | null {
-    if (this.articleCache[language] === undefined) {
+    const cache = this.articleCache[language];
+    if (cache === undefined) {
       return null;
     }
     return {
-      updateTime: this.articleCache[language].lastUpdate,
-      articles: completeOnly
-        ? this.articleCache[language].completeArticles
-        : this.articleCache[language].articles,
+      updateTime: cache.lastUpdate,
+      articles: completeOnly ? cache.completeArticles : cache.articles,
     };
+  }
+
+  static getStats(): LanguageStats[] {
+    return NEWSFEED_LANGAUGES.map((lang) => ({
+      language: lang,
+      stats: this.mapToStats(this.articleCache[lang]),
+    }));
+  }
+
+  private static mapToStats(
+    cache: ArticleCache | undefined,
+  ): NewsfeedStats | undefined {
+    return cache !== undefined
+      ? {
+          completeCount: cache.completeArticles.length,
+          totalCount: cache.articles.length,
+          lastUpdate: cache.lastUpdate,
+        }
+      : undefined;
   }
 
   static isInitialized(): boolean {

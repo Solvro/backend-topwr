@@ -38,4 +38,15 @@ export default class NewsfeedController {
     }
     return response.ok(update);
   }
+
+  /**
+   * Returns the stats for currently stored newsfeed articles from the PWr website
+   * as an array of article statistics of {@link LanguageStats} and latest update time.
+   * If the {@link NewsfeedStats} field is undefined, it means that the service failed to get articles for that language.
+   * @returns 200 LanguageStats array
+   */
+  async stats({ response }: HttpContext) {
+    await NewsfeedService.startNewsfeedUpdate();
+    return response.ok(NewsfeedService.getStats());
+  }
 }
