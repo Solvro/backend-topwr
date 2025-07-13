@@ -95,8 +95,12 @@ router
 
     router.get("/about_us", [AboutUsController, "index"]);
 
-    router.get("/newsfeed/latest", [NewsfeedController, "latest"]);
-
+    router
+      .group(() => {
+        router.get("/latest", [NewsfeedController, "latest"]);
+        router.get("/stats", [NewsfeedController, "stats"]);
+      })
+      .prefix("/newsfeed");
     configureBaseRoutes();
   })
   .prefix("/api/v1");

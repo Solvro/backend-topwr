@@ -3,11 +3,14 @@ import vine from "@vinejs/vine";
 import { HttpContext } from "@adonisjs/core/http";
 
 import { ServiceUnavailableException } from "#exceptions/http_exceptions";
-import NewsfeedService from "#services/newsfeed_service";
+import NewsfeedService, {
+  NEWSFEED_LANGAUGES,
+} from "#services/newsfeed_service";
 
-const completeOnlyValidator = vine.compile(
+const validator = vine.compile(
   vine.object({
-    completeOnly: vine.boolean(),
+    completeOnly: vine.boolean().optional(),
+    lang: vine.enum(NEWSFEED_LANGAUGES).optional(),
   }),
 );
 
@@ -20,16 +23,30 @@ export default class NewsfeedController {
    * @returns 200 NewsfeedUpdate or 503 with an error message
    */
   async latest({ request, response }: HttpContext) {
+    const { completeOnly, lang } = await request.validateUsing(validator);
+
     await NewsfeedService.startNewsfeedUpdate();
-    const { completeOnly } = await request.validateUsing(completeOnlyValidator);
-    const update = completeOnly
-      ? NewsfeedService.getLatestNewsfeedArticles(true)
-      : NewsfeedService.getLatestNewsfeedArticles();
+    const update = NewsfeedService.getLatestNewsfeedArticles(
+      lang ?? "pl",
+      completeOnly ?? true,
+    );
+
     if (update === null) {
       throw new ServiceUnavailableException(
         "Could not get latest newsfeed articles. Please try again later.",
       );
     }
     return response.ok(update);
+  }
+
+  /**
+   * Returns the stats for currently stored newsfeed articles from the PWr website
+   * as a map of language codes to article statistics of type {@link NewsfeedStats}.
+   * If a language code is not present, it means that the service failed to get articles for that language.
+   * @returns 200 with an object with NewsfeedStats for each language code
+   */
+  async stats({ response }: HttpContext) {
+    await NewsfeedService.startNewsfeedUpdate();
+    return response.ok(NewsfeedService.getStats());
   }
 }
