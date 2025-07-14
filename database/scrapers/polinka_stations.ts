@@ -52,7 +52,7 @@ export default class PolinkaStationScraper extends BaseScraperModule {
           : await this.directusUploadFieldAndGetKey(
               polinkaStation.photoKey,
             ).addErrorContext(
-              `Failed to upload the cover photo for building ${polinkaStation.id}`,
+              `Failed to upload the cover photo for building ${polinkaStation.name}`,
             );
     }
 
