@@ -3,7 +3,7 @@ import { Readable } from "node:stream";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
-import Polinka from "#models/polinka_station";
+import PolinkaStation from "#models/polinka_station";
 import FilesService from "#services/files_service";
 
 const assetsPath = "https://admin.topwr.solvro.pl/assets/";
@@ -16,6 +16,7 @@ interface SourceResponse<T> {
 
 interface PolinkaStationDraft {
   name: string;
+  campusId: number;
   latitude: number;
   longitude: number;
   address_line1: string;
@@ -42,7 +43,7 @@ const isValidPolinkaStationData = (
   isValidDataResponse<PolinkaStationDraft>(data);
 
 export default class PolinkaStationScraper extends BaseScraperModule {
-  static name = "Polinka";
+  static name = "Polinka Station";
   static description =
     'Scrapes polinkas stations from local file: "./assets/polinkas.json"';
   static taskTitle = "Scrape Polinka";
@@ -64,12 +65,10 @@ export default class PolinkaStationScraper extends BaseScraperModule {
       });
 
     for (const polinkaStation of polinkaStationsData.data) {
-      polinkaStation.photoKey = await this.semaphore.runTask(() =>
-        this.uploadCoverAndGetKey(polinkaStation),
-      );
+      polinkaStation.photoKey = await this.uploadCoverAndGetKey(polinkaStation);
     }
 
-    await Polinka.createMany(polinkaStationsData.data);
+    await PolinkaStation.createMany(polinkaStationsData.data);
     task.update("Polinka stations created!");
   }
   private async uploadCoverAndGetKey(
