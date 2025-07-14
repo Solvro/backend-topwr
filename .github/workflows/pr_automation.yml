@@ -13,9 +13,13 @@ jobs:
     if: ${{ github.event.pull_request.assignee == null }}
     runs-on: ubuntu-latest
     env:
-      PR_URL: ${{ github.event.pull_request.html_url }}
+      PR_NUM: ${{ github.event.pull_request.number }}
       PR_AUTHOR: ${{ github.event.pull_request.user.login }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - name: Assign the author to the pull request
-        run: gh pr edit "$PR_URL" --add-assignee $PR_AUTHOR
+        run: |
+          curl -LvX POST --fail-with-body \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            --json '{"assignees": ["'"$PR_AUTHOR"'"]}' \
+            "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/issues/$PR_NUM/assignees"

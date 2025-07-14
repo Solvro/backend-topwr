@@ -30,27 +30,19 @@ export default class AcademicCalendarScraper extends BaseScraperModule {
   static description = "Import data about academic calendars and day swaps";
   static taskTitle = "Fetching academic calendar and day swaps data";
 
+  async shouldRun(): Promise<boolean> {
+    return await this.modelHasNoRows(AcademicCalendar);
+  }
+
   async run(): Promise<void> {
-    const [academicCalendarResponse, daySwapsResponse] = await Promise.all([
-      fetch("https://admin.topwr.solvro.pl/items/AcademicCalendarData"),
-      fetch("https://admin.topwr.solvro.pl/items/WeekExceptions"),
-    ]);
-
-    if (!academicCalendarResponse.ok) {
-      throw new Error(
-        `Fetching academic calendar has failed. Status code: ${academicCalendarResponse.status}`,
-      );
-    }
-    if (!daySwapsResponse.ok) {
-      throw new Error(
-        `Fetching day swaps has failed. Status code: ${daySwapsResponse.status}`,
-      );
-    }
-
-    const [academicCalendarResult, daySwapsResult] = await Promise.all([
-      academicCalendarResponse.json() as Promise<AcademicCalendarData>,
-      daySwapsResponse.json() as Promise<WeekExceptions>,
-    ]);
+    const academicCalendarResult = (await this.fetchJSON(
+      "https://admin.topwr.solvro.pl/items/AcademicCalendarData",
+      "Academic calendar data",
+    )) as AcademicCalendarData;
+    const daySwapsResult = (await this.fetchJSON(
+      "https://admin.topwr.solvro.pl/items/WeekExceptions",
+      "Day swaps data",
+    )) as WeekExceptions;
     const semesterStartDate = DateTime.fromISO(
       academicCalendarResult.data.semesterStartDate,
     );

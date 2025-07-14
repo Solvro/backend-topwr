@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
-import { BuildingIcon } from "#enums/building_icon";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { Weekday } from "#enums/weekday";
 import Building from "#models/building";
@@ -32,7 +31,6 @@ export default class BuildingSeeder extends BaseSeeder {
       {
         identifier: "B001",
         specialName: "Main Admin Building",
-        iconType: BuildingIcon.Icon,
         addressLine1: "123 University Ave",
         addressLine2: "Building A",
         latitude: 40.7128,
@@ -46,7 +44,6 @@ export default class BuildingSeeder extends BaseSeeder {
       {
         identifier: "B002",
         specialName: "Engineering Block",
-        iconType: BuildingIcon.Icon,
         addressLine1: "124 University Ave",
         addressLine2: "Building B",
         latitude: 40.7129,
@@ -59,7 +56,6 @@ export default class BuildingSeeder extends BaseSeeder {
       {
         identifier: "B003",
         specialName: null,
-        iconType: BuildingIcon.Icon,
         addressLine1: "500 Science Park",
         addressLine2: "kolowe sny",
         latitude: 37.7749,

@@ -1,0 +1,24 @@
+{
+  "data": [
+    {
+      "linkType": "default",
+      "link": "https://solvro.pwr.edu.pl"
+    },
+    {
+      "linkType": "github",
+      "link": "https://github.com/Solvro"
+    },
+    {
+      "linkType": "facebook",
+      "link": "https://www.facebook.com/knsolvro"
+    },
+    {
+      "linkType": "linkedin",
+      "link": "https://www.linkedin.com/company/knsolvro/"
+    },
+    {
+      "linkType": "mailto:",
+      "link": "mailto:kn.solvro@pwr.edu.pl"
+    }
+  ]
+}

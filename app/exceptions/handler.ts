@@ -5,6 +5,7 @@ import logger from "@adonisjs/core/services/logger";
 import {
   ErrorResponse,
   analyzeErrorStack,
+  prepareReportForLogging,
   toIBaseError,
 } from "./base_error.js";
 
@@ -36,10 +37,14 @@ export default class HttpExceptionHandler extends ExceptionHandler {
   ) {
     const report = analyzeErrorStack(toIBaseError(error));
     if (!report.code.startsWith("E_")) {
-      logger.warn(
-        `Found error stack with a code that does not start with 'E_' ('${report.code}'). Replacing with 'E_UNEXPECTED_ERROR' in the response!`,
-      );
-      report.code = "E_UNEXPECTED_ERROR";
+      if (report.code.startsWith("ERR_")) {
+        report.code = `E_${report.code.substring(4)}`;
+      } else {
+        logger.warn(
+          `Found error stack with a code that does not start with 'E_' ('${report.code}'). Replacing with 'E_UNEXPECTED_ERROR' in the response!`,
+        );
+        report.code = "E_UNEXPECTED_ERROR";
+      }
     }
     const sensitive =
       ctx.extras?.sensitive ??
@@ -71,12 +76,7 @@ export default class HttpExceptionHandler extends ExceptionHandler {
       return;
     }
     logger.error(
-      [
-        `Error thrown while handling route ${ctx.route?.name ?? ctx.route?.pattern ?? "<unknown>"}: ${report.message}`,
-        `Error code: ${report.code}, status: ${report.status}`,
-        `Cause stack:\n${report.causeStack.map((c) => `    ${c}`).join("\n")}`,
-        `Root stack trace:\n${report.rootStackTrace.map((f) => `    ${f}`).join("\n")}`,
-      ].join("\n"),
+      `Error thrown while handling route ${ctx.route?.name ?? ctx.route?.pattern ?? "<unknown>"}: ${prepareReportForLogging(report)}`,
     );
   }
 }

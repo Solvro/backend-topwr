@@ -5,7 +5,6 @@ import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
-import { BuildingIcon } from "#enums/building_icon";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -27,9 +26,6 @@ export default class Building extends BaseModel {
 
   @typedColumn({ type: "string", optional: true })
   declare specialName: string | null;
-
-  @typedColumn({ type: BuildingIcon })
-  declare iconType: BuildingIcon;
 
   @typedColumn({ foreignKeyOf: () => Campus })
   declare campusId: number;

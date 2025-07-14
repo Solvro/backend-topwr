@@ -346,6 +346,7 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
     }
     currentError = currentError.cause;
   }
+  const cwd = process.cwd();
   return {
     message: topError.message,
     status: result.status ?? 500,
@@ -360,10 +361,44 @@ export function analyzeErrorStack(topError: IBaseError): ErrorReport {
         if (!line.startsWith("at ")) {
           return [];
         }
-        return line.replace(/^at\s+/, "");
+        return (
+          line
+            // each stack trace line starts with "at", trim that
+            .replace(/^at\s+/, "")
+            // strip the file:// protocol in file paths
+            .replace("file://", "")
+            // cwd + node_modules => external dependency, trim out the path leaving the package name at the start
+            .replace(`${cwd}/node_modules/`, "")
+            // replace cwd with . to make the path relative
+            .replace(cwd, ".")
+        );
       }) ?? [],
     extraResponseFields: result.extraResponseFields,
   };
+}
+
+interface PrepareErrorOptions {
+  includeCodeAndStatus: boolean;
+}
+
+const defaultPrepareErrorOptions: PrepareErrorOptions = {
+  includeCodeAndStatus: true,
+};
+
+export function prepareReportForLogging(
+  report: ErrorReport,
+  opts = defaultPrepareErrorOptions,
+): string {
+  return [
+    report.message,
+    ...(opts.includeCodeAndStatus
+      ? [`Error code: ${report.code}, status: ${report.status}`]
+      : []),
+    "Cause stack:",
+    ...report.causeStack.map((c) => `    ${c}`),
+    "Root stack trace:",
+    ...report.rootStackTrace.map((f) => `    ${f}`),
+  ].join("\n");
 }
 
 export interface ErrorResponse {

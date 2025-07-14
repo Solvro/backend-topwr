@@ -21,7 +21,8 @@ const { default: BaseController } = await (() =>
 const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
-
+const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
+const NewsfeedController = () => import("#controllers/newsfeed_controller");
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
   "aeds",
@@ -53,16 +54,15 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "student_organizations",
   "version_screenshots",
   "versions",
+  "event_calendar",
+  "mobile_config",
 ]);
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
 });
 
-router.get("/metrics", async () => {
-  const { emitMetrics } = await import("#middleware/metrics_middleware");
-  return emitMetrics();
-});
+router.get("/metrics", [MetricsMiddleware, "emitMetrics"]);
 
 router
   .group(() => {
@@ -96,6 +96,12 @@ router
 
     router.get("/about_us", [AboutUsController, "index"]);
 
+    router
+      .group(() => {
+        router.get("/latest", [NewsfeedController, "latest"]);
+        router.get("/stats", [NewsfeedController, "stats"]);
+      })
+      .prefix("/newsfeed");
     configureBaseRoutes();
   })
   .prefix("/api/v1");
