@@ -10,10 +10,6 @@ import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Campus from "#models/campus";
 import PolinkaStation from "#models/polinka_station";
 
-const assetsPath = "https://admin.topwr.solvro.pl/assets/";
-const filesMetaPath = (id: string) =>
-  `https://admin.topwr.solvro.pl/files/${id}?fields=filename_disk`;
-
 interface PolinkaStationDraft {
   name: string;
   campusId: number;
@@ -50,7 +46,6 @@ export default class PolinkaStationScraper extends BaseScraperModule {
       )) as SourceResponse<PolinkaStationDraft>;
 
     for (const polinkaStation of polinkaStationsData.data) {
-      console.log(`polinka: ${polinkaStation}`);
       polinkaStation.photoKey =
         polinkaStation.photoKey === null
           ? null
