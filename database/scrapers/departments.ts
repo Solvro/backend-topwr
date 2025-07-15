@@ -17,7 +17,6 @@ interface DepartmentsDraft {
   logo: string | null;
   description: string | null;
   code: string;
-  isBranch: boolean;
   gradient_start: string;
   gradient_end: string;
   address: string;
@@ -105,7 +104,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             addressLine2,
             code: departmentEntry.code,
             betterCode: departmentEntry.betterCode,
-            isBranch: departmentEntry.isBranch,
+            isBranch: false,
             logoKey: fileId,
             description: departmentEntry.description,
             gradientStart: departmentEntry.gradient_start,
