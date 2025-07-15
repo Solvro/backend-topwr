@@ -210,22 +210,31 @@ For example, to sort campuses by `name`, in ascending order, send the following 
 To request filtering, pass property names & predicates as query parameter keys and values.
 Property names should use the same casing as in model definition files. (camelCase)
 
-For strings properties, the values are matched agains the predicates using `ILIKE` - this means the filtering is **case insensitive**, and **`%` can be used as a wildcard**.
+For strings properties, the values are matched against the predicates using `ILIKE` - this means the filtering is **case insensitive**, and **`%` can be used as a wildcard**.
 Other types of properties are matched using direct equality.
 
 Examples:
 
-- get all fields of study that last 6 semesters:<br>
-  `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?semesterCount=6`
+- get all fields of study that belong to department number six:<br>
+  `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?departmentId=6`
 - get all contributors' youtube links:<br>
   `GET https://api.topwr.solvro.pl/api/v1/contributor_social_links?linkType=youtu`
 - get all campuses whose names end with `a`:<br>
   `GET https://api.topwr.solro.pl/api/v1/campuses?name=%a`
 
-<!--
-  TODO: The search helper scope appears to support arrays and number ranges.
-        How does it actually work?
--->
+Any numeric or date-time field can be filtered by range. Pass the following JSON object as a query param: `{"from": "<value>", "to": "<value>"}`
+
+You can pass both `from` lower bound and `to` upper bound or only one of them.
+When both are passed, if `from` > `to`, the request will result in a 400 Bad Request response.
+If `from` is equal to `to`, the filter works exactly like the single value filter (in other words: `departmentId={"from": "1", "to": "1"}` is equal to `departmentId=1`).
+
+**Remember to encode the JSON properly before sending**.
+If the JSON is not encoded, it will be treated as two separate query parameters (with respective values `"from":"<value>"`,`"to":"<value>"`),
+and the request will either fail or yield an unintended result.
+
+Example of a correctly encoded request:  
+JSON: `{ "from": "3", "to": "4" }`  
+Request: `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?departmentId=%7B%22from%22%3A%223%22%2C%22to%22%3A%224%22%7D`
 
 ### Errors
 
