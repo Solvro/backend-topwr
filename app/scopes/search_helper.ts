@@ -9,13 +9,9 @@ import {
   QueryScope,
 } from "@adonisjs/lucid/types/model";
 
+import { ValidatedColumnDef, validateColumnDef } from "#decorators/typed_model";
 import { BadRequestException } from "#exceptions/http_exceptions";
 import env from "#start/env";
-
-import {
-  ValidatedColumnDef,
-  validateColumnDef,
-} from "../decorators/typed_model.js";
 
 /*
  *
@@ -55,7 +51,7 @@ export type QueryValues =
  *
  * **Supported Column Types:**
  * - **string**:   Direct match or pattern-based filtering.
- * - **number**:   Numeric comparisons (`=`, `>=`, `<=`).
+ * - **number**:   Numeric comparisons (`=`, `>=`, `<=`) and range based filtering.
  * - **boolean**:  Matches `true`, `false`, `1`, or `0`.
  * - **DateTime**: Filters JS date/time values for exact or range-based filtering.
  * - **enum**:     Exact match only
@@ -82,7 +78,7 @@ export function handleSearchQuery<T extends LucidModel>(): QueryScope<
   T,
   (
     query: ModelQueryBuilderContract<T>,
-    qs: Record<string, string | string[] | FromTo | undefined>,
+    qs: Record<string, string | string[] | undefined>,
     ...excluded: Partial<keyof ModelAttributes<InstanceType<T>>>[]
   ) => void
 > {
@@ -101,13 +97,23 @@ export function handleSearchQuery<T extends LucidModel>(): QueryScope<
       const [column, value] = entry;
       if (Array.isArray(value)) {
         query = handleArray(query, column, value);
-      } else if (typeof value === "object") {
-        query = handleFromTo(query, column, value);
       } else {
-        query = handleDirectValue(query, column, value);
+        const range = checkForRangeSearch(value);
+        query =
+          range !== undefined
+            ? handleFromTo(query, column, range)
+            : handleDirectValue(query, column, value);
       }
     }
   });
+}
+
+function checkForRangeSearch(value: string): FromTo | undefined {
+  try {
+    return JSON.parse(value) as FromTo;
+  } catch {
+    return undefined;
+  }
 }
 
 function handleArray<T extends LucidModel>(
@@ -161,10 +167,17 @@ function handleFromTo<T extends LucidModel>(
       }
       const invalidMessage = invalidParts.join(" and ");
       throw new BadRequestException(
-        `invalid filter value(s) ${invalidMessage} ` +
+        `invalid filter value(s): ${invalidMessage} ;` +
           `for column: '${column.columnName}' ` +
           `of type: '${columnType}'`,
       );
+    }
+    if (value.from !== undefined && value.to !== undefined) {
+      if (value.from > value.to) {
+        throw new BadRequestException(
+          `Invalid filter values: lower from bound is greater than higher to bound; for column: '${column.columnName}' `,
+        );
+      }
     }
     if (columnType === "number") {
       if (value.from !== undefined) {
@@ -260,11 +273,12 @@ function arrayTypeCheckHelper(
 
 function extractEntry<T extends LucidModel>(
   param: string,
-  value: string | string[] | FromTo | undefined,
+  value: string | string[] | undefined,
   excluded: string[],
   model: T,
-): [ValidatedColumnDef, string | string[] | FromTo] | undefined {
-  if (excluded.includes(param) || param.trim() === "") {
+): [ValidatedColumnDef, string | string[]] | undefined {
+  const trimmed = param.trim();
+  if (excluded.includes(trimmed) || trimmed === "") {
     return;
   }
   if (value === undefined || value === "") {
@@ -272,7 +286,7 @@ function extractEntry<T extends LucidModel>(
     return;
   }
   // predicate for ts type safety
-  const column = model.$getColumn(param);
+  const column = model.$getColumn(trimmed);
   if (column === undefined) {
     return;
   }
@@ -282,7 +296,7 @@ function extractEntry<T extends LucidModel>(
 
   // DEVELOPMENT LOGGING
   const app = env.get("NODE_ENV");
-  if (["development", "testing"].includes(app)) {
+  if (["development", "test"].includes(app)) {
     logger.warn(
       `\nColumn type for '${column.columnName}' not defined or not supported. \n` +
         `Check 'meta: declaredType' property in columnDefinitions. \n` +
