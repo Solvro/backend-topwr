@@ -104,6 +104,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             addressLine2,
             code: departmentEntry.code,
             betterCode: departmentEntry.betterCode,
+            isBranch: false,
             logoKey: fileId,
             description: departmentEntry.description,
             gradientStart: departmentEntry.gradient_start,

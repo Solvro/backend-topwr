@@ -26,6 +26,9 @@ export default class Department extends BaseModel {
   @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
 
+  @typedColumn({ type: "boolean" })
+  declare isBranch: boolean;
+
   @typedColumn({ type: "string" })
   declare code: string;
 
