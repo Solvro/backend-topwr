@@ -210,22 +210,30 @@ For example, to sort campuses by `name`, in ascending order, send the following 
 To request filtering, pass property names & predicates as query parameter keys and values.
 Property names should use the same casing as in model definition files. (camelCase)
 
-For strings properties, the values are matched agains the predicates using `ILIKE` - this means the filtering is **case insensitive**, and **`%` can be used as a wildcard**.
+For strings properties, the values are matched against the predicates using `ILIKE` - this means the filtering is **case insensitive**, and **`%` can be used as a wildcard**.
 Other types of properties are matched using direct equality.
 
 Examples:
 
-- get all fields of study that last 6 semesters:<br>
-  `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?semesterCount=6`
+- get all fields of study that belong to department number six:<br>
+  `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?departmentId=6`
 - get all contributors' youtube links:<br>
   `GET https://api.topwr.solvro.pl/api/v1/contributor_social_links?linkType=youtu`
 - get all campuses whose names end with `a`:<br>
   `GET https://api.topwr.solro.pl/api/v1/campuses?name=%a`
 
-<!--
-  TODO: The search helper scope appears to support arrays and number ranges.
-        How does it actually work?
--->
+Any numeric or date-time field can be filtered by range. Pass the following query params to filter by range:
+
+- for lower bound of greater or equal to value: `<param>.from=<value>`
+- for upper bound of lesser or equal to value: `<param>.to=<value>`
+- for both lower and upper bound, pass both params separately (that is: `<param>.from=<value>&<param>.to=<value>`)
+
+You can pass both `from` lower bound and `to` upper bound or only one of them.
+If `from` is equal to `to`, the filter works exactly like the single value filter (in other words: `departmentId.from=1&departmentId.to=1` is equal to `departmentId=1`).
+
+Example of a correctly formed request:  
+Goal: Fields of study belonging to departments with ids ranging from two to four, both ends inclusive
+Request: `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?departmentId.from=2&departmentId.to=4`
 
 ### Errors
 

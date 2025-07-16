@@ -9,13 +9,9 @@ import {
   QueryScope,
 } from "@adonisjs/lucid/types/model";
 
+import { ValidatedColumnDef, validateColumnDef } from "#decorators/typed_model";
 import { BadRequestException } from "#exceptions/http_exceptions";
 import env from "#start/env";
-
-import {
-  ValidatedColumnDef,
-  validateColumnDef,
-} from "../decorators/typed_model.js";
 
 /*
  *
@@ -23,9 +19,9 @@ import {
  *
  */
 
-export interface FromTo {
-  from?: string;
-  to?: string;
+export interface RangeSearch {
+  param: string;
+  isFrom: boolean;
 }
 
 export type QueryValues =
@@ -48,14 +44,14 @@ export type QueryValues =
  * - **values** are query string values of shape:
  * - - **string**
  * - - **string[]**
- * - - **{ from?: string, to?: string }**
+ * - - **<string>.to / <string>.from**
  *
  * Filtering request is validated based on column type defined in `meta` property of each column definition.
  * Column type needs to match the ColumnType type defined in **@typedModel** decorator
  *
  * **Supported Column Types:**
  * - **string**:   Direct match or pattern-based filtering.
- * - **number**:   Numeric comparisons (`=`, `>=`, `<=`).
+ * - **number**:   Numeric comparisons (`=`, `>=`, `<=`) and range based filtering.
  * - **boolean**:  Matches `true`, `false`, `1`, or `0`.
  * - **DateTime**: Filters JS date/time values for exact or range-based filtering.
  * - **enum**:     Exact match only
@@ -82,14 +78,15 @@ export function handleSearchQuery<T extends LucidModel>(): QueryScope<
   T,
   (
     query: ModelQueryBuilderContract<T>,
-    qs: Record<string, string | string[] | FromTo | undefined>,
+    qs: Record<string, string | string[] | undefined>,
     ...excluded: Partial<keyof ModelAttributes<InstanceType<T>>>[]
   ) => void
 > {
   return scope((query, qs, ...excluded) => {
     for (const [queryParam, queryValue] of Object.entries(qs)) {
+      const range = checkForRangeSearch(queryParam);
       const entry = extractEntry(
-        queryParam,
+        range?.param ?? queryParam, //if range search detected pass the param without the range search suffix
         queryValue,
         excluded as string[],
         query.model,
@@ -101,13 +98,29 @@ export function handleSearchQuery<T extends LucidModel>(): QueryScope<
       const [column, value] = entry;
       if (Array.isArray(value)) {
         query = handleArray(query, column, value);
-      } else if (typeof value === "object") {
-        query = handleFromTo(query, column, value);
       } else {
-        query = handleDirectValue(query, column, value);
+        query =
+          range !== undefined
+            ? handleRange(query, column, value, range.isFrom)
+            : handleDirectValue(query, column, value);
       }
     }
   });
+}
+
+function checkForRangeSearch(paramName: string): RangeSearch | undefined {
+  if (paramName.endsWith(".from")) {
+    return {
+      param: paramName.substring(0, paramName.length - 5),
+      isFrom: true,
+    };
+  } else if (paramName.endsWith(".to")) {
+    return {
+      param: paramName.substring(0, paramName.length - 3),
+      isFrom: false,
+    };
+  }
+  return undefined;
 }
 
 function handleArray<T extends LucidModel>(
@@ -132,10 +145,11 @@ function handleArray<T extends LucidModel>(
   return query;
 }
 
-function handleFromTo<T extends LucidModel>(
+function handleRange<T extends LucidModel>(
   query: ModelQueryBuilderContract<T>,
   column: ValidatedColumnDef,
-  value: FromTo,
+  value: string,
+  isFrom: boolean,
 ) {
   const columnType = column.meta.typing.declaredType;
   if (columnType !== "number" && columnType !== "DateTime") {
@@ -146,41 +160,27 @@ function handleFromTo<T extends LucidModel>(
     );
   } else {
     // verify using the same logic as for array of values
-    // both values are optional
-    const values = [value.from, value.to];
-    const invalid = arrayTypeCheckHelper(values, column);
+    const invalid = arrayTypeCheckHelper([value], column);
     if (invalid.length > 0) {
-      const invalidFrom = invalid.find((val) => val === value.from);
-      const invalidTo = invalid.find((val) => val === value.to);
-      const invalidParts: string[] = [];
-      if (invalidFrom !== undefined) {
-        invalidParts.push(`'[from]=${invalidFrom}'`);
-      }
-      if (invalidTo !== undefined) {
-        invalidParts.push(`'[to]=${invalidTo}'`);
-      }
-      const invalidMessage = invalidParts.join(" and ");
+      const invalidMessage = isFrom ? `[from]=${value}` : `[to]=${value}`;
       throw new BadRequestException(
-        `invalid filter value(s) ${invalidMessage} ` +
+        `invalid filter value: ${invalidMessage} ;` +
           `for column: '${column.columnName}' ` +
           `of type: '${columnType}'`,
       );
     }
     if (columnType === "number") {
-      if (value.from !== undefined) {
-        query = query.where(column.columnName, ">=", Number(value.from));
-      }
-      if (value.to !== undefined) {
-        query = query.where(column.columnName, "<=", Number(value.to));
+      if (isFrom) {
+        query = query.where(column.columnName, ">=", Number(value));
+      } else {
+        query = query.where(column.columnName, "<=", Number(value));
       }
     } else {
-      if (value.from !== undefined) {
-        const fromDate = new Date(value.from);
-        query = query.where(column.columnName, ">=", fromDate);
-      }
-      if (value.to !== undefined) {
-        const toDate = new Date(value.to);
-        query = query.where(column.columnName, "<=", toDate);
+      const date = new Date(value);
+      if (isFrom) {
+        query = query.where(column.columnName, ">=", date);
+      } else {
+        query = query.where(column.columnName, "<=", date);
       }
     }
   }
@@ -260,11 +260,12 @@ function arrayTypeCheckHelper(
 
 function extractEntry<T extends LucidModel>(
   param: string,
-  value: string | string[] | FromTo | undefined,
+  value: string | string[] | undefined,
   excluded: string[],
   model: T,
-): [ValidatedColumnDef, string | string[] | FromTo] | undefined {
-  if (excluded.includes(param) || param.trim() === "") {
+): [ValidatedColumnDef, string | string[]] | undefined {
+  const trimmed = param.trim();
+  if (excluded.includes(trimmed) || trimmed === "") {
     return;
   }
   if (value === undefined || value === "") {
@@ -272,7 +273,7 @@ function extractEntry<T extends LucidModel>(
     return;
   }
   // predicate for ts type safety
-  const column = model.$getColumn(param);
+  const column = model.$getColumn(trimmed);
   if (column === undefined) {
     return;
   }
@@ -282,7 +283,7 @@ function extractEntry<T extends LucidModel>(
 
   // DEVELOPMENT LOGGING
   const app = env.get("NODE_ENV");
-  if (["development", "testing"].includes(app)) {
+  if (["development", "test"].includes(app)) {
     logger.warn(
       `\nColumn type for '${column.columnName}' not defined or not supported. \n` +
         `Check 'meta: declaredType' property in columnDefinitions. \n` +
