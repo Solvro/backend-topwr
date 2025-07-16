@@ -19,9 +19,9 @@ import env from "#start/env";
  *
  */
 
-export interface FromTo {
-  from?: string;
-  to?: string;
+export interface RangeSearch {
+  param: string;
+  isFrom: boolean;
 }
 
 export type QueryValues =
@@ -44,7 +44,7 @@ export type QueryValues =
  * - **values** are query string values of shape:
  * - - **string**
  * - - **string[]**
- * - - **{ from?: string, to?: string }**
+ * - - **<string>.to / <string>.from**
  *
  * Filtering request is validated based on column type defined in `meta` property of each column definition.
  * Column type needs to match the ColumnType type defined in **@typedModel** decorator
@@ -84,8 +84,9 @@ export function handleSearchQuery<T extends LucidModel>(): QueryScope<
 > {
   return scope((query, qs, ...excluded) => {
     for (const [queryParam, queryValue] of Object.entries(qs)) {
+      const range = checkForRangeSearch(queryParam);
       const entry = extractEntry(
-        queryParam,
+        range?.param ?? queryParam, //if range search detected pass the param without the range search suffix
         queryValue,
         excluded as string[],
         query.model,
@@ -98,22 +99,28 @@ export function handleSearchQuery<T extends LucidModel>(): QueryScope<
       if (Array.isArray(value)) {
         query = handleArray(query, column, value);
       } else {
-        const range = checkForRangeSearch(value);
         query =
           range !== undefined
-            ? handleFromTo(query, column, range)
+            ? handleRange(query, column, value, range.isFrom)
             : handleDirectValue(query, column, value);
       }
     }
   });
 }
 
-function checkForRangeSearch(value: string): FromTo | undefined {
-  try {
-    return JSON.parse(value) as FromTo;
-  } catch {
-    return undefined;
+function checkForRangeSearch(paramName: string): RangeSearch | undefined {
+  if (paramName.endsWith(".from")) {
+    return {
+      param: paramName.substring(0, paramName.length - 5),
+      isFrom: true,
+    };
+  } else if (paramName.endsWith(".to")) {
+    return {
+      param: paramName.substring(0, paramName.length - 3),
+      isFrom: false,
+    };
   }
+  return undefined;
 }
 
 function handleArray<T extends LucidModel>(
@@ -138,10 +145,11 @@ function handleArray<T extends LucidModel>(
   return query;
 }
 
-function handleFromTo<T extends LucidModel>(
+function handleRange<T extends LucidModel>(
   query: ModelQueryBuilderContract<T>,
   column: ValidatedColumnDef,
-  value: FromTo,
+  value: string,
+  isFrom: boolean,
 ) {
   const columnType = column.meta.typing.declaredType;
   if (columnType !== "number" && columnType !== "DateTime") {
@@ -152,48 +160,27 @@ function handleFromTo<T extends LucidModel>(
     );
   } else {
     // verify using the same logic as for array of values
-    // both values are optional
-    const values = [value.from, value.to];
-    const invalid = arrayTypeCheckHelper(values, column);
+    const invalid = arrayTypeCheckHelper([value], column);
     if (invalid.length > 0) {
-      const invalidFrom = invalid.find((val) => val === value.from);
-      const invalidTo = invalid.find((val) => val === value.to);
-      const invalidParts: string[] = [];
-      if (invalidFrom !== undefined) {
-        invalidParts.push(`'[from]=${invalidFrom}'`);
-      }
-      if (invalidTo !== undefined) {
-        invalidParts.push(`'[to]=${invalidTo}'`);
-      }
-      const invalidMessage = invalidParts.join(" and ");
+      const invalidMessage = isFrom ? `[from]=${value}` : `[to]=${value}`;
       throw new BadRequestException(
-        `invalid filter value(s): ${invalidMessage} ;` +
+        `invalid filter value: ${invalidMessage} ;` +
           `for column: '${column.columnName}' ` +
           `of type: '${columnType}'`,
       );
     }
-    if (value.from !== undefined && value.to !== undefined) {
-      if (value.from > value.to) {
-        throw new BadRequestException(
-          `Invalid filter values: lower from bound is greater than higher to bound; for column: '${column.columnName}' `,
-        );
-      }
-    }
     if (columnType === "number") {
-      if (value.from !== undefined) {
-        query = query.where(column.columnName, ">=", Number(value.from));
-      }
-      if (value.to !== undefined) {
-        query = query.where(column.columnName, "<=", Number(value.to));
+      if (isFrom) {
+        query = query.where(column.columnName, ">=", Number(value));
+      } else {
+        query = query.where(column.columnName, "<=", Number(value));
       }
     } else {
-      if (value.from !== undefined) {
-        const fromDate = new Date(value.from);
-        query = query.where(column.columnName, ">=", fromDate);
-      }
-      if (value.to !== undefined) {
-        const toDate = new Date(value.to);
-        query = query.where(column.columnName, "<=", toDate);
+      const date = new Date(value);
+      if (isFrom) {
+        query = query.where(column.columnName, ">=", date);
+      } else {
+        query = query.where(column.columnName, "<=", date);
       }
     }
   }

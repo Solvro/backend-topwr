@@ -222,19 +222,18 @@ Examples:
 - get all campuses whose names end with `a`:<br>
   `GET https://api.topwr.solro.pl/api/v1/campuses?name=%a`
 
-Any numeric or date-time field can be filtered by range. Pass the following JSON object as a query param: `{"from": "<value>", "to": "<value>"}`
+Any numeric or date-time field can be filtered by range. Pass the following query params to filter by range:
+
+- for lower bound of greater or equal to value: `<param>.from=<value>`
+- for upper bound of lesser or equal to value: `<param>.to=<value>`
+- for both lower and upper bound, pass both params separately (that is: `<param>.from=<value>&<param>.to=<value>`)
 
 You can pass both `from` lower bound and `to` upper bound or only one of them.
-When both are passed, if `from` > `to`, the request will result in a 400 Bad Request response.
-If `from` is equal to `to`, the filter works exactly like the single value filter (in other words: `departmentId={"from": "1", "to": "1"}` is equal to `departmentId=1`).
+If `from` is equal to `to`, the filter works exactly like the single value filter (in other words: `departmentId.from=1&departmentId.to=1` is equal to `departmentId=1`).
 
-**Remember to encode the JSON properly before sending**.
-If the JSON is not encoded, it will be treated as two separate query parameters (with respective values `"from":"<value>"`,`"to":"<value>"`),
-and the request will either fail or yield an unintended result.
-
-Example of a correctly encoded request:  
-JSON: `{ "from": "3", "to": "4" }`  
-Request: `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?departmentId=%7B%22from%22%3A%223%22%2C%22to%22%3A%224%22%7D`
+Example of a correctly formed request:  
+Goal: Fields of study belonging to departments with ids ranging from two to four, both ends inclusive
+Request: `GET https://api.topwr.solvro.pl/api/v1/fields_of_study?departmentId.from=2&departmentId.to=4`
 
 ### Errors
 
