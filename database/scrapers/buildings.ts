@@ -66,7 +66,7 @@ export default class BuildingsScraper extends BaseScraperModule {
       buildingsPath,
       "list of buildings from Directus",
     )) as SourceResponse<BuildingDraft>;
-    const formattedBuildingData = await Promise.all(
+    let formattedBuildingData = await Promise.all(
       buildingsData.data.map(async (data) => {
         const addressArray = data.addres.split(",");
         return {
@@ -93,6 +93,11 @@ export default class BuildingsScraper extends BaseScraperModule {
         };
       }),
     );
+
+    formattedBuildingData = formattedBuildingData.filter(
+      (building) => !building.identifier.includes("POLINKA"),
+    );
+
     const updatedCampuses: Campus[] = [];
     await Building.createMany(
       formattedBuildingData.map((buildingEntry) => {
