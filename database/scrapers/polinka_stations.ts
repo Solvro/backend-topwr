@@ -25,7 +25,7 @@ interface PolinkaStationDraft {
 export default class PolinkaStationScraper extends BaseScraperModule {
   static name = "Polinka Station";
   static description =
-    'Scrapes polinkas stations from local file: "./assets/polinkas.json"';
+    'Scrapes polinkas stations from local file: "./assets/polinka_stations.json"';
   static taskTitle = "Scrape Polinka Stations";
 
   async shouldRun(): Promise<boolean> {
@@ -52,7 +52,7 @@ export default class PolinkaStationScraper extends BaseScraperModule {
           : await this.directusUploadFieldAndGetKey(
               polinkaStation.photoKey,
             ).addErrorContext(
-              `Failed to upload the cover photo for building ${polinkaStation.name}`,
+              `Failed to upload the cover photo for polinka: ${polinkaStation.name}`,
             );
     }
 

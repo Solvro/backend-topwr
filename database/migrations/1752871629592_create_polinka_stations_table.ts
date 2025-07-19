@@ -12,12 +12,12 @@ export default class extends BaseSchema {
         .foreign("campus_id")
         .references("id")
         .inTable("campuses")
-        .onDelete("CASCADE");
+        .onDelete("RESTRICT");
 
       table.text("address_line1").notNullable();
       table.text("address_line2").nullable();
-      table.decimal("latitude").notNullable();
-      table.decimal("longitude").notNullable();
+      table.double("latitude").notNullable();
+      table.double("longitude").notNullable();
       table.text("photo_key").nullable();
       table.text("external_digital_guide_mode").nullable();
       table.text("external_digital_guide_id_or_url").nullable();
@@ -42,8 +42,8 @@ export default class extends BaseSchema {
         "digital_guide_format_check",
       );
 
-      table.timestamp("created_at");
-      table.timestamp("updated_at");
+      table.timestamp("created_at").notNullable();
+      table.timestamp("updated_at").notNullable();
     });
   }
 
