@@ -39,9 +39,9 @@ export default class FileEntry extends BaseModel {
       this.url = await drive
         .use()
         .getUrl(this.keyWithExtension)
-        .addErrorContext("Generating file URL in find hook");
+        .addErrorContext("Generating fileEntry URL in the find hook");
     } catch (e) {
-      //logger.error(e); todo
+      logger.error(e);
       this.url = undefined;
     }
   }

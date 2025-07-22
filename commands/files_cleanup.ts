@@ -5,6 +5,7 @@ import path from "node:path";
 import { BaseCommand } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 import { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
+import { Dictionary } from "@adonisjs/lucid/types/querybuilder";
 
 import { TaskHandle } from "#commands/db_scrape";
 import { ValidatedColumnDef } from "#decorators/typed_model";
@@ -162,7 +163,6 @@ export default class CleanupFiles extends BaseCommand {
 
     // ----
     task.update("Stage 7 - unused files");
-    console.log(fileEntrySet.size, modelSet.size, localSet.size);
     const unusedFiles = fileEntrySet.difference(modelSet);
     if (unusedFiles.size === 0) {
       task.update(`No unused files found`);
@@ -331,10 +331,12 @@ export default class CleanupFiles extends BaseCommand {
         }
         const column = collection.relationData.column;
         // Remove from the model table
+        const values: Dictionary<unknown> = {};
+        values[column] = null;
         await collection.relationData.model
           .query()
           .whereIn(column, toNull)
-          .update({ column: null })
+          .update(values)
           .exec();
         // Remove from the FileEntry table
         await FileEntry.query().delete().whereIn("id", toNull).exec();
