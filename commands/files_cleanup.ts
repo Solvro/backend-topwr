@@ -34,11 +34,11 @@ interface DBUsedFiles {
 
 const DEFAULT_FILE_PATH = path.resolve(".", "storage");
 const MODEL_DIR_PATH = path.resolve(".", "app", "models");
+const TIME_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day; anything newer than this will not get indexed
 
 export default class CleanupFiles extends BaseCommand {
   static commandName = "file_cleanup";
-  static description =
-    "Runs a script that will remove unused, orphaned and ghost files from the database and local storage";
+  static description = `Runs a script that will remove unused, orphaned and ghost files from the database and local storage. Only affects files older than ${TIME_LIMIT_MS} ms.`;
 
   static options: CommandOptions = {
     startApp: true,
@@ -89,7 +89,12 @@ export default class CleanupFiles extends BaseCommand {
     // ----
     task.update("Stage 2 - Fetching files from FileEntries table");
     const fetchedFileEntries = await FileEntry.all();
-    const dbFileEntry = fetchedFileEntries.map((row) => row.id);
+    const currentTime = Date.now();
+    const dbFileEntry = fetchedFileEntries
+      .filter((row) => {
+        return currentTime - row.createdAt.toMillis() >= TIME_LIMIT_MS;
+      }) // filter out new ones
+      .map((row) => row.id);
     task.update(`Found ${dbFileEntry.length} files in the FileEntry table`);
     // ----
     task.update("Stage 3 - Looking for models with relations to FileEntry");
@@ -370,13 +375,17 @@ export default class CleanupFiles extends BaseCommand {
   //Filter out only files that have valid UUIDs as filenames
   private getValidFiles(dirPath: string): LocalFileEntry[] {
     const uuidRegex =
-      /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi; //borrowed from AdminJS implementation
+      /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi; // borrowed from AdminJS implementation
     const filenames = fs.readdirSync(dirPath);
+    const currentTime = Date.now();
     return filenames
-      .map((filename) => path.parse(filename))
-      .filter((pathObj) => {
-        return uuidRegex.test(pathObj.name);
+      .map((filename) => {
+        const filePath = path.join(dirPath, filename);
+        const stats = fs.statSync(filePath);
+        return { ...path.parse(filePath), createdAt: stats.birthtimeMs };
       })
+      .filter((pathObj) => currentTime - pathObj.createdAt >= TIME_LIMIT_MS) // filter out new ones
+      .filter((pathObj) => uuidRegex.test(pathObj.name))
       .map((pathObj) => ({
         uuid: pathObj.name,
         ext: pathObj.ext,
