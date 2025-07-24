@@ -11,9 +11,10 @@ interface CacheReferenceData {
 }
 
 export default class CacheReferenceNumberScraper extends BaseScraperModule {
-  static name = "Cache reference number";
-  static description = "Cache ref number and last updated datetime";
-  static taskTitle = "Scrape the cache ref number with last updated datetime";
+  static name = "CMS cache reference number";
+  static description = "CMS cache ref number and last updated datetime";
+  static taskTitle =
+    "Scrape the cms cache ref number with last updated datetime";
 
   async run(task: TaskHandle) {
     task.update("Fetching the cache reference number...");
@@ -24,12 +25,12 @@ export default class CacheReferenceNumberScraper extends BaseScraperModule {
 
     const lastUpdated = DateTime.fromISO(fetched.data.date_updated);
 
-    task.update("Creating the cache reference number");
+    task.update("Creating the cms cache reference number");
     await MobileConfig.create({
-      referenceNumber: fetched.data.referenceNumber,
+      cmsReferenceNumber: fetched.data.referenceNumber,
       createdAt: lastUpdated,
       updatedAt: lastUpdated,
     }); //day swap lookahead defaults to 7
-    task.update("Cache reference number migrated");
+    task.update("CMS cache reference number migrated");
   }
 }
