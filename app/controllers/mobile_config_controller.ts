@@ -18,13 +18,25 @@ export default class MobileConfigController extends BaseController<
     controller: LazyImport<Constructor<BaseController<typeof MobileConfig>>>,
   ) {
     super.$configureRoutes(controller);
-    router.post("/bump", [MobileConfigController, "bump"]).as("bump");
+    router
+      .post("/bump/cms", [MobileConfigController, "bumpCms"])
+      .as("bump_cms");
+    router
+      .post("/bump/translator", [MobileConfigController, "bumpTranslator"])
+      .as("bump_translator");
   }
 
-  async bump({ auth }: HttpContext) {
+  async bumpCms({ auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await MobileConfig.bumpCache();
+    await MobileConfig.bumpCmsCache();
+  }
+
+  async bumpTranslator({ auth }: HttpContext) {
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    await MobileConfig.bumpTranslatorCache();
   }
 }
