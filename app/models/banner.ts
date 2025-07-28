@@ -1,7 +1,7 @@
 import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
-import { BaseModel } from "@adonisjs/lucid/orm";
+import { BaseModel, computed } from "@adonisjs/lucid/orm";
 
 import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
@@ -81,6 +81,16 @@ export default class Banner extends BaseModel {
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @computed()
+  get shouldRender(): boolean {
+    const now = DateTime.now();
+    return (
+      !this.draft &&
+      (this.visibleFrom === null || this.visibleFrom <= now) &&
+      (this.visibleUntil === null || now <= this.visibleUntil)
+    );
+  }
 
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
