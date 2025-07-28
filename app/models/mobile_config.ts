@@ -1,7 +1,7 @@
 import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
-import { BaseModel } from "@adonisjs/lucid/orm";
+import { BaseModel, computed } from "@adonisjs/lucid/orm";
 
 import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
@@ -23,6 +23,14 @@ export default class MobileConfig extends BaseModel {
     validator: vine.number().withoutDecimals().min(1),
   })
   declare daySwapLookahead: number;
+
+  /**
+   * @deprecated Since issue #217. Use cmsReferenceNumber instead
+   */
+  @computed()
+  get referenceNumber() {
+    return this.cmsReferenceNumber;
+  }
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
