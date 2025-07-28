@@ -11,7 +11,7 @@ export default class extends BaseSchema {
       table.text("description").notNullable();
       table.text("url").nullable();
 
-      table.boolean("is_enabled").notNullable();
+      table.boolean("draft").notNullable();
 
       table.integer("text_color").nullable();
       table.integer("background_color").nullable();

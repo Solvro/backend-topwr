@@ -21,7 +21,7 @@ export default class Banner extends BaseModel {
   declare url: string | null;
 
   @typedColumn({ type: "boolean", optional: false })
-  declare isEnabled: boolean;
+  declare draft: boolean;
 
   @typedColumn({ type: "number", optional: true })
   declare textColor: number | null;
