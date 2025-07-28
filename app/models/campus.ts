@@ -10,6 +10,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
 
 import Building from "./building.js";
 import FileEntry from "./file_entry.js";
+import PolinkaStation from "./polinka_station.js";
 
 export default class Campus extends BaseModel {
   @typedColumn({ isPrimary: true, type: "number" })
@@ -29,6 +30,9 @@ export default class Campus extends BaseModel {
 
   @hasMany(() => Building)
   declare buildings: HasMany<typeof Building>;
+
+  @hasMany(() => PolinkaStation)
+  declare polinkaStations: HasMany<typeof PolinkaStation>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",

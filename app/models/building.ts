@@ -16,6 +16,7 @@ import Campus from "./campus.js";
 import FileEntry from "./file_entry.js";
 import FoodSpot from "./food_spot.js";
 import Library from "./library.js";
+import PinkBox from "./pink_box.js";
 
 export default class Building extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
@@ -68,6 +69,9 @@ export default class Building extends BaseModel {
 
   @hasMany(() => Library)
   declare libraries: HasMany<typeof Library>;
+
+  @hasMany(() => PinkBox)
+  declare pinkBoxes: HasMany<typeof PinkBox>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",
