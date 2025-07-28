@@ -20,10 +20,10 @@ export default class MobileConfigController extends BaseController<
     super.$configureRoutes(controller);
     router
       .post("/bump/cms", [MobileConfigController, "bumpCms"])
-      .as("bump_cms");
+      .as("bump.cms");
     router
       .post("/bump/translator", [MobileConfigController, "bumpTranslator"])
-      .as("bump_translator");
+      .as("bump.translator");
   }
 
   async bumpCms({ auth }: HttpContext) {
