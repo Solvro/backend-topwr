@@ -13,9 +13,9 @@ export default class extends BaseSchema {
 
       table.boolean("draft").notNullable();
 
-      table.integer("text_color").nullable();
-      table.integer("background_color").nullable();
-      table.integer("title_color").nullable();
+      table.text("text_color").nullable();
+      table.text("background_color").nullable();
+      table.text("title_color").nullable();
 
       table.timestamp("visible_from").nullable();
       table.timestamp("visible_until").nullable();
