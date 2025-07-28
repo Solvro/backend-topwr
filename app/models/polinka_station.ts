@@ -1,8 +1,8 @@
 import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
-import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
-import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
+import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
+import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
@@ -10,23 +10,15 @@ import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
-import Aed from "./aed.js";
-import BicycleShower from "./bicycle_shower.js";
 import Campus from "./campus.js";
 import FileEntry from "./file_entry.js";
-import FoodSpot from "./food_spot.js";
-import Library from "./library.js";
-import PinkBox from "./pink_box.js";
 
-export default class Building extends BaseModel {
+export default class PolinkaStation extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
   @typedColumn({ type: "string" })
-  declare identifier: string;
-
-  @typedColumn({ type: "string", optional: true })
-  declare specialName: string | null;
+  declare name: string;
 
   @typedColumn({ foreignKeyOf: () => Campus })
   declare campusId: number;
@@ -43,11 +35,8 @@ export default class Building extends BaseModel {
   @typedColumn({ type: "number", validator: vine.number().min(-180).max(180) })
   declare longitude: number;
 
-  @typedColumn({ type: "boolean" })
-  declare haveFood: boolean;
-
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
-  declare coverKey: string | null;
+  declare photoKey: string | null;
 
   @typedColumn({ type: ExternalDigitalGuideMode, optional: true })
   declare externalDigitalGuideMode: ExternalDigitalGuideMode | null;
@@ -58,26 +47,11 @@ export default class Building extends BaseModel {
   @belongsTo(() => Campus)
   declare campus: BelongsTo<typeof Campus>;
 
-  @hasMany(() => Aed)
-  declare aeds: HasMany<typeof Aed>;
-
-  @hasMany(() => BicycleShower)
-  declare bicycleShowers: HasMany<typeof BicycleShower>;
-
-  @hasMany(() => FoodSpot)
-  declare foodSpots: HasMany<typeof FoodSpot>;
-
-  @hasMany(() => Library)
-  declare libraries: HasMany<typeof Library>;
-
-  @hasMany(() => PinkBox)
-  declare pinkBoxes: HasMany<typeof PinkBox>;
-
   @belongsTo(() => FileEntry, {
     localKey: "id",
-    foreignKey: "coverKey",
+    foreignKey: "photoKey",
   })
-  declare cover: BelongsTo<typeof FileEntry>;
+  declare photo: BelongsTo<typeof FileEntry>;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
