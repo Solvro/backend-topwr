@@ -3,6 +3,7 @@ import * as fs from "node:fs";
 import path from "node:path";
 
 import { BaseCommand } from "@adonisjs/core/ace";
+import router from "@adonisjs/core/services/router";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 import { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
 import { Dictionary } from "@adonisjs/lucid/types/querybuilder";
@@ -16,9 +17,15 @@ import {
 } from "#exceptions/base_error";
 import FileEntry from "#models/file_entry";
 
+interface DbFileEntry {
+  uuid: string;
+  createdAt: number;
+}
+
 interface LocalFileEntry {
   uuid: string;
   ext: string;
+  createdAt: number;
 }
 
 interface DBRelation {
@@ -33,7 +40,6 @@ interface DBUsedFiles {
 }
 
 const DEFAULT_FILE_PATH = path.resolve(".", "storage");
-const MODEL_DIR_PATH = path.resolve(".", "app", "models");
 const TIME_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day; anything newer than this will not get indexed
 
 export default class CleanupFiles extends BaseCommand {
@@ -45,6 +51,9 @@ export default class CleanupFiles extends BaseCommand {
   };
 
   async run() {
+    if (!router.commited) {
+      router.commit();
+    }
     const tasks = this.ui.tasks({ verbose: true });
     tasks.add("File cleanup", async (task) => {
       try {
@@ -89,12 +98,10 @@ export default class CleanupFiles extends BaseCommand {
     // ----
     task.update("Stage 2 - Fetching files from FileEntries table");
     const fetchedFileEntries = await FileEntry.all();
-    const currentTime = Date.now();
-    const dbFileEntry = fetchedFileEntries
-      .filter((row) => {
-        return currentTime - row.createdAt.toMillis() >= TIME_LIMIT_MS;
-      }) // filter out new ones
-      .map((row) => row.id);
+    const dbFileEntry: DbFileEntry[] = fetchedFileEntries.map((row) => ({
+      uuid: row.id,
+      createdAt: row.createdAt.toMillis(),
+    }));
     task.update(`Found ${dbFileEntry.length} files in the FileEntry table`);
     // ----
     task.update("Stage 3 - Looking for models with relations to FileEntry");
@@ -103,16 +110,17 @@ export default class CleanupFiles extends BaseCommand {
     if (!FileEntry.booted) {
       FileEntry.boot();
     }
-    for (const model of Object.values(models)) {
+    for (const model of models) {
       if (!model.booted) {
         model.boot();
       }
     }
-    for (const model of Object.values(models)) {
+    for (const model of models) {
       await this.addFileEntryRelationData(relations, model);
     }
     task.update(`Found ${relations.length} related models`);
     await this.askForListing(
+      "List all related models with relation keys?",
       relations.map(
         (relation) => `${relation.model.name} - ${relation.column}`,
       ),
@@ -137,10 +145,28 @@ export default class CleanupFiles extends BaseCommand {
     const localSet: Set<string> = new Set<string>(
       localFiles.map((file) => file.uuid),
     );
-    const fileEntrySet: Set<string> = new Set<string>(dbFileEntry);
+    const fileEntrySet: Set<string> = new Set<string>(
+      dbFileEntry.map((file) => file.uuid),
+    );
     const modelSet: Set<string> = new Set<string>(
       usedFiles.flatMap((file) => file.uuids.filter((uuid) => uuid !== null)),
     );
+    // ignore any new files
+    const bound = Date.now() - TIME_LIMIT_MS;
+    for (const file of localFiles) {
+      if (file.createdAt > bound) {
+        localSet.delete(file.uuid);
+        fileEntrySet.delete(file.uuid);
+        modelSet.delete(file.uuid);
+      }
+    }
+    for (const file of dbFileEntry) {
+      if (file.createdAt > bound) {
+        fileEntrySet.delete(file.uuid);
+        localSet.delete(file.uuid);
+        modelSet.delete(file.uuid);
+      }
+    }
     // ----
     task.update("Stage 6 - orphaned files");
     const orphanedFiles = localSet.difference(fileEntrySet);
@@ -148,7 +174,7 @@ export default class CleanupFiles extends BaseCommand {
       task.update(`No orphaned files found`);
     } else {
       task.update(`Found ${orphanedFiles.size} orphaned files`);
-      await this.askForListing(orphanedFiles);
+      await this.askForListing("List all orphaned files' ids?", orphanedFiles);
       const orphanedConfirmation = await this.prompt.confirm(
         "Delete all orphaned files from the file system?",
         { default: false },
@@ -173,7 +199,7 @@ export default class CleanupFiles extends BaseCommand {
       task.update(`No unused files found`);
     } else {
       task.update(`Found ${unusedFiles.size} unused files`);
-      await this.askForListing(unusedFiles);
+      await this.askForListing("List all unused files' ids?", unusedFiles);
       const unusedConfirmation = await this.prompt.confirm(
         "Delete all unused files from the file system and the database?",
         { default: false },
@@ -198,7 +224,7 @@ export default class CleanupFiles extends BaseCommand {
       task.update(`No ghost files found`);
     } else {
       task.update(`Found ${ghostFiles.size} ghost files`);
-      await this.askForListing(ghostFiles);
+      await this.askForListing("List all ghost files' ids?", ghostFiles);
       const ghostConfirmation = await this.prompt.confirm(
         "For all nullable references: Replace all ghost files references with null and delete them from FileEntry table?",
         { default: false },
@@ -213,7 +239,7 @@ export default class CleanupFiles extends BaseCommand {
 
   private async importModels(): Promise<LucidModel[]> {
     const models: LucidModel[] = [];
-    for (const file of fs.readdirSync(MODEL_DIR_PATH)) {
+    for (const file of fs.readdirSync(this.app.modelsPath())) {
       const imported = (await import(
         `#models/${file.substring(0, file.length - 3)}`
       )) as { default: LucidModel };
@@ -323,7 +349,7 @@ export default class CleanupFiles extends BaseCommand {
     task.update(
       `${applicable.length} models with nullable references to FileEntry found. Setting references to null...`,
     );
-    await Promise.all(
+    const removedIds = await Promise.all(
       applicable.map(async (collection) => {
         const toNull = collection.uuids
           .filter((uuid) => uuid !== null)
@@ -332,7 +358,7 @@ export default class CleanupFiles extends BaseCommand {
           this.logger.info(
             `Skipped model ${collection.relationData.model.name} - no valid values found`,
           );
-          return;
+          return null; // nothing was removed
         }
         const column = collection.relationData.column;
         // Remove from the model table
@@ -343,17 +369,21 @@ export default class CleanupFiles extends BaseCommand {
           .whereIn(column, toNull)
           .update(values)
           .exec();
-        // Remove from the FileEntry table
-        await FileEntry.query().delete().whereIn("id", toNull).exec();
         this.logger.info(
-          `Set ${toNull.length} references to null for ${collection.relationData.model.name}. Removed all from FileEntry table.`,
+          `Set ${toNull.length} references to null for ${collection.relationData.model.name}`,
         );
+        return toNull;
       }),
+    ).then((values) => values.filter((value) => value !== null).flat());
+    // Remove from the FileEntry table
+    await FileEntry.query().delete().whereIn("id", removedIds).exec();
+    this.logger.info(
+      `Removed ${removedIds.length} entries from the FileEntry table.`,
     );
   }
 
-  private async askForListing(values: string[] | Set<string>) {
-    const response = await this.prompt.confirm("List values?", {
+  private async askForListing(prompt: string, values: string[] | Set<string>) {
+    const response = await this.prompt.confirm(prompt, {
       default: false,
     });
     if (response) {
@@ -377,18 +407,17 @@ export default class CleanupFiles extends BaseCommand {
     const uuidRegex =
       /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi; // borrowed from AdminJS implementation
     const filenames = fs.readdirSync(dirPath);
-    const currentTime = Date.now();
     return filenames
       .map((filename) => {
         const filePath = path.join(dirPath, filename);
         const stats = fs.statSync(filePath);
         return { ...path.parse(filePath), createdAt: stats.birthtimeMs };
       })
-      .filter((pathObj) => currentTime - pathObj.createdAt >= TIME_LIMIT_MS) // filter out new ones
       .filter((pathObj) => uuidRegex.test(pathObj.name))
       .map((pathObj) => ({
         uuid: pathObj.name,
         ext: pathObj.ext,
+        createdAt: pathObj.createdAt,
       }));
   }
 }

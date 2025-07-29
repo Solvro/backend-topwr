@@ -2,7 +2,6 @@ import { DateTime } from "luxon";
 import { randomUUID } from "node:crypto";
 import type { UUID } from "node:crypto";
 
-import logger from "@adonisjs/core/services/logger";
 import drive from "@adonisjs/drive/services/main";
 import {
   BaseModel,
@@ -35,15 +34,7 @@ export default class FileEntry extends BaseModel {
   }
 
   async computeExtraProps() {
-    try {
-      this.url = await drive
-        .use()
-        .getUrl(this.keyWithExtension)
-        .addErrorContext("Generating fileEntry URL in the find hook");
-    } catch (e) {
-      logger.error(e);
-      this.url = undefined;
-    }
+    this.url = await drive.use().getUrl(this.keyWithExtension);
   }
 
   @afterFetch()
