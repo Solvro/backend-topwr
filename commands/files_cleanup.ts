@@ -343,22 +343,25 @@ export default class CleanupFiles extends BaseCommand {
     usedFiles: DBUsedFiles[],
     ghostFiles: Set<string>,
   ) {
-    const applicable = usedFiles.filter(
-      (collection) => collection.relationData.isNullable,
-    );
-    task.update(
-      `${applicable.length} models with nullable references to FileEntry found. Setting references to null...`,
-    );
+    const untouchableIds = new Set<string>();
     const removedIds = await Promise.all(
-      applicable.map(async (collection) => {
+      usedFiles.map(async (collection) => {
         const toNull = collection.uuids
           .filter((uuid) => uuid !== null)
           .filter((uuid) => ghostFiles.has(uuid));
+        if (!collection.relationData.isNullable) {
+          // We cannot touch this model
+          this.logger.info(
+            `Skipped model ${collection.relationData.model.name} - relation is not nullable`,
+          );
+          toNull.forEach((uuid) => untouchableIds.add(uuid));
+          return null;
+        }
         if (toNull.length === 0) {
           this.logger.info(
             `Skipped model ${collection.relationData.model.name} - no valid values found`,
           );
-          return null; // nothing was removed
+          return null; // Nothing was removed
         }
         const column = collection.relationData.column;
         // Remove from the model table
@@ -375,10 +378,13 @@ export default class CleanupFiles extends BaseCommand {
         return toNull;
       }),
     ).then((values) => values.filter((value) => value !== null).flat());
+    task.update(`Set ${removedIds.length} references to null in models`);
+    // Get the Ids that can have their File entries deleted
+    const safeToNullIds = removedIds.filter((id) => !untouchableIds.has(id));
     // Remove from the FileEntry table
-    await FileEntry.query().delete().whereIn("id", removedIds).exec();
-    this.logger.info(
-      `Removed ${removedIds.length} entries from the FileEntry table.`,
+    await FileEntry.query().delete().whereIn("id", safeToNullIds).exec();
+    task.update(
+      `Removed ${safeToNullIds.length} entries from the FileEntry table.`,
     );
   }
 
