@@ -34,9 +34,9 @@ jobs:
             const issueLinkRegex = /(?:fix(?:e[sd])?|close(?:[sd])?|resolve(?:[sd])?):?\s+#\d+/i;
             if(!issueLinkRegex.test(prBody)){
               await github.rest.issues.createComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  issue_number: prNumber,
-                  body: "Looks like you did not link an issue to this PR. If this PR completes a task, consider linking it."
-                });
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body: "Looks like you did not link an issue to this PR. If this PR completes a task, consider linking it."
+              });
             }
