@@ -56,6 +56,7 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "versions",
   "event_calendar",
   "mobile_config",
+  "banners",
 ]);
 
 router.get("/", async () => {
