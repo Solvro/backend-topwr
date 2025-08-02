@@ -37,6 +37,6 @@ jobs:
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: prNumber,
-                  body: "Pull request does not have an issue linked to it. Please link it."
+                  body: "Looks like you did not link an issue to this PR. If this PR completes a task, consider linking it."
                 });
             }
