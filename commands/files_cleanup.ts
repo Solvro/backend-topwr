@@ -291,14 +291,12 @@ export default class CleanupFiles extends BaseCommand {
       .filter((file) => orphanedFiles.has(file.uuid))
       .forEach((file) => {
         try {
-          fs.rmSync(path.join(storagePath, `${file.uuid}.${file.ext}`), {
-            force: true,
-          });
+          fs.rmSync(path.join(storagePath, `${file.uuid}${file.ext}`));
           orphanedFiles.delete(file.uuid);
           localSet.delete(file.uuid);
         } catch (e) {
           this.logger.warning(
-            `Failed to delete file ${file.uuid}.${file.ext} from the file system: ${e}`,
+            `Failed to delete file ${file.uuid}${file.ext} from the file system: ${e}`,
           );
         }
       });
@@ -324,14 +322,12 @@ export default class CleanupFiles extends BaseCommand {
       .filter((file) => unusedFiles.has(file.uuid))
       .forEach((file) => {
         try {
-          fs.rmSync(path.join(storagePath, `${file.uuid}.${file.ext}`), {
-            force: true,
-          });
+          fs.rmSync(path.join(storagePath, `${file.uuid}${file.ext}`));
           unusedFiles.delete(file.uuid);
           localSet.delete(file.uuid);
         } catch (e) {
           this.logger.warning(
-            `Failed to delete file ${file.uuid}.${file.ext} from the file system: ${e}`,
+            `Failed to delete file ${file.uuid}${file.ext} from the file system: ${e}`,
           );
         }
       });
@@ -411,7 +407,7 @@ export default class CleanupFiles extends BaseCommand {
   //Filter out only files that have valid UUIDs as filenames
   private getValidFiles(dirPath: string): LocalFileEntry[] {
     const uuidRegex =
-      /^[0-9a-fA-F]{8}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{4}\b-[0-9a-fA-F]{12}$/gi; // borrowed from AdminJS implementation
+      /^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i;
     const filenames = fs.readdirSync(dirPath);
     return filenames
       .map((filename) => {
