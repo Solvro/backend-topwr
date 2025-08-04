@@ -24,6 +24,10 @@ jobs:
             --json '{"assignees": ["'"$PR_AUTHOR"'"]}' \
             "$GITHUB_API_URL/repos/$GITHUB_REPOSITORY/issues/$PR_NUM/assignees"
 
+  link-reminder:
+    name: Remind to link issues
+    runs-on: ubuntu-latest
+    steps:
       - name: Check linking
         uses: actions/github-script@v7
         with:
