@@ -4,6 +4,7 @@ import { ResourceBuilder, ResourceFactory } from "./resource_factory.js";
 import { AboutUsBuilder } from "./resource_registers/about_us.js";
 import { AcademicCalendarsBuilder } from "./resource_registers/academic_calendars.js";
 import { AdminPanelBuilder } from "./resource_registers/admin_panel.js";
+import { BannersBuilder } from "./resource_registers/banners.js";
 import { BuildingsBuilder } from "./resource_registers/buildings.js";
 import { MobileConfigBuilder } from "./resource_registers/cache_reference_number.js";
 import { DepartmentsBuilder } from "./resource_registers/departments.js";
@@ -13,6 +14,7 @@ import { VersionsBuilder } from "./resource_registers/versions.js";
 
 function setUpResources(): ResourceBuilder[] {
   return [
+    BannersBuilder,
     BuildingsBuilder,
     AdminPanelBuilder,
     AcademicCalendarsBuilder,
