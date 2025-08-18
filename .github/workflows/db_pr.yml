@@ -260,6 +260,13 @@ jobs:
           diff topwr1.sql topwr2.sql || (echo "Detected behaviour changes in existing migrations!" && exit 1)
           echo "::$STOP_MARKER::"
 
+      - name: Upload database dumps
+        uses: actions/upload-artifact@v4
+        if: "!cancelled()"
+        with:
+          name: db-dumps
+          path: "*.sql"
+
   dry-runs:
     # this job verifies that migrations don't modify the database on dry runs
     name: Verify migrations on dry runs
@@ -360,3 +367,10 @@ jobs:
           echo "::stop-commands::$STOP_MARKER"
           diff before.sql after.sql || (echo "Detected database changes during dry runs!" && exit 1)
           echo "::$STOP_MARKER::"
+
+      - name: Upload database dumps
+        uses: actions/upload-artifact@v4
+        if: "!cancelled()"
+        with:
+          name: db-dumps
+          path: "*.sql"
