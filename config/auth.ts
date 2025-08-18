@@ -1,6 +1,5 @@
 import { defineConfig } from "@adonisjs/auth";
 import { tokensGuard, tokensUserProvider } from "@adonisjs/auth/access_tokens";
-import { sessionUserProvider } from "@adonisjs/auth/session";
 import type {
   Authenticators,
   InferAuthEvents,
@@ -10,13 +9,11 @@ import type {
 import env from "#start/env";
 
 import { JwtGuard } from "../app/auth/guards/jwt.js";
+import { JwtLucidUserProvider } from "../app/auth/jwt_user_provider.js";
 
 const jwtConfig = {
   secret: env.get("APP_KEY"),
 };
-const userProvider = sessionUserProvider({
-  model: () => import("#models/user"),
-});
 
 const authConfig = defineConfig({
   default: "jwt",
@@ -28,12 +25,11 @@ const authConfig = defineConfig({
       }),
     }),
     jwt: (ctx) => {
-      return new JwtGuard(
-        ctx,
-        // @ts-expect-error these types are compatible
-        userProvider,
-        jwtConfig,
+      const userModel = import("#models/user");
+      const provider = userModel.then(
+        (model) => new JwtLucidUserProvider(model.default),
       );
+      return new JwtGuard(ctx, provider, jwtConfig);
     },
   },
 });

@@ -8,7 +8,6 @@ export default class AuthController {
     const { email, password } = await request.validateUsing(loginValidator);
 
     const user = await User.verifyCredentials(email, password);
-
     return await auth.use("jwt").generate(user);
   }
 

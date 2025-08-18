@@ -42,27 +42,44 @@ export interface JwtUserProviderContract<RealUser> {
   createUserForGuard(user: RealUser): Promise<JwtGuardUser<RealUser>>;
 
   /**
-   * Find a user by their id.
+   * Find a user by their email.
    */
-  findById(
-    identifier: string | number | bigint,
-  ): Promise<JwtGuardUser<RealUser> | null>;
+  findByEmail(email: string): Promise<JwtGuardUser<RealUser> | null>;
 }
 
 export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   implements GuardContract<UserProvider[typeof symbols.PROVIDER_REAL_USER]>
 {
   #ctx: HttpContext;
-  #userProvider: UserProvider;
+  #userProvider: UserProvider | Promise<UserProvider>;
   #options: JwtGuardOptions;
+  #resolvedUserProvider?: UserProvider;
+
   constructor(
     ctx: HttpContext,
-    userProvider: UserProvider,
+    userProvider: UserProvider | Promise<UserProvider>,
     options: JwtGuardOptions,
   ) {
     this.#userProvider = userProvider;
     this.#options = options;
     this.#ctx = ctx;
+  }
+
+  /**
+   * Resolve the user provider if it's a promise
+   */
+  async #getUserProvider(): Promise<UserProvider> {
+    if (this.#resolvedUserProvider !== undefined) {
+      return this.#resolvedUserProvider;
+    }
+
+    if (this.#userProvider instanceof Promise) {
+      this.#resolvedUserProvider = await this.#userProvider;
+    } else {
+      this.#resolvedUserProvider = this.#userProvider;
+    }
+
+    return this.#resolvedUserProvider;
   }
 
   /**
@@ -97,14 +114,23 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
    * Generate a JWT token for a given user.
    */
   async generate(user: UserProvider[typeof symbols.PROVIDER_REAL_USER]) {
-    const providerUser = await this.#userProvider.createUserForGuard(user);
-    const { name, email, role } = user as {
-      name?: string;
+    const userProvider = await this.#getUserProvider();
+    await userProvider.createUserForGuard(user);
+    const { email, role } = user as {
       email?: string;
       role?: string;
     };
+    const iat = Math.floor(Date.now() / 1000);
+    const exp = iat + 3600;
     const token = jwt.sign(
-      { userId: providerUser.getId(), name, email, role },
+      {
+        role,
+        aud: "admin.topwr.solvro.pl",
+        sub: email,
+        iss: "admin.topwr.solvro.pl",
+        iat,
+        exp,
+      },
       this.#options.secret,
     );
 
@@ -134,7 +160,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     /**
      * Ensure the auth header exists
      */
-    const authHeader = this.#ctx.request.header("authorization");
+    const authHeader = this.#ctx.request.header("Authorization");
     if (authHeader === undefined) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
@@ -144,18 +170,22 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     /**
      * Split the header value and read the token from it
      */
-    const [, token] = authHeader.split("Bearer ");
-    if (!token) {
+    if (!authHeader.startsWith("Bearer ")) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       }) as Error;
-    }
+    } //throw here
+    const token = authHeader.substring(7);
 
     /**
      * Verify token
      */
     const payload = jwt.verify(token, this.#options.secret);
-    if (typeof payload !== "object" || !("userId" in payload)) {
+    if (
+      typeof payload !== "object" ||
+      !("sub" in payload) ||
+      typeof payload.sub !== "string"
+    ) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       }) as Error;
@@ -164,9 +194,8 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     /**
      * Fetch the user by user ID and save a reference to it
      */
-    const providerUser = await this.#userProvider.findById(
-      payload.userId as string | number | bigint,
-    );
+    const userProvider = await this.#getUserProvider();
+    const providerUser = await userProvider.findByEmail(payload.sub);
     if (providerUser === null) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
@@ -174,7 +203,9 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     }
 
     this.user = providerUser.getOriginal();
-    return this.getUserOrFail();
+    const user = this.getUserOrFail();
+    this.isAuthenticated = true;
+    return user;
   }
 
   /**
