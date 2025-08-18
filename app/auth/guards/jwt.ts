@@ -6,9 +6,9 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 export interface JwtGuardOptions {
   secret: string;
-  expiresIn?: number; // w sekundach, domyślnie 3600 (1 godzina)
-  refreshSecret?: string; // secret dla refresh tokenów, domyślnie używa tego samego co access token
-  refreshExpiresIn?: number; // w sekundach, domyślnie 2592000 (30 dni)
+  expiresIn?: number;
+  refreshSecret?: string;
+  refreshExpiresIn?: number;
 }
 
 export interface JwtTokenResponse {
@@ -19,42 +19,14 @@ export interface JwtTokenResponse {
   refreshExpiresIn: number;
 }
 
-/**
- * The bridge between the User provider and the
- * Guard
- */
 export interface JwtGuardUser<RealUser> {
-  /**
-   * Returns the unique ID of the user
-   */
   getId(): string | number | bigint;
-
-  /**
-   * Returns the original user object
-   */
   getOriginal(): RealUser;
 }
 
-/**
- * The interface for the UserProvider accepted by the
- * JWT guard.
- */
 export interface JwtUserProviderContract<RealUser> {
-  /**
-   * A property the guard implementation can use to infer
-   * the data type of the actual user (aka RealUser)
-   */
   [symbols.PROVIDER_REAL_USER]: RealUser;
-
-  /**
-   * Create a user object that acts as an adapter between
-   * the guard and real user value.
-   */
   createUserForGuard(user: RealUser): Promise<JwtGuardUser<RealUser>>;
-
-  /**
-   * Find a user by their ID.
-   */
   findById(id: string | number): Promise<JwtGuardUser<RealUser> | null>;
 }
 
@@ -76,9 +48,6 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     this.#ctx = ctx;
   }
 
-  /**
-   * Resolve the user provider if it's a promise
-   */
   async #getUserProvider(): Promise<UserProvider> {
     if (this.#resolvedUserProvider !== undefined) {
       return this.#resolvedUserProvider;
@@ -93,32 +62,14 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     return this.#resolvedUserProvider;
   }
 
-  /**
-   * A list of events and their types emitted by
-   * the guard.
-   */
   declare [symbols.GUARD_KNOWN_EVENTS]: {};
 
-  /**
-   * A unique name for the guard driver
-   */
   driverName = "jwt" as const;
 
-  /**
-   * A flag to know if the authentication was an attempt
-   * during the current HTTP request
-   */
   authenticationAttempted = false;
 
-  /**
-   * A boolean to know if the current request has
-   * been authenticated
-   */
   isAuthenticated = false;
 
-  /**
-   * Reference to the currently authenticated user
-   */
   user?: UserProvider[typeof symbols.PROVIDER_REAL_USER];
 
   /**
@@ -175,18 +126,9 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     };
   }
 
-  /**
-   * Authenticate the current HTTP request and return
-   * the user instance if there is a valid JWT token
-   * or throw an exception
-   */
   async authenticate(): Promise<
     UserProvider[typeof symbols.PROVIDER_REAL_USER]
   > {
-    /**
-     * Avoid re-authentication when it has been done already
-     * for the given request
-     */
     if (this.authenticationAttempted) {
       return this.getUserOrFail();
     }
@@ -209,12 +151,9 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
       }) as Error;
-    } //throw here
+    }
     const token = authHeader.substring(7);
 
-    /**
-     * Verify token
-     */
     let payload;
     try {
       payload = jwt.verify(token, this.#options.secret);
@@ -246,9 +185,6 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
       }) as Error;
     }
 
-    /**
-     * Fetch the user by user ID and save a reference to it
-     */
     const userProvider = await this.#getUserProvider();
     const providerUser = await userProvider.findById(payload.sub);
     if (providerUser === null) {
@@ -263,9 +199,6 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     return user;
   }
 
-  /**
-   * Refresh access token using refresh token
-   */
   async refresh(refreshTokenString: string): Promise<JwtTokenResponse> {
     const refreshSecret = this.#options.refreshSecret ?? this.#options.secret;
 
@@ -303,9 +236,6 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
       }) as Error;
     }
 
-    /**
-     * Find the user by ID
-     */
     const userProvider = await this.#getUserProvider();
     const providerUser = await userProvider.findById(payload.sub);
     if (providerUser === null) {
@@ -318,9 +248,6 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     return await this.generate(user);
   }
 
-  /**
-   * Same as authenticate, but does not throw an exception
-   */
   async check(): Promise<boolean> {
     try {
       await this.authenticate();
@@ -330,9 +257,6 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     }
   }
 
-  /**
-   * Returns the authenticated user or throws an error
-   */
   getUserOrFail(): UserProvider[typeof symbols.PROVIDER_REAL_USER] {
     if (this.user === undefined) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {

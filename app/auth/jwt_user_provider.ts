@@ -19,16 +19,10 @@ export class JwtLucidUser<RealUser extends UserWithId>
     this.user = user;
   }
 
-  /**
-   * Returns the unique ID of the user
-   */
   getId(): string | number | bigint {
     return this.user.id;
   }
 
-  /**
-   * Returns the original user object
-   */
   getOriginal(): RealUser {
     return this.user;
   }
@@ -57,17 +51,10 @@ export class JwtLucidUserProvider<RealUser extends UserWithId>
     this.userModel = userModel;
   }
 
-  /**
-   * Create a user object that acts as an adapter between
-   * the guard and real user value.
-   */
   async createUserForGuard(user: RealUser): Promise<JwtGuardUser<RealUser>> {
     return new JwtLucidUser(user);
   }
 
-  /**
-   * Find a user by their ID.
-   */
   async findById(id: string | number): Promise<JwtGuardUser<RealUser> | null> {
     const user = await this.userModel.findBy("id", id);
     if (user === null) {
