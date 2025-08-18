@@ -13,6 +13,7 @@ import { JwtLucidUserProvider } from "../app/auth/jwt_user_provider.js";
 
 const jwtConfig = {
   secret: env.get("APP_KEY"),
+  expiresIn: 3600,
 };
 
 const authConfig = defineConfig({

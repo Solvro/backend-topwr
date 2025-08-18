@@ -6,6 +6,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 export interface JwtGuardOptions {
   secret: string;
+  expiresIn?: number; // w sekundach, domyślnie 3600 (1 godzina)
 }
 
 /**
@@ -121,7 +122,8 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
       role?: string;
     };
     const iat = Math.floor(Date.now() / 1000);
-    const exp = iat + 3600;
+    const expiresIn = this.#options.expiresIn ?? 3600; // domyślnie 1 godzina
+    const exp = iat + expiresIn;
     const token = jwt.sign(
       {
         role,
@@ -180,13 +182,31 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     /**
      * Verify token
      */
-    const payload = jwt.verify(token, this.#options.secret);
+    let payload;
+    try {
+      payload = jwt.verify(token, this.#options.secret);
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Token has expired", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Invalid token", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      throw new errors.E_UNAUTHORIZED_ACCESS("Token verification failed", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
     if (
       typeof payload !== "object" ||
       !("sub" in payload) ||
       typeof payload.sub !== "string"
     ) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Invalid token payload", {
         guardDriverName: this.driverName,
       }) as Error;
     }
