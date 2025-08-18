@@ -11,6 +11,20 @@ export default class AuthController {
     return await auth.use("jwt").generate(user);
   }
 
+  async refresh({ request, auth }: HttpContext) {
+    const refreshToken = request.input("refreshToken") as string;
+
+    if (!refreshToken || typeof refreshToken !== "string") {
+      return { error: "Refresh token is required" };
+    }
+
+    try {
+      return await auth.use("jwt").refresh(refreshToken);
+    } catch {
+      return { error: "Invalid or expired refresh token" };
+    }
+  }
+
   async me({ auth }: HttpContext) {
     return auth.getUserOrFail();
   }

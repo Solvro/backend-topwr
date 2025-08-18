@@ -7,6 +7,16 @@ import type { HttpContext } from "@adonisjs/core/http";
 export interface JwtGuardOptions {
   secret: string;
   expiresIn?: number; // w sekundach, domyślnie 3600 (1 godzina)
+  refreshSecret?: string; // secret dla refresh tokenów, domyślnie używa tego samego co access token
+  refreshExpiresIn?: number; // w sekundach, domyślnie 2592000 (30 dni)
+}
+
+export interface JwtTokenResponse {
+  type: "bearer";
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  refreshExpiresIn: number;
 }
 
 /**
@@ -112,9 +122,11 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   user?: UserProvider[typeof symbols.PROVIDER_REAL_USER];
 
   /**
-   * Generate a JWT token for a given user.
+   * Generate JWT access and refresh tokens for a given user.
    */
-  async generate(user: UserProvider[typeof symbols.PROVIDER_REAL_USER]) {
+  async generate(
+    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
+  ): Promise<JwtTokenResponse> {
     const userProvider = await this.#getUserProvider();
     const providerUser = await userProvider.createUserForGuard(user);
     const { role } = user as {
@@ -122,13 +134,16 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     };
     const userId = providerUser.getId();
     const iat = Math.floor(Date.now() / 1000);
+
+    // Access Token
     const expiresIn = this.#options.expiresIn ?? 3600; // domyślnie 1 godzina
     const exp = iat + expiresIn;
-    const token = jwt.sign(
+    const accessToken = jwt.sign(
       {
+        type: "access",
         role,
         aud: "admin.topwr.solvro.pl",
-        sub: userId.toString(), // używamy ID użytkownika zamiast emaila
+        sub: userId.toString(),
         iss: "admin.topwr.solvro.pl",
         iat,
         exp,
@@ -136,9 +151,27 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
       this.#options.secret,
     );
 
+    // Refresh Token
+    const refreshSecret = this.#options.refreshSecret ?? this.#options.secret;
+    const refreshExpiresIn = this.#options.refreshExpiresIn ?? 2592000; // domyślnie 30 dni
+    const refreshExp = iat + refreshExpiresIn;
+    const refreshToken = jwt.sign(
+      {
+        type: "refresh",
+        sub: userId.toString(),
+        iss: "admin.topwr.solvro.pl",
+        iat,
+        exp: refreshExp,
+      },
+      refreshSecret,
+    );
+
     return {
       type: "bearer",
-      token,
+      accessToken,
+      refreshToken,
+      expiresIn,
+      refreshExpiresIn,
     };
   }
 
@@ -204,7 +237,9 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     if (
       typeof payload !== "object" ||
       !("sub" in payload) ||
-      typeof payload.sub !== "string"
+      typeof payload.sub !== "string" ||
+      !("type" in payload) ||
+      payload.type !== "access"
     ) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Invalid token payload", {
         guardDriverName: this.driverName,
@@ -226,6 +261,61 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     const user = this.getUserOrFail();
     this.isAuthenticated = true;
     return user;
+  }
+
+  /**
+   * Refresh access token using refresh token
+   */
+  async refresh(refreshTokenString: string): Promise<JwtTokenResponse> {
+    const refreshSecret = this.#options.refreshSecret ?? this.#options.secret;
+
+    let payload;
+    try {
+      payload = jwt.verify(refreshTokenString, refreshSecret);
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Refresh token has expired", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Invalid refresh token", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      throw new errors.E_UNAUTHORIZED_ACCESS(
+        "Refresh token verification failed",
+        {
+          guardDriverName: this.driverName,
+        },
+      ) as Error;
+    }
+
+    if (
+      typeof payload !== "object" ||
+      !("sub" in payload) ||
+      typeof payload.sub !== "string" ||
+      !("type" in payload) ||
+      payload.type !== "refresh"
+    ) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Invalid refresh token payload", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    /**
+     * Find the user by ID
+     */
+    const userProvider = await this.#getUserProvider();
+    const providerUser = await userProvider.findById(payload.sub);
+    if (providerUser === null) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("User not found", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    const user = providerUser.getOriginal();
+    return await this.generate(user);
   }
 
   /**
@@ -260,10 +350,10 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
   async authenticateAsClient(
     user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
   ): Promise<AuthClientResponse> {
-    const token = await this.generate(user);
+    const tokens = await this.generate(user);
     return {
       headers: {
-        authorization: `Bearer ${token.token}`,
+        authorization: `Bearer ${tokens.accessToken}`,
       },
     };
   }

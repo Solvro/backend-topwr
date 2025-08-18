@@ -13,7 +13,9 @@ import { JwtLucidUserProvider } from "../app/auth/jwt_user_provider.js";
 
 const jwtConfig = {
   secret: env.get("APP_KEY"),
-  expiresIn: 3600,
+  expiresIn: 3600, // 1 godzina dla access token
+  refreshSecret: env.get("APP_KEY"), // można użyć innego sekreta
+  refreshExpiresIn: 2592000, // 30 dni dla refresh token
 };
 
 const authConfig = defineConfig({
