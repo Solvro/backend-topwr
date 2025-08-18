@@ -254,6 +254,7 @@ jobs:
           PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
           docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump --schema-only postgresql://postgres@localhost/topwr1 > topwr1.sql
           docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump --schema-only postgresql://postgres@localhost/topwr2 > topwr2.sql
+          sed -i -E -e 's/^\\(un)?restrict .+$//' *.sql
           echo "Diffing schemas - any output below means failure!"
           STOP_MARKER=`uuidgen`
           echo "::stop-commands::$STOP_MARKER"
@@ -324,7 +325,7 @@ jobs:
       - name: Take a database snapshot
         run: |
           PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
-          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > before.sql
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > 1-before.sql
 
       - name: Dry-run new AdonisJS migrations
         run: |
@@ -336,11 +337,12 @@ jobs:
       - name: Diff the database
         run: |
           PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
-          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > after.sql
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > 1-after.sql
+          sed -i -E -e 's/^\\(un)?restrict .+$//' *.sql
           echo "Diffing schemas - any output below means failure!"
           STOP_MARKER=`uuidgen`
           echo "::stop-commands::$STOP_MARKER"
-          diff before.sql after.sql || (echo "Detected database changes during dry runs!" && exit 1)
+          diff 1-before.sql 1-after.sql || (echo "Detected database changes during dry runs!" && exit 1)
           echo "::$STOP_MARKER::"
 
       - name: Run new AdonisJS migrations (for real this time)
@@ -349,7 +351,7 @@ jobs:
       - name: Take a database snapshot
         run: |
           PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
-          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > before.sql
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > 2-before.sql
 
       - name: Rollback new migrations as a dry run
         run: |
@@ -361,11 +363,12 @@ jobs:
       - name: Diff the database
         run: |
           PG_CONTAINER_ID=`docker container ls --filter ancestor=postgres --format "{{.ID}}"`
-          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > after.sql
+          docker exec -e PGPASSWORD $PG_CONTAINER_ID pg_dump postgresql://postgres@localhost/postgres > 2-after.sql
+          sed -i -E -e 's/^\\(un)?restrict .+$//' *.sql
           echo "Diffing schemas - any output below means failure!"
           STOP_MARKER=`uuidgen`
           echo "::stop-commands::$STOP_MARKER"
-          diff before.sql after.sql || (echo "Detected database changes during dry runs!" && exit 1)
+          diff 2-before.sql 2-after.sql || (echo "Detected database changes during dry runs!" && exit 1)
           echo "::$STOP_MARKER::"
 
       - name: Upload database dumps
