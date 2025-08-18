@@ -264,7 +264,7 @@ jobs:
         uses: actions/upload-artifact@v4
         if: "!cancelled()"
         with:
-          name: db-dumps
+          name: migration-consistency-db-dumps
           path: "*.sql"
 
   dry-runs:
@@ -372,5 +372,5 @@ jobs:
         uses: actions/upload-artifact@v4
         if: "!cancelled()"
         with:
-          name: db-dumps
+          name: dry-runs-db-dumps
           path: "*.sql"
