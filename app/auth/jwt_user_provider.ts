@@ -35,7 +35,7 @@ export class JwtLucidUser<RealUser extends UserWithId>
 }
 
 interface UserModel {
-  findBy(column: string, value: string): Promise<UserWithId | null>;
+  findBy(column: string, value: string | number): Promise<UserWithId | null>;
 }
 
 /**
@@ -66,10 +66,10 @@ export class JwtLucidUserProvider<RealUser extends UserWithId>
   }
 
   /**
-   * Find a user by their email.
+   * Find a user by their ID.
    */
-  async findByEmail(email: string): Promise<JwtGuardUser<RealUser> | null> {
-    const user = await this.userModel.findBy("email", email);
+  async findById(id: string | number): Promise<JwtGuardUser<RealUser> | null> {
+    const user = await this.userModel.findBy("id", id);
     if (user === null) {
       return null;
     }

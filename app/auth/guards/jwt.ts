@@ -43,9 +43,9 @@ export interface JwtUserProviderContract<RealUser> {
   createUserForGuard(user: RealUser): Promise<JwtGuardUser<RealUser>>;
 
   /**
-   * Find a user by their email.
+   * Find a user by their ID.
    */
-  findByEmail(email: string): Promise<JwtGuardUser<RealUser> | null>;
+  findById(id: string | number): Promise<JwtGuardUser<RealUser> | null>;
 }
 
 export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
@@ -116,11 +116,11 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
    */
   async generate(user: UserProvider[typeof symbols.PROVIDER_REAL_USER]) {
     const userProvider = await this.#getUserProvider();
-    await userProvider.createUserForGuard(user);
-    const { email, role } = user as {
-      email?: string;
+    const providerUser = await userProvider.createUserForGuard(user);
+    const { role } = user as {
       role?: string;
     };
+    const userId = providerUser.getId();
     const iat = Math.floor(Date.now() / 1000);
     const expiresIn = this.#options.expiresIn ?? 3600; // domyślnie 1 godzina
     const exp = iat + expiresIn;
@@ -128,7 +128,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
       {
         role,
         aud: "admin.topwr.solvro.pl",
-        sub: email,
+        sub: userId.toString(), // używamy ID użytkownika zamiast emaila
         iss: "admin.topwr.solvro.pl",
         iat,
         exp,
@@ -215,7 +215,7 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
      * Fetch the user by user ID and save a reference to it
      */
     const userProvider = await this.#getUserProvider();
-    const providerUser = await userProvider.findByEmail(payload.sub);
+    const providerUser = await userProvider.findById(payload.sub);
     if (providerUser === null) {
       throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
         guardDriverName: this.driverName,
