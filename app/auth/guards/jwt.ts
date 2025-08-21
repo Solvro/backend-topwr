@@ -1,0 +1,284 @@
+import jwt from "jsonwebtoken";
+
+import { errors, symbols } from "@adonisjs/auth";
+import { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
+import type { HttpContext } from "@adonisjs/core/http";
+
+export interface JwtGuardOptions {
+  secret: string;
+  expiresIn?: number;
+  refreshSecret?: string;
+  refreshExpiresIn?: number;
+}
+
+export interface JwtTokenResponse {
+  type: "bearer";
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  refreshExpiresIn: number;
+}
+
+export interface JwtGuardUser<RealUser> {
+  getId(): string | number | bigint;
+  getOriginal(): RealUser;
+}
+
+export interface JwtUserProviderContract<RealUser> {
+  [symbols.PROVIDER_REAL_USER]: RealUser;
+  createUserForGuard(user: RealUser): Promise<JwtGuardUser<RealUser>>;
+  findById(id: string | number): Promise<JwtGuardUser<RealUser> | null>;
+}
+
+export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
+  implements GuardContract<UserProvider[typeof symbols.PROVIDER_REAL_USER]>
+{
+  #ctx: HttpContext;
+  #userProvider: UserProvider | Promise<UserProvider>;
+  #options: JwtGuardOptions;
+  #resolvedUserProvider?: UserProvider;
+
+  constructor(
+    ctx: HttpContext,
+    userProvider: UserProvider | Promise<UserProvider>,
+    options: JwtGuardOptions,
+  ) {
+    this.#userProvider = userProvider;
+    this.#options = options;
+    this.#ctx = ctx;
+  }
+
+  async #getUserProvider(): Promise<UserProvider> {
+    if (this.#resolvedUserProvider !== undefined) {
+      return this.#resolvedUserProvider;
+    }
+
+    if (this.#userProvider instanceof Promise) {
+      this.#resolvedUserProvider = await this.#userProvider;
+    } else {
+      this.#resolvedUserProvider = this.#userProvider;
+    }
+
+    return this.#resolvedUserProvider;
+  }
+
+  declare [symbols.GUARD_KNOWN_EVENTS]: {};
+
+  driverName = "jwt" as const;
+
+  authenticationAttempted = false;
+
+  isAuthenticated = false;
+
+  user?: UserProvider[typeof symbols.PROVIDER_REAL_USER];
+
+  /**
+   * Generate JWT access and refresh tokens for a given user.
+   */
+  async generate(
+    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
+  ): Promise<JwtTokenResponse> {
+    const userProvider = await this.#getUserProvider();
+    const providerUser = await userProvider.createUserForGuard(user);
+    const { role } = user as {
+      role?: string;
+    };
+    const userId = providerUser.getId();
+    const iat = Math.floor(Date.now() / 1000);
+
+    // Access Token
+    const expiresIn = this.#options.expiresIn ?? 3600; // domyślnie 1 godzina
+    const exp = iat + expiresIn;
+    const accessToken = jwt.sign(
+      {
+        type: "access",
+        role,
+        aud: "admin.topwr.solvro.pl",
+        sub: userId.toString(),
+        iss: "admin.topwr.solvro.pl",
+        iat,
+        exp,
+      },
+      this.#options.secret,
+    );
+
+    // Refresh Token
+    const refreshSecret = this.#options.refreshSecret ?? this.#options.secret;
+    const refreshExpiresIn = this.#options.refreshExpiresIn ?? 2592000; // domyślnie 30 dni
+    const refreshExp = iat + refreshExpiresIn;
+    const refreshToken = jwt.sign(
+      {
+        type: "refresh",
+        sub: userId.toString(),
+        iss: "admin.topwr.solvro.pl",
+        iat,
+        exp: refreshExp,
+      },
+      refreshSecret,
+    );
+
+    return {
+      type: "bearer",
+      accessToken,
+      refreshToken,
+      expiresIn,
+      refreshExpiresIn,
+    };
+  }
+
+  async authenticate(): Promise<
+    UserProvider[typeof symbols.PROVIDER_REAL_USER]
+  > {
+    if (this.authenticationAttempted) {
+      return this.getUserOrFail();
+    }
+    this.authenticationAttempted = true;
+
+    /**
+     * Ensure the auth header exists
+     */
+    const authHeader = this.#ctx.request.header("Authorization");
+    if (authHeader === undefined) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    /**
+     * Split the header value and read the token from it
+     */
+    if (!authHeader.startsWith("Bearer ")) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+    const token = authHeader.substring(7);
+
+    let payload;
+    try {
+      payload = jwt.verify(token, this.#options.secret);
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Token has expired", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Invalid token", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      throw new errors.E_UNAUTHORIZED_ACCESS("Token verification failed", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    if (
+      typeof payload !== "object" ||
+      !("sub" in payload) ||
+      typeof payload.sub !== "string" ||
+      !("type" in payload) ||
+      payload.type !== "access"
+    ) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Invalid token payload", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    const userProvider = await this.#getUserProvider();
+    const providerUser = await userProvider.findById(payload.sub);
+    if (providerUser === null) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    this.user = providerUser.getOriginal();
+    const user = this.getUserOrFail();
+    this.isAuthenticated = true;
+    return user;
+  }
+
+  async refresh(refreshTokenString: string): Promise<JwtTokenResponse> {
+    const refreshSecret = this.#options.refreshSecret ?? this.#options.secret;
+
+    let payload;
+    try {
+      payload = jwt.verify(refreshTokenString, refreshSecret);
+    } catch (error) {
+      if (error instanceof jwt.TokenExpiredError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Refresh token has expired", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      if (error instanceof jwt.JsonWebTokenError) {
+        throw new errors.E_UNAUTHORIZED_ACCESS("Invalid refresh token", {
+          guardDriverName: this.driverName,
+        }) as Error;
+      }
+      throw new errors.E_UNAUTHORIZED_ACCESS(
+        "Refresh token verification failed",
+        {
+          guardDriverName: this.driverName,
+        },
+      ) as Error;
+    }
+
+    if (
+      typeof payload !== "object" ||
+      !("sub" in payload) ||
+      typeof payload.sub !== "string" ||
+      !("type" in payload) ||
+      payload.type !== "refresh"
+    ) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Invalid refresh token payload", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    const userProvider = await this.#getUserProvider();
+    const providerUser = await userProvider.findById(payload.sub);
+    if (providerUser === null) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("User not found", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    const user = providerUser.getOriginal();
+    return await this.generate(user);
+  }
+
+  async check(): Promise<boolean> {
+    try {
+      await this.authenticate();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  getUserOrFail(): UserProvider[typeof symbols.PROVIDER_REAL_USER] {
+    if (this.user === undefined) {
+      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
+        guardDriverName: this.driverName,
+      }) as Error;
+    }
+
+    return this.user;
+  }
+
+  /**
+   * This method is called by Japa during testing when "loginAs"
+   * method is used to log in the user.
+   */
+  async authenticateAsClient(
+    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
+  ): Promise<AuthClientResponse> {
+    const tokens = await this.generate(user);
+    return {
+      headers: {
+        authorization: `Bearer ${tokens.accessToken}`,
+      },
+    };
+  }
+}
