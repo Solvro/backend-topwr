@@ -1,3 +1,8 @@
+import { MorphMap } from "@holoyan/adonisjs-permissions";
+import {
+  AclModelInterface,
+  ModelIdType,
+} from "@holoyan/adonisjs-permissions/types";
 import { DateTime } from "luxon";
 
 import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
@@ -22,7 +27,15 @@ import { handleSortQuery } from "#scopes/sort_helper";
 
 import FileEntry from "./file_entry.js";
 
-export default class StudentOrganization extends BaseModel {
+@MorphMap("student_organizations")
+export default class StudentOrganization
+  extends BaseModel
+  implements AclModelInterface
+{
+  getModelId(): ModelIdType {
+    return this.id;
+  }
+
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
