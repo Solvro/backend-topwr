@@ -10,14 +10,22 @@ declare module "@adonisjs/core/http" {
 }
 
 export default class UserScopeMiddleware {
-  //@ts-ignore
-  async handle(ctx: HttpContext, next: NextFn) {
-    const scope = new Scope();
-    ctx.acl = new AclManager(true).scope(scope);
-    /**
-     * Call next method in the pipeline and return its output
-     * Call next method in the pipeline and return its output
-     */
+  async handle(
+    ctx: HttpContext,
+    next: NextFn,
+    options: { permission: string },
+  ) {
+    const hasPermission = await ctx.auth.user?.hasPermission(
+      options.permission,
+    );
+
+    if (!hasPermission) {
+      ctx.response.abort(
+        { message: "User does not have the required permission" },
+        403,
+      );
+    }
+
     const output = await next();
     return output;
   }

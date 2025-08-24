@@ -1,3 +1,8 @@
+import { MorphMap, hasPermissions } from "@holoyan/adonisjs-permissions";
+import {
+  AclModelInterface,
+  ModelIdType,
+} from "@holoyan/adonisjs-permissions/types";
 import { DateTime } from "luxon";
 
 import { DbAccessTokensProvider } from "@adonisjs/auth/access_tokens";
@@ -14,7 +19,15 @@ const AuthFinder = withAuthFinder(() => hash.use("scrypt"), {
   passwordColumnName: "password",
 });
 
-export default class User extends compose(BaseModel, AuthFinder) {
+@MorphMap("users")
+export default class User
+  extends compose(BaseModel, AuthFinder, hasPermissions())
+  implements AclModelInterface
+{
+  getModelId(): ModelIdType {
+    return this.id;
+  }
+
   @column({ isPrimary: true })
   declare id: number;
 
