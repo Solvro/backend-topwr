@@ -4,6 +4,7 @@ import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
+import { Branch } from "#enums/branch";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -21,6 +22,9 @@ export default class Campus extends BaseModel {
 
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
+
+  @typedColumn({ type: Branch })
+  declare branch: Branch;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

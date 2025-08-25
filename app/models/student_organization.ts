@@ -8,6 +8,7 @@ import type {
 } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn, typedManyToMany } from "#decorators/typed_model";
+import { Branch } from "#enums/branch";
 import { applyLinkTypeSorting } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
@@ -30,6 +31,9 @@ export default class StudentOrganization extends BaseModel {
 
   @typedColumn({ type: "boolean" })
   declare isStrategic: boolean;
+
+  @typedColumn({ type: Branch })
+  declare branch: Branch;
 
   @typedColumn({ foreignKeyOf: () => Department, optional: true })
   declare departmentId: number | null;

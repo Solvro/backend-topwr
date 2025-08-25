@@ -1,5 +1,6 @@
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
+import { Branch } from "#enums/branch";
 import { LinkType } from "#enums/link_type";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
@@ -27,6 +28,7 @@ export default class extends BaseSeeder {
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
         organizationStatus: OrganizationStatus.Active,
+        branch: Branch.Main,
       },
       {
         name: "Student Organization 2",
@@ -39,6 +41,7 @@ export default class extends BaseSeeder {
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.ScientificClub,
         organizationStatus: OrganizationStatus.Inactive,
+        branch: Branch.Main,
       },
       {
         name: "Student Organization 3",
@@ -51,6 +54,7 @@ export default class extends BaseSeeder {
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentCouncil,
         organizationStatus: OrganizationStatus.Dissolved,
+        branch: Branch.Main,
       },
     ]);
     const org1 = await StudentOrganization.first();
