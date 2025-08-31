@@ -9,19 +9,19 @@ export const branchEnumValues = {
   availableValues: [
     {
       value: Branch.Main,
-      label: "Main branch",
+      label: "Main campus",
     },
     {
       value: Branch.JeleniaGora,
-      label: "Branch in w Jelenia Gora",
+      label: "Branch in Jelenia Gora",
     },
     {
       value: Branch.Walbrzych,
-      label: "Branch in w Walbrzych",
+      label: "Branch in Walbrzych",
     },
     {
       value: Branch.Legnica,
-      label: "Branch in w Legnica",
+      label: "Branch in Legnica",
     },
   ],
 };

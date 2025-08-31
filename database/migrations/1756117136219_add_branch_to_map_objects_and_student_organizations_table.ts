@@ -28,6 +28,12 @@ export default class extends BaseSchema {
           .notNullable();
       });
     }
+
+    for (const tableName of this.tablesToChange) {
+      this.schema.raw(
+        `ALTER TABLE "${tableName}" ALTER COLUMN "branch" DROP DEFAULT`,
+      );
+    }
   }
 
   async down() {
