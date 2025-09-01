@@ -1,4 +1,4 @@
-import { AclManager, Scope } from "@holoyan/adonisjs-permissions";
+import { AclManager } from "@holoyan/adonisjs-permissions";
 
 import type { HttpContext } from "@adonisjs/core/http";
 import type { NextFn } from "@adonisjs/core/types/http";
