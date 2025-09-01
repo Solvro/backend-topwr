@@ -218,6 +218,11 @@ export default abstract class BaseController<
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
     }
+    // Superuser bypass: solvro_admin has access to everything
+    const isSolvroAdmin = await (http.auth.user as any)?.hasRole?.(
+      "solvro_admin",
+    );
+    if (isSolvroAdmin) return;
     const has = await http.auth.user?.hasPermission(slug);
     if (!has) {
       throw new ForbiddenException();
