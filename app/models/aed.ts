@@ -32,6 +32,9 @@ export default class Aed extends BaseModel {
   @typedColumn({ type: Branch })
   declare branch: Branch;
 
+  @typedColumn({ type: "string", optional: true })
+  declare instructions: string | null;
+
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
