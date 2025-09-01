@@ -122,8 +122,6 @@ type ControllerAction =
   | "manyToManyRelationAttach"
   | "manyToManyRelationDetach";
 
-type Ctor<T> = new (...args: any[]) => T;
-
 export default abstract class BaseController<
   T extends LucidModel & Scopes<LucidModel>,
 > {
@@ -475,7 +473,7 @@ export default abstract class BaseController<
    * Generates a configuration callback for a controller using its lazy import
    */
   static async configureRoutes<T extends LucidModel & Scopes<LucidModel>>(
-    controller: LazyImport<Ctor<BaseController<T>>>,
+    controller: LazyImport<Constructor<BaseController<T>>>,
   ): Promise<() => void> {
     const imported = await controller();
     const Controller = imported.default;
@@ -496,7 +494,7 @@ export default abstract class BaseController<
       names.map(async (name) => {
         const controller = (async () =>
           await import(`#controllers/${name}_controller`)) as LazyImport<
-          Ctor<BaseController<LucidModel & Scopes<LucidModel>>>
+          Constructor<BaseController<LucidModel & Scopes<LucidModel>>>
         >;
         return [name, await BaseController.configureRoutes(controller)];
       }),
@@ -511,8 +509,7 @@ export default abstract class BaseController<
   /**
    * Configures routes for this controller when passed as the group callback
    */
-  $configureRoutes(controller: LazyImport<Ctor<BaseController<T>>>) {
-    // keep parameter type compatible for implementers; using broader Ctor internally
+  $configureRoutes(controller: LazyImport<Constructor<BaseController<T>>>) {
     if (this.singletonId === undefined) {
       // basic routes
       router.get("/", [controller, "index"]).as("index");
