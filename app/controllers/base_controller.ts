@@ -139,8 +139,6 @@ type ControllerAction =
   | "manyToManyRelationAttach"
   | "manyToManyRelationDetach";
 
-type Ctor<T> = new (...args: any[]) => T;
-
 export default abstract class BaseController<
   T extends LucidModel & Scopes<LucidModel>,
 > {
@@ -491,8 +489,8 @@ export default abstract class BaseController<
   /**
    * Generates a configuration callback for a controller using its lazy import
    */
-  static async configureRoutes(
-    controller: LazyImport<Constructor<object>>,
+  static async configureRoutes<T extends LucidModel & Scopes<LucidModel>>(
+    controller: LazyImport<Constructor<BaseController<T>>>,
     debugName: string,
   ): Promise<() => void> {
     const imported = await controller();
@@ -513,7 +511,10 @@ export default abstract class BaseController<
       logger.warn(
         `Configuring routes for a non-BaseController-based controller: ${debugName}`,
       );
-      return instance.$configureRoutes.bind(instance, controller);
+      return instance.$configureRoutes.bind(
+        instance,
+        controller as LazyImport<Constructor<object>>,
+      );
     }
     return instance.$configureRoutes.bind(
       instance,
@@ -531,7 +532,7 @@ export default abstract class BaseController<
       paths.map(async (path) => {
         const controller = (async () =>
           await import(`#controllers/${path}`)) as LazyImport<
-          Constructor<object>
+          Constructor<BaseController<LucidModel & Scopes<LucidModel>>>
         >;
         return [path, await BaseController.configureRoutes(controller, path)];
       }),
