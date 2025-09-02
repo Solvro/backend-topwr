@@ -1,251 +1,193 @@
 import jwt from "jsonwebtoken";
+import { DateTime, Duration } from "luxon";
+import assert from "node:assert";
+import { UUID, randomUUID } from "node:crypto";
 
 import { errors, symbols } from "@adonisjs/auth";
 import { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
 import type { HttpContext } from "@adonisjs/core/http";
+import logger from "@adonisjs/core/services/logger";
 
-export interface JwtGuardOptions {
-  secret: string;
-  expiresIn?: number;
-  refreshSecret?: string;
-  refreshExpiresIn?: number;
-}
+import RefreshToken from "#models/refresh_token";
+import User from "#models/user";
+import env from "#start/env";
 
-export interface JwtTokenResponse {
+export interface JwtAccessTokenResponse {
   type: "bearer";
   accessToken: string;
+  accessExpiresInMs: number;
+}
+
+export interface JwtTokenResponse extends JwtAccessTokenResponse {
   refreshToken: string;
-  expiresIn: number;
-  refreshExpiresIn: number;
+  refreshExpiresInMs: number;
 }
 
-export interface JwtGuardUser<RealUser> {
-  getId(): string | number | bigint;
-  getOriginal(): RealUser;
+export const JWT_GUARD = "jwt";
+const AUDIENCE = "admin.topwr.solvro.pl"; // that's whoever wants to respect our tokens - so just us for now
+const ISSUER = "admin.topwr.solvro.pl"; // that's us
+const ACCESS_EXPIRES_IN_MS = Number.parseInt(
+  env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
+); // 1 hour
+const REFRESH_EXPIRES_IN_MS = Number.parseInt(
+  env.get("REFRESH_EXPIRES_IN_MS", "604800000"),
+); // 7 days
+const ACCESS_SECRET = assertIsDefined(env.get("ACCESS_SECRET")); // For HMAC256
+const REFRESH_PK = assertIsDefined(env.get("REFRESH_PK")); // In PEM format for ECDSA384
+const REFRESH_PUB = assertIsDefined(env.get("REFRESH_PUB")); // In PEM format for ECDSA384
+
+function assertIsDefined<T>(value: T | undefined): T {
+  assert(value !== undefined);
+  return value;
 }
 
-export interface JwtUserProviderContract<RealUser> {
-  [symbols.PROVIDER_REAL_USER]: RealUser;
-  createUserForGuard(user: RealUser): Promise<JwtGuardUser<RealUser>>;
-  findById(id: string | number): Promise<JwtGuardUser<RealUser> | null>;
+interface SupportedPayload {
+  iss: string;
+  sub: number;
+  aud: string;
+  exp: number;
+  iat: number;
+  isRefresh: boolean;
 }
 
-export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
-  implements GuardContract<UserProvider[typeof symbols.PROVIDER_REAL_USER]>
-{
+interface RefreshTokenPayload extends SupportedPayload {
+  isRefresh: true;
+  tokenId: UUID;
+}
+
+export class JwtGuard implements GuardContract<User> {
   #ctx: HttpContext;
-  #userProvider: UserProvider | Promise<UserProvider>;
-  #options: JwtGuardOptions;
-  #resolvedUserProvider?: UserProvider;
 
-  constructor(
-    ctx: HttpContext,
-    userProvider: UserProvider | Promise<UserProvider>,
-    options: JwtGuardOptions,
-  ) {
-    this.#userProvider = userProvider;
-    this.#options = options;
+  constructor(ctx: HttpContext) {
     this.#ctx = ctx;
   }
 
-  async #getUserProvider(): Promise<UserProvider> {
-    if (this.#resolvedUserProvider !== undefined) {
-      return this.#resolvedUserProvider;
-    }
-
-    if (this.#userProvider instanceof Promise) {
-      this.#resolvedUserProvider = await this.#userProvider;
-    } else {
-      this.#resolvedUserProvider = this.#userProvider;
-    }
-
-    return this.#resolvedUserProvider;
-  }
-
-  declare [symbols.GUARD_KNOWN_EVENTS]: {};
-
-  driverName = "jwt" as const;
-
-  authenticationAttempted = false;
+  user?: User;
 
   isAuthenticated = false;
 
-  user?: UserProvider[typeof symbols.PROVIDER_REAL_USER];
+  authenticationAttempted = false;
 
-  /**
-   * Generate JWT access and refresh tokens for a given user.
-   */
-  async generate(
-    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
-  ): Promise<JwtTokenResponse> {
-    const userProvider = await this.#getUserProvider();
-    const providerUser = await userProvider.createUserForGuard(user);
-    const { role } = user as {
-      role?: string;
-    };
-    const userId = providerUser.getId();
-    const iat = Math.floor(Date.now() / 1000);
+  driverName = JWT_GUARD;
 
-    // Access Token
-    const expiresIn = this.#options.expiresIn ?? 3600; // domyślnie 1 godzina
-    const exp = iat + expiresIn;
-    const accessToken = jwt.sign(
+  declare [symbols.GUARD_KNOWN_EVENTS]: {};
+
+  private generateAccessToken(userId: number): string {
+    return jwt.sign(
       {
-        type: "access",
-        role,
-        aud: "admin.topwr.solvro.pl",
-        sub: userId.toString(),
-        iss: "admin.topwr.solvro.pl",
-        iat,
-        exp,
+        isRefresh: false,
       },
-      this.#options.secret,
-    );
-
-    // Refresh Token
-    const refreshSecret = this.#options.refreshSecret ?? this.#options.secret;
-    const refreshExpiresIn = this.#options.refreshExpiresIn ?? 2592000; // domyślnie 30 dni
-    const refreshExp = iat + refreshExpiresIn;
-    const refreshToken = jwt.sign(
+      ACCESS_SECRET,
       {
-        type: "refresh",
-        sub: userId.toString(),
-        iss: "admin.topwr.solvro.pl",
-        iat,
-        exp: refreshExp,
+        subject: userId.toString(),
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        expiresIn: ACCESS_EXPIRES_IN_MS,
+        algorithm: "HS256",
+        allowInsecureKeySizes: false,
+        allowInvalidAsymmetricKeyTypes: false,
       },
-      refreshSecret,
     );
+  }
 
+  private async generateRefreshToken(userId: number): Promise<string> {
+    const dbToken = new RefreshToken();
+    dbToken.forUserId = userId;
+    dbToken.expiresAt = DateTime.now().plus(
+      Duration.fromMillis(REFRESH_EXPIRES_IN_MS),
+    );
+    dbToken.isValid = true;
+    dbToken.id = randomUUID();
+    const payload = jwt.sign(
+      {
+        tokenId: dbToken.id,
+        isRefresh: true,
+      },
+      REFRESH_PK,
+      {
+        subject: userId.toString(),
+        audience: AUDIENCE,
+        issuer: ISSUER,
+        expiresIn: REFRESH_EXPIRES_IN_MS,
+        algorithm: "ES384",
+        allowInsecureKeySizes: false,
+        allowInvalidAsymmetricKeyTypes: false,
+      },
+    );
+    await dbToken.save();
+    return payload;
+  }
+
+  private validateAccessToken(token: string): SupportedPayload {
+    return jwt.verify(token, ACCESS_SECRET, {
+      audience: AUDIENCE,
+      issuer: ISSUER,
+      ignoreExpiration: false,
+    }) as unknown as SupportedPayload;
+  }
+
+  private async validateRefreshToken(
+    withDb: boolean,
+    token: string,
+  ): Promise<RefreshTokenPayload> {
+    const payload = jwt.verify(token, REFRESH_PUB, {
+      audience: AUDIENCE,
+      issuer: ISSUER,
+      allowInvalidAsymmetricKeyTypes: false,
+      ignoreExpiration: false,
+    }) as unknown as RefreshTokenPayload;
+    if (!withDb) {
+      return payload;
+    }
+    const isValid = await RefreshToken.isTokenValid(
+      payload.tokenId,
+      payload.sub,
+    );
+    if (!isValid) {
+      this.throw403();
+    }
+    return payload;
+  }
+
+  public async generateOnLogin(user: User): Promise<JwtTokenResponse> {
+    const accessToken = this.generateAccessToken(user.id);
+    const refreshToken = await this.generateRefreshToken(user.id);
     return {
       type: "bearer",
       accessToken,
       refreshToken,
-      expiresIn,
-      refreshExpiresIn,
+      accessExpiresInMs: ACCESS_EXPIRES_IN_MS,
+      refreshExpiresInMs: REFRESH_EXPIRES_IN_MS,
     };
   }
 
-  async authenticate(): Promise<
-    UserProvider[typeof symbols.PROVIDER_REAL_USER]
-  > {
+  private extractTokenFromHeaderOrFail(): string {
+    const authHeader = this.#ctx.request.header("Authorization");
+    // Exists
+    if (authHeader === undefined) {
+      this.throw403();
+    }
+    // Extract token
+    if (!authHeader.startsWith("Bearer ")) {
+      this.throw403();
+    }
+    return authHeader.substring(7);
+  }
+
+  public async authenticate(): Promise<User> {
     if (this.authenticationAttempted) {
       return this.getUserOrFail();
     }
     this.authenticationAttempted = true;
-
-    /**
-     * Ensure the auth header exists
-     */
-    const authHeader = this.#ctx.request.header("Authorization");
-    if (authHeader === undefined) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
-        guardDriverName: this.driverName,
-      }) as Error;
+    const token = this.extractTokenFromHeaderOrFail();
+    const payload = this.validateAccessToken(token);
+    const owner = await User.findBy("id", payload.sub);
+    if (owner === null) {
+      this.throw403();
     }
-
-    /**
-     * Split the header value and read the token from it
-     */
-    if (!authHeader.startsWith("Bearer ")) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
-        guardDriverName: this.driverName,
-      }) as Error;
-    }
-    const token = authHeader.substring(7);
-
-    let payload;
-    try {
-      payload = jwt.verify(token, this.#options.secret);
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new errors.E_UNAUTHORIZED_ACCESS("Token has expired", {
-          guardDriverName: this.driverName,
-        }) as Error;
-      }
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new errors.E_UNAUTHORIZED_ACCESS("Invalid token", {
-          guardDriverName: this.driverName,
-        }) as Error;
-      }
-      throw new errors.E_UNAUTHORIZED_ACCESS("Token verification failed", {
-        guardDriverName: this.driverName,
-      }) as Error;
-    }
-
-    if (
-      typeof payload !== "object" ||
-      !("sub" in payload) ||
-      typeof payload.sub !== "string" ||
-      !("type" in payload) ||
-      payload.type !== "access"
-    ) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("Invalid token payload", {
-        guardDriverName: this.driverName,
-      }) as Error;
-    }
-
-    const userProvider = await this.#getUserProvider();
-    const providerUser = await userProvider.findById(payload.sub);
-    if (providerUser === null) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
-        guardDriverName: this.driverName,
-      }) as Error;
-    }
-
-    this.user = providerUser.getOriginal();
-    const user = this.getUserOrFail();
+    this.user = owner;
     this.isAuthenticated = true;
-    return user;
-  }
-
-  async refresh(refreshTokenString: string): Promise<JwtTokenResponse> {
-    const refreshSecret = this.#options.refreshSecret ?? this.#options.secret;
-
-    let payload;
-    try {
-      payload = jwt.verify(refreshTokenString, refreshSecret);
-    } catch (error) {
-      if (error instanceof jwt.TokenExpiredError) {
-        throw new errors.E_UNAUTHORIZED_ACCESS("Refresh token has expired", {
-          guardDriverName: this.driverName,
-        }) as Error;
-      }
-      if (error instanceof jwt.JsonWebTokenError) {
-        throw new errors.E_UNAUTHORIZED_ACCESS("Invalid refresh token", {
-          guardDriverName: this.driverName,
-        }) as Error;
-      }
-      throw new errors.E_UNAUTHORIZED_ACCESS(
-        "Refresh token verification failed",
-        {
-          guardDriverName: this.driverName,
-        },
-      ) as Error;
-    }
-
-    if (
-      typeof payload !== "object" ||
-      !("sub" in payload) ||
-      typeof payload.sub !== "string" ||
-      !("type" in payload) ||
-      payload.type !== "refresh"
-    ) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("Invalid refresh token payload", {
-        guardDriverName: this.driverName,
-      }) as Error;
-    }
-
-    const userProvider = await this.#getUserProvider();
-    const providerUser = await userProvider.findById(payload.sub);
-    if (providerUser === null) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("User not found", {
-        guardDriverName: this.driverName,
-      }) as Error;
-    }
-
-    const user = providerUser.getOriginal();
-    return await this.generate(user);
+    return owner;
   }
 
   async check(): Promise<boolean> {
@@ -257,28 +199,65 @@ export class JwtGuard<UserProvider extends JwtUserProviderContract<unknown>>
     }
   }
 
-  getUserOrFail(): UserProvider[typeof symbols.PROVIDER_REAL_USER] {
-    if (this.user === undefined) {
-      throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
-        guardDriverName: this.driverName,
-      }) as Error;
-    }
+  public async refreshAccessToken(
+    refreshToken: string,
+  ): Promise<JwtAccessTokenResponse> {
+    const payload = await this.validateRefreshToken(true, refreshToken);
+    return {
+      type: "bearer",
+      accessToken: this.generateAccessToken(payload.sub),
+      accessExpiresInMs: ACCESS_EXPIRES_IN_MS,
+    };
+  }
 
+  public async invalidateRefreshToken(token: string): Promise<boolean> {
+    let payload;
+    try {
+      payload = await this.validateRefreshToken(false, token);
+    } catch {
+      // Token was invalid, so positive outcome
+      return true;
+    }
+    try {
+      await RefreshToken.invalidateToken(payload.tokenId);
+      return true;
+    } catch (error) {
+      logger.error("Failed to invalidate refresh token: ", error);
+      return false;
+    }
+  }
+
+  public async invalidateAllRefreshTokensForUser(
+    forUserId: number,
+  ): Promise<boolean> {
+    try {
+      await RefreshToken.invalidateAllTokensForUser(forUserId);
+      return true;
+    } catch (error) {
+      logger.error("Failed to invalidate refresh tokens: ", error);
+      return false;
+    }
+  }
+
+  public getUserOrFail(): User {
+    if (this.user === undefined) {
+      this.throw403();
+    }
     return this.user;
   }
 
-  /**
-   * This method is called by Japa during testing when "loginAs"
-   * method is used to log in the user.
+  private throw403(): never {
+    throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
+      guardDriverName: this.driverName,
+    }) as Error;
+  }
+
+  /** This is required for the interface contract, but until a use case is found,
+   *  it is best for it to remain unsupported.
    */
-  async authenticateAsClient(
-    user: UserProvider[typeof symbols.PROVIDER_REAL_USER],
-  ): Promise<AuthClientResponse> {
-    const tokens = await this.generate(user);
-    return {
-      headers: {
-        authorization: `Bearer ${tokens.accessToken}`,
-      },
-    };
+  async authenticateAsClient(_: User): Promise<AuthClientResponse> {
+    throw new Error(
+      "Unsupported operation. Use `generateOnLogin` instead to get a token pair.",
+    );
   }
 }
