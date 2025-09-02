@@ -48,6 +48,6 @@ export default class extends BaseSchema {
 
   async down() {
     this.schema.dropTable(this.tableName);
-    this.schema.raw("DROP FUNCTION get_user_id_for_valid_token(UUID)");
+    this.schema.raw("DROP FUNCTION is_token_valid(UUID, BIGINT)");
   }
 }
