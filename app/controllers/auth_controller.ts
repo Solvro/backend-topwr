@@ -1,27 +1,37 @@
-import { HttpContext } from "@adonisjs/core/http";
+import { HttpContext, Request } from "@adonisjs/core/http";
 
 import User from "#models/user";
 import { loginValidator } from "#validators/auth";
 
-export default class AuthController {
-  async login({ request, auth }: HttpContext) {
-    const { email, password } = await request.validateUsing(loginValidator);
+import { JWT_GUARD, JwtTokenResponse } from "../auth/guards/jwt.js";
 
+export default class AuthController {
+  async login({ request, auth }: HttpContext): Promise<JwtTokenResponse> {
+    const { email, password } = await request.validateUsing(loginValidator);
     const user = await User.verifyCredentials(email, password);
-    return await auth.use("jwt").generate(user);
+    return await auth.use(JWT_GUARD).generateOnLogin(user);
   }
 
-  async refresh({ request, auth }: HttpContext) {
-    const refreshToken = request.input("refreshToken") as string;
-
-    if (!refreshToken || typeof refreshToken !== "string") {
-      return { error: "Refresh token is required" };
+  private extractRefreshToken(request: Request): string | undefined {
+    const refreshToken: unknown = request.body();
+    if (typeof refreshToken !== "string") {
+      return undefined;
     }
+    return refreshToken;
+  }
 
+  async refreshAccessToken({ request, response, auth }: HttpContext) {
+    const refreshToken: string | undefined = this.extractRefreshToken(request);
+    if (refreshToken === undefined) {
+      return response.badRequest({ error: "Refresh token is required" });
+    }
     try {
-      return await auth.use("jwt").refresh(refreshToken);
+      const newAccessToken = await auth
+        .use(JWT_GUARD)
+        .refreshAccessToken(refreshToken);
+      return response.ok({ body: newAccessToken });
     } catch {
-      return { error: "Invalid or expired refresh token" };
+      return response.forbidden({ error: "Invalid or expired refresh token" });
     }
   }
 
@@ -29,9 +39,45 @@ export default class AuthController {
     return auth.getUserOrFail();
   }
 
-  async logout() {
-    // Cant invalidate jwt, maybe do sth  later
-    // await auth.use().invalidateToken()
-    return { success: true, message: "Logged out" };
+  async logout({ request, auth, response }: HttpContext) {
+    const jwtGuard = auth.use(JWT_GUARD);
+    const user = jwtGuard.getUserOrFail();
+    const userId = user.id;
+    const allAccounts: unknown = request.input("all", "true");
+    if (typeof allAccounts === "string" && allAccounts === "true") {
+      // Invalidate all tokens for the account
+      const invalidationResult =
+        await jwtGuard.invalidateAllRefreshTokensForUser(userId);
+      if (!invalidationResult) {
+        return response.internalServerError({
+          success: false,
+          message: "Failed to invalidate the refresh tokens",
+        });
+      }
+      return response.ok({
+        success: true,
+        message: "All refresh tokens marked as invalid",
+      });
+    }
+    const refreshToken = this.extractRefreshToken(request);
+    if (refreshToken === undefined) {
+      return response.badRequest({
+        success: false,
+        message: "No refresh token provided. Cannot invalidate",
+      });
+    }
+    // Invalidate the provided token
+    const invalidationResult =
+      await jwtGuard.invalidateRefreshToken(refreshToken);
+    if (!invalidationResult) {
+      return response.internalServerError({
+        success: false,
+        message: "Failed to invalidate refresh token",
+      });
+    }
+    return response.ok({
+      success: true,
+      message: "Invalidated the provided refresh token",
+    });
   }
 }
