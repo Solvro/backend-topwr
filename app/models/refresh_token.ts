@@ -30,11 +30,15 @@ export default class RefreshToken extends BaseModel {
     tokenId: UUID,
     userId: number,
   ): Promise<boolean> {
-    return db.rawQuery<boolean>(
-      "SELECT * FROM is_token_valid(?, ?)",
-      [tokenId, userId],
-      { mode: "write" },
-    );
+    const result = await db.rawQuery<{
+      rowCount: number;
+      rows: {
+        is_token_valid: boolean;
+      }[];
+    }>("SELECT * FROM is_token_valid(?, ?)", [tokenId, userId], {
+      mode: "write",
+    });
+    return result.rowCount > 0 && result.rows[0].is_token_valid;
   }
 
   public static async invalidateToken(tokenId: UUID): Promise<void> {

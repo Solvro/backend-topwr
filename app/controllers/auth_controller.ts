@@ -13,7 +13,8 @@ export default class AuthController {
   }
 
   private extractRefreshToken(request: Request): string | undefined {
-    const refreshToken: unknown = request.body();
+    const body = request.body();
+    const refreshToken: unknown = body.refreshToken;
     if (typeof refreshToken !== "string") {
       return undefined;
     }
@@ -43,7 +44,7 @@ export default class AuthController {
     const jwtGuard = auth.use(JWT_GUARD);
     const user = jwtGuard.getUserOrFail();
     const userId = user.id;
-    const allAccounts: unknown = request.input("all", "true");
+    const allAccounts: unknown = request.input("all");
     if (typeof allAccounts === "string" && allAccounts === "true") {
       // Invalidate all tokens for the account
       const invalidationResult =
