@@ -3,7 +3,11 @@ import { test } from "@japa/runner";
 import testUtils from "@adonisjs/core/services/test_utils";
 import db from "@adonisjs/lucid/services/db";
 
+import { Weekday } from "#enums/weekday";
+import Contributor from "#models/contributor";
 import Library from "#models/library";
+import Milestone from "#models/milestone";
+import Role from "#models/role";
 import User from "#models/user";
 
 async function makeToken(user: User) {
@@ -151,5 +155,147 @@ test.group("Permissions", (group) => {
       .json({ title: "PermTest Lib 3 Updated" });
     ok.assertStatus(200);
     assert.equal(ok.body().data.title, "PermTest Lib 3 Updated");
+  });
+
+  test("relationIndex is public; 1:N relation store requires permission", async ({
+    client,
+    assert,
+  }) => {
+    const admin = await User.create({
+      email: `admin3@perm.test`,
+      password: "Passw0rd!",
+      fullName: "Solvro Admin 3",
+    });
+    await assignSolvroAdmin(admin);
+    const adminToken = await makeToken(admin);
+
+    const created = await client
+      .post("/api/v1/libraries")
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({ title: "PermTest Lib 4", latitude: 13, longitude: 23 });
+    created.assertStatus(200);
+    const libId = created.body().data.id as number;
+
+    // relationIndex should be public
+    const ri = await client.get(`/api/v1/libraries/${libId}/regular_hours`);
+    ri.assertStatus(200);
+    assert.property(ri.body(), "data");
+
+    // Regular user cannot create related
+    const user = await User.create({
+      email: `user3@perm.test`,
+      password: "Passw0rd!",
+      fullName: "Perm User 3",
+    });
+    const userToken = await makeToken(user);
+    const badStore = await client
+      .post(`/api/v1/libraries/${libId}/regular_hours`)
+      .header("Authorization", `Bearer ${userToken}`)
+      .json({ weekDay: Weekday.Monday, openTime: "08:00", closeTime: "16:00" });
+    badStore.assertStatus(403);
+
+    // Admin can create related
+    const okStore = await client
+      .post(`/api/v1/libraries/${libId}/regular_hours`)
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({
+        weekDay: Weekday.Tuesday,
+        openTime: "09:00",
+        closeTime: "17:00",
+      });
+    okStore.assertStatus(200);
+    assert.equal(okStore.body().success, true);
+    assert.equal(okStore.body().data.libraryId, libId);
+  });
+
+  test("many-to-many attach/detach require permission; solvro_admin bypass works", async ({
+    client,
+    assert,
+  }) => {
+    const role = await Role.create({ name: "PermTest Role" });
+    const person = await Contributor.create({ name: "PermTest Contributor" });
+    const milestone = await Milestone.create({ name: "PermTest Milestone" });
+
+    const user = await User.create({
+      email: `user4@perm.test`,
+      password: "Passw0rd!",
+      fullName: "Perm User 4",
+    });
+    const userToken = await makeToken(user);
+
+    const admin = await User.create({
+      email: `admin4@perm.test`,
+      password: "Passw0rd!",
+      fullName: "Solvro Admin 4",
+    });
+    await assignSolvroAdmin(admin);
+    const adminToken = await makeToken(admin);
+
+    // Regular user cannot attach
+    const badAttach = await client
+      .post(`/api/v1/roles/${role.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${userToken}`)
+      .json({});
+    badAttach.assertStatus(403);
+
+    // Admin can attach
+    const okAttach = await client
+      .post(`/api/v1/roles/${role.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({ milestone_id: milestone.id });
+    okAttach.assertStatus(200);
+    assert.equal(okAttach.body().success, true);
+
+    // Regular user cannot detach
+    const badDetach = await client
+      .delete(`/api/v1/roles/${role.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${userToken}`)
+      .json({});
+    badDetach.assertStatus(403);
+
+    // Admin can detach
+    const okDetach = await client
+      .delete(`/api/v1/roles/${role.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({});
+    okDetach.assertStatus(200);
+    assert.equal(okDetach.body().success, true);
+  });
+
+  test("destroy blocked without permission; allowed for solvro_admin", async ({
+    client,
+  }) => {
+    const admin = await User.create({
+      email: `admin5@perm.test`,
+      password: "Passw0rd!",
+      fullName: "Solvro Admin 5",
+    });
+    await assignSolvroAdmin(admin);
+    const adminToken = await makeToken(admin);
+
+    const created = await client
+      .post("/api/v1/libraries")
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({ title: "PermTest Lib 5", latitude: 15, longitude: 25 });
+    created.assertStatus(200);
+    const id = created.body().data.id as number;
+
+    // Regular user cannot delete
+    const user = await User.create({
+      email: `user5@perm.test`,
+      password: "Passw0rd!",
+      fullName: "Perm User 5",
+    });
+    const userToken = await makeToken(user);
+    const bad = await client
+      .delete(`/api/v1/libraries/${id}`)
+      .header("Authorization", `Bearer ${userToken}`);
+    bad.assertStatus(403);
+
+    // Admin can delete
+    const ok = await client
+      .delete(`/api/v1/libraries/${id}`)
+      .header("Authorization", `Bearer ${adminToken}`);
+    ok.assertStatus(200);
   });
 });
