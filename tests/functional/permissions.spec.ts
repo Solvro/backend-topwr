@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { test } from "@japa/runner";
 
 import testUtils from "@adonisjs/core/services/test_utils";
@@ -9,6 +11,11 @@ import Library from "#models/library";
 import Milestone from "#models/milestone";
 import Role from "#models/role";
 import User from "#models/user";
+
+function uniqueEmail(prefix: string) {
+  const id = crypto.randomUUID().slice(0, 8);
+  return `${prefix}-${id}@perm.test`;
+}
 
 async function makeToken(user: User) {
   const token = await User.accessTokens.create(user, [], {
@@ -83,7 +90,7 @@ test.group("Permissions", (group) => {
     client,
   }) => {
     const user = await User.create({
-      email: `user1@perm.test`,
+      email: uniqueEmail("user1"),
       password: "Passw0rd!",
       fullName: "Perm User 1",
     });
@@ -99,7 +106,7 @@ test.group("Permissions", (group) => {
 
   test("solvro_admin bypass: can store", async ({ client, assert }) => {
     const adminUser = await User.create({
-      email: `admin1@perm.test`,
+      email: uniqueEmail("admin1"),
       password: "Passw0rd!",
       fullName: "Solvro Admin",
     });
@@ -122,7 +129,7 @@ test.group("Permissions", (group) => {
   }) => {
     // Create a record as solvro_admin
     const adminUser = await User.create({
-      email: `admin2@perm.test`,
+      email: uniqueEmail("admin2"),
       password: "Passw0rd!",
       fullName: "Solvro Admin 2",
     });
@@ -137,7 +144,7 @@ test.group("Permissions", (group) => {
 
     // Regular user cannot update
     const user = await User.create({
-      email: `user2@perm.test`,
+      email: uniqueEmail("user2"),
       password: "Passw0rd!",
       fullName: "Perm User 2",
     });
@@ -162,7 +169,7 @@ test.group("Permissions", (group) => {
     assert,
   }) => {
     const admin = await User.create({
-      email: `admin3@perm.test`,
+      email: uniqueEmail("admin3"),
       password: "Passw0rd!",
       fullName: "Solvro Admin 3",
     });
@@ -183,7 +190,7 @@ test.group("Permissions", (group) => {
 
     // Regular user cannot create related
     const user = await User.create({
-      email: `user3@perm.test`,
+      email: uniqueEmail("user3"),
       password: "Passw0rd!",
       fullName: "Perm User 3",
     });
@@ -217,14 +224,14 @@ test.group("Permissions", (group) => {
     const milestone = await Milestone.create({ name: "PermTest Milestone" });
 
     const user = await User.create({
-      email: `user4@perm.test`,
+      email: uniqueEmail("user4"),
       password: "Passw0rd!",
       fullName: "Perm User 4",
     });
     const userToken = await makeToken(user);
 
     const admin = await User.create({
-      email: `admin4@perm.test`,
+      email: uniqueEmail("admin4"),
       password: "Passw0rd!",
       fullName: "Solvro Admin 4",
     });
@@ -266,7 +273,7 @@ test.group("Permissions", (group) => {
     client,
   }) => {
     const admin = await User.create({
-      email: `admin5@perm.test`,
+      email: uniqueEmail("admin5"),
       password: "Passw0rd!",
       fullName: "Solvro Admin 5",
     });
@@ -282,7 +289,7 @@ test.group("Permissions", (group) => {
 
     // Regular user cannot delete
     const user = await User.create({
-      email: `user5@perm.test`,
+      email: uniqueEmail("user5"),
       password: "Passw0rd!",
       fullName: "Perm User 5",
     });
