@@ -4,11 +4,8 @@ import assert from "node:assert";
 import { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
 import router from "@adonisjs/core/services/router";
-import {
-  Constructor,
-  LazyImport,
-  StoreRouteNode,
-} from "@adonisjs/core/types/http";
+import { LazyImport, StoreRouteNode } from "@adonisjs/core/types/http";
+import type { Constructor } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 import {
   ExtractScopes,
@@ -121,6 +118,8 @@ type ControllerAction =
   | "manyToManyRelationAttach"
   | "manyToManyRelationDetach";
 
+// Use the same Constructor type as other controllers (e.g., mobile_config_controller)
+
 export default abstract class BaseController<
   T extends LucidModel & Scopes<LucidModel>,
 > {
@@ -159,7 +158,6 @@ export default abstract class BaseController<
    *  - manyToManyRelationDetach -> "update"
    *  - index/show -> none (public by default)
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected requiredPermissionFor(
     action: ControllerAction,
   ): string | null | undefined {
@@ -210,17 +208,22 @@ export default abstract class BaseController<
   }
 
   /**
-   * Optional per-record authorization hook. Override to enforce row-level checks.
-   * Called after the record is fetched and before any data is returned or mutated.
+   * Optional id-based authorization hook. Override to enforce row-level checks
+   * before interacting with the database to avoid leaking resource existence.
    */
-  protected async authorizeRecord(
+  protected async authorizeById(
     http: HttpContext,
     action: ControllerAction,
-    record: InstanceType<T>,
+    ids: {
+      id?: string | number;
+      localId?: string | number;
+      relatedId?: string | number;
+      relationName?: string;
+    },
   ): Promise<void> {
     void http;
     void action;
-    void record;
+    void ids;
   }
 
   /**
@@ -624,6 +627,7 @@ export default abstract class BaseController<
     }
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "show", { id });
     const relations = await request.validateUsing(this.relationValidator);
 
     const data = await this.model
@@ -637,7 +641,6 @@ export default abstract class BaseController<
         () =>
           `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
-    await this.authorizeRecord(httpCtx, "show", data as InstanceType<T>);
     return { data };
   }
 
@@ -712,6 +715,7 @@ export default abstract class BaseController<
     )) as PartialModel<T>;
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "update", { id });
     const row = await this.model
       .query()
       .where(primaryColumnName, id)
@@ -720,7 +724,6 @@ export default abstract class BaseController<
         () =>
           `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
-    await this.authorizeRecord(httpCtx, "update", row as InstanceType<T>);
 
     updates =
       (await this.updateHook({
@@ -768,8 +771,8 @@ export default abstract class BaseController<
     };
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "destroy", { id });
 
-    // Always fetch to allow per-record authorization
     const record = await this.model
       .query()
       .where(primaryColumnName, id)
@@ -778,7 +781,6 @@ export default abstract class BaseController<
         () =>
           `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
-    await this.authorizeRecord(httpCtx, "destroy", record as InstanceType<T>);
 
     await this.destroyHook({
       http: httpCtx,
@@ -819,6 +821,7 @@ export default abstract class BaseController<
     const { page, limit } = await request.validateUsing(paginationValidator);
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "relationIndex", { id, relationName });
     const mainInstance = await this.model
       .query()
       .where(primaryColumnName, id)
@@ -826,11 +829,6 @@ export default abstract class BaseController<
       .addErrorContext(
         `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
-    await this.authorizeRecord(
-      httpCtx,
-      "relationIndex",
-      mainInstance as InstanceType<T>,
-    );
     const relatedQuery = mainInstance
       .related(relationName as ExtractModelRelations<InstanceType<T>>)
       .query()
@@ -889,6 +887,11 @@ export default abstract class BaseController<
     } = (await request.validateUsing(this.pathIdValidator)) as {
       params: { id: string | number };
     };
+    await this.authorizeById(
+      { request, route, auth } as unknown as HttpContext,
+      "oneToManyRelationStore",
+      { id, relationName },
+    );
     const toStore = (await request.validateUsing(
       this.relatedStoreValidator(relationName),
     )) as Partial<ModelAttributes<LucidRow>>;
@@ -901,11 +904,6 @@ export default abstract class BaseController<
       .addErrorContext(
         `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
-    await this.authorizeRecord(
-      { request, route, auth } as unknown as HttpContext,
-      "oneToManyRelationStore",
-      mainInstance as InstanceType<T>,
-    );
 
     const relationClient = mainInstance.related(
       relationName as ExtractModelRelations<InstanceType<T>>,
@@ -965,6 +963,12 @@ export default abstract class BaseController<
       this.attachValidator(relationName),
     )) as Record<string, unknown>;
 
+    await this.authorizeById(
+      { request, route, auth } as unknown as HttpContext,
+      "manyToManyRelationAttach",
+      { localId, relatedId, relationName },
+    );
+
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
     const mainInstance = await this.model
       .query()
@@ -973,11 +977,6 @@ export default abstract class BaseController<
       .addErrorContext(
         `${this.model.name} with '${primaryColumnName}' = '${localId}' does not exist`,
       );
-    await this.authorizeRecord(
-      { request, route, auth } as unknown as HttpContext,
-      "manyToManyRelationAttach",
-      mainInstance as InstanceType<T>,
-    );
 
     const relationClient = mainInstance.related(
       relationName as ExtractModelRelations<InstanceType<T>>,
@@ -1030,6 +1029,12 @@ export default abstract class BaseController<
       this.detachValidator(relationName),
     )) as Record<string, unknown>;
 
+    await this.authorizeById(
+      { request, route, auth } as unknown as HttpContext,
+      "manyToManyRelationDetach",
+      { localId, relatedId, relationName },
+    );
+
     const relation = this.model.$relationsDefinitions.get(relationName);
     if (relation === undefined) {
       throw new InternalControllerError(
@@ -1046,20 +1051,7 @@ export default abstract class BaseController<
       relation.boot();
     }
 
-    // Fetch main instance to allow row-level authorization
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    const mainInstance = await this.model
-      .query()
-      .where(primaryColumnName, localId)
-      .firstOrFail()
-      .addErrorContext(
-        `${this.model.name} with '${primaryColumnName}' = '${localId}' does not exist`,
-      );
-    await this.authorizeRecord(
-      { request, route, auth } as unknown as HttpContext,
-      "manyToManyRelationDetach",
-      mainInstance as InstanceType<T>,
-    );
+    // We can avoid fetching the main instance here since authorization was done pre-DB
 
     let result;
     try {
