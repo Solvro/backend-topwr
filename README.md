@@ -187,6 +187,17 @@ All names in paths are in `snake_case`.
   - **Requres authentication**
   - Deletes the requested object
   - Response: `{ "success": true }`
+
+##### Draft approval
+
+For draft models (`student_organization_drafts`, `guide_article_drafts`), there is an additional endpoint:
+
+- **POST /api/v1/:model/:id/approve**
+  - **Requires authentication and solvro_admin role**
+  - Approves the draft by updating the corresponding main model instance (if `original*Id` is set) or creating a new one
+  - Deletes the draft after approval
+  - Response: `{ "data": Model }`
+
 - **GET /api/v1/:model/:id/:crudRelation**
   - Lists all objects associated with the requested object (`id`) via the specified relation (`crudRelation`)
   - Supports pagination, on-demand recursive relations (relative to the requested relation), filtering and sorting

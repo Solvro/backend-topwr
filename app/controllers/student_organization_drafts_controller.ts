@@ -1,8 +1,10 @@
+import router from "@adonisjs/core/services/router";
+import { LazyImport } from "@adonisjs/core/types/http";
+import type { Constructor } from "@adonisjs/core/types/http";
+
+import BaseController from "#controllers/base_controller";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
-
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
 
 export default class StudentOrganizationDraftsController extends BaseController<
   typeof StudentOrganizationDraft
@@ -137,5 +139,71 @@ export default class StudentOrganizationDraftsController extends BaseController<
       return { data: await baseQuery };
     }
     return await baseQuery.paginate(page ?? 1, limit ?? 10);
+  }
+
+  $configureRoutes(
+    controller: LazyImport<
+      Constructor<BaseController<typeof StudentOrganizationDraft>>
+    >,
+  ) {
+    super.$configureRoutes(controller);
+    router.post("/:id/approve", [controller as any, "approve"]).as("approve");
+  }
+
+  async approve({ params, auth }: any) {
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    // Only solvro_admin can approve drafts
+    const isSolvroAdmin = await auth.user?.hasRole?.("solvro_admin");
+    if (!isSolvroAdmin) {
+      throw new (
+        await import("#exceptions/http_exceptions")
+      ).ForbiddenException();
+    }
+
+    const draft = await StudentOrganizationDraft.find(params.id);
+    if (!draft) {
+      throw new (
+        await import("#exceptions/http_exceptions")
+      ).NotFoundException();
+    }
+
+    const draftData = {
+      name: draft.name,
+      isStrategic: draft.isStrategic,
+      departmentId: draft.departmentId,
+      logoKey: draft.logoKey,
+      coverKey: draft.coverKey,
+      description: draft.description,
+      shortDescription: draft.shortDescription,
+      coverPreview: draft.coverPreview,
+      source: draft.source,
+      organizationType: draft.organizationType,
+      organizationStatus: draft.organizationStatus,
+    };
+
+    let organization: StudentOrganization;
+    if (draft.originalOrganizationId) {
+      const existingOrg = await StudentOrganization.find(
+        draft.originalOrganizationId,
+      );
+      if (!existingOrg) {
+        throw new (
+          await import("#exceptions/http_exceptions")
+        ).NotFoundException(
+          `Original organization with id ${draft.originalOrganizationId} not found`,
+        );
+      }
+      existingOrg.merge(draftData);
+      await existingOrg.save();
+      organization = existingOrg;
+    } else {
+      organization = await StudentOrganization.create(draftData);
+    }
+
+    await draft.delete();
+
+    return { data: organization };
   }
 }

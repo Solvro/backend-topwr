@@ -1,8 +1,10 @@
+import router from "@adonisjs/core/services/router";
+import { LazyImport } from "@adonisjs/core/types/http";
+import type { Constructor } from "@adonisjs/core/types/http";
+
+import BaseController from "#controllers/base_controller";
 import GuideArticle from "#models/guide_article";
 import GuideArticleDraft from "#models/guide_article_draft";
-
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
 
 export default class GuideArticleDraftsController extends BaseController<
   typeof GuideArticleDraft
@@ -99,5 +101,69 @@ export default class GuideArticleDraftsController extends BaseController<
         await import("#exceptions/http_exceptions")
       ).ForbiddenException();
     }
+  }
+
+  $configureRoutes(
+    controller: LazyImport<
+      Constructor<BaseController<typeof GuideArticleDraft>>
+    >,
+  ) {
+    super.$configureRoutes(controller);
+    router.post("/:id/approve", [controller as any, "approve"]).as("approve");
+  }
+
+  async approve({ params, auth }: any) {
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    // Only solvro_admin can approve drafts
+    const isSolvroAdmin = await auth.user?.hasRole?.("solvro_admin");
+    if (!isSolvroAdmin) {
+      throw new (
+        await import("#exceptions/http_exceptions")
+      ).ForbiddenException();
+    }
+
+    const draft = await GuideArticleDraft.find(params.id);
+    if (!draft) {
+      throw new (
+        await import("#exceptions/http_exceptions")
+      ).NotFoundException();
+    }
+
+    const draftData: any = {
+      title: draft.title,
+      shortDesc: draft.shortDesc,
+      description: draft.description,
+    };
+    if (draft.imageKey !== null) {
+      draftData.imageKey = draft.imageKey;
+    }
+
+    let article: GuideArticle;
+    if (draft.originalArticleId) {
+      const existingArticle = await GuideArticle.find(draft.originalArticleId);
+      if (!existingArticle) {
+        throw new (
+          await import("#exceptions/http_exceptions")
+        ).NotFoundException(
+          `Original article with id ${draft.originalArticleId} not found`,
+        );
+      }
+      existingArticle.merge(draftData);
+      await existingArticle.save();
+      article = existingArticle;
+    } else {
+      if (draft.imageKey === null) {
+        throw new (
+          await import("#exceptions/http_exceptions")
+        ).BadRequestException("Cannot create article without image");
+      }
+      article = await GuideArticle.create(draftData);
+    }
+
+    await draft.delete();
+
+    return { data: article };
   }
 }

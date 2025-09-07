@@ -4,11 +4,13 @@ import crypto from "node:crypto";
 import { test } from "@japa/runner";
 
 import testUtils from "@adonisjs/core/services/test_utils";
+import db from "@adonisjs/lucid/services/db";
 
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
 import GuideArticleDraft from "#models/guide_article_draft";
+import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 import User from "#models/user";
 
@@ -23,6 +25,48 @@ async function makeToken(user: User) {
 function uniqueEmail(prefix: string) {
   const id = crypto.randomUUID().slice(0, 8);
   return `${prefix}-${id}@drafts.test`;
+}
+
+async function ensureSolvroAdminRoleId(): Promise<number> {
+  // Ensure 'solvro_admin' exists in access_roles and return its id
+  const role = await db
+    .knexQuery()
+    .table("access_roles")
+    .where({ slug: "solvro_admin" })
+    .first();
+  if (role) return Number(role.id);
+  const inserted = await db
+    .knexQuery()
+    .table("access_roles")
+    .insert({
+      slug: "solvro_admin",
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+    .returning("id");
+  const id = Array.isArray(inserted)
+    ? ((inserted as any)[0]?.id ?? inserted[0])
+    : (inserted as any);
+  return Number(id);
+}
+
+async function assignSolvroAdmin(user: User) {
+  const roleId = await ensureSolvroAdminRoleId();
+  // model_roles: model_type, model_id, role_id
+  const existing = await db
+    .knexQuery()
+    .table("model_roles")
+    .where({ model_type: "users", model_id: user.id, role_id: roleId })
+    .first();
+  if (!existing) {
+    await db.knexQuery().table("model_roles").insert({
+      model_type: "users",
+      model_id: user.id,
+      role_id: roleId,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+  }
 }
 
 test.group("Drafts ACL (per-model and class-level)", (group) => {
@@ -465,5 +509,115 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       .delete(`/api/v1/guide_article_drafts/${draft.id}`)
       .header("Authorization", `Bearer ${t1}`);
     ok.assertStatus(200);
+  });
+
+  test("student org draft: approve creates new organization and deletes draft", async ({
+    client,
+    assert,
+  }) => {
+    const adminUser = await User.create({
+      email: uniqueEmail("admin-approve"),
+      password: "Passw0rd!",
+      fullName: "Approve Admin",
+    });
+    await assignSolvroAdmin(adminUser);
+    const adminToken = await makeToken(adminUser);
+
+    const draft = await StudentOrganizationDraft.create({
+      name: "Draft Org To Approve",
+      isStrategic: true,
+      coverPreview: false,
+      source: OrganizationSource.Manual,
+      organizationType: OrganizationType.StudentOrganization,
+      organizationStatus: OrganizationStatus.Unknown,
+    });
+
+    const response = await client
+      .post(`/api/v1/student_organization_drafts/${draft.id}/approve`)
+      .header("Authorization", `Bearer ${adminToken}`);
+    response.assertStatus(200);
+
+    // Check that organization was created
+    const org = await StudentOrganization.findBy(
+      "name",
+      "Draft Org To Approve",
+    );
+    assert.isNotNull(org);
+    assert.equal(org!.isStrategic, true);
+
+    // Check that draft was deleted
+    const deletedDraft = await StudentOrganizationDraft.find(draft.id);
+    assert.isNull(deletedDraft);
+  });
+
+  test("student org draft: approve updates existing organization", async ({
+    client,
+    assert,
+  }) => {
+    const adminUser = await User.create({
+      email: uniqueEmail("admin-approve2"),
+      password: "Passw0rd!",
+      fullName: "Approve Admin 2",
+    });
+    await assignSolvroAdmin(adminUser);
+    const adminToken = await makeToken(adminUser);
+
+    const existingOrg = await StudentOrganization.create({
+      name: "Existing Org",
+      isStrategic: false,
+      coverPreview: false,
+      source: OrganizationSource.Manual,
+      organizationType: OrganizationType.StudentOrganization,
+      organizationStatus: OrganizationStatus.Unknown,
+    });
+
+    const draft = await StudentOrganizationDraft.create({
+      name: "Updated Org",
+      isStrategic: true,
+      coverPreview: false,
+      source: OrganizationSource.Manual,
+      organizationType: OrganizationType.StudentOrganization,
+      organizationStatus: OrganizationStatus.Unknown,
+      originalOrganizationId: existingOrg.id,
+    });
+
+    const response = await client
+      .post(`/api/v1/student_organization_drafts/${draft.id}/approve`)
+      .header("Authorization", `Bearer ${adminToken}`);
+    response.assertStatus(200);
+
+    // Check that organization was updated
+    await existingOrg.refresh();
+    assert.equal(existingOrg.name, "Updated Org");
+    assert.equal(existingOrg.isStrategic, true);
+
+    // Check that draft was deleted
+    const deletedDraft = await StudentOrganizationDraft.find(draft.id);
+    assert.isNull(deletedDraft);
+  });
+
+  test("student org draft: approve requires solvro_admin", async ({
+    client,
+  }) => {
+    const regularUser = await User.create({
+      email: uniqueEmail("regular-approve"),
+      password: "Passw0rd!",
+      fullName: "Regular User",
+    });
+    const token = await makeToken(regularUser);
+
+    const draft = await StudentOrganizationDraft.create({
+      name: "Draft Org No Approve",
+      isStrategic: false,
+      coverPreview: false,
+      source: OrganizationSource.Manual,
+      organizationType: OrganizationType.StudentOrganization,
+      organizationStatus: OrganizationStatus.Unknown,
+    });
+
+    const response = await client
+      .post(`/api/v1/student_organization_drafts/${draft.id}/approve`)
+      .header("Authorization", `Bearer ${token}`);
+    response.assertStatus(403);
   });
 });
