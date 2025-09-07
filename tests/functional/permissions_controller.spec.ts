@@ -1,3 +1,5 @@
+import crypto from "node:crypto";
+
 import { test } from "@japa/runner";
 
 import testUtils from "@adonisjs/core/services/test_utils";
@@ -5,6 +7,11 @@ import db from "@adonisjs/lucid/services/db";
 
 import StudentOrganizationDraft from "#models/student_organization_draft";
 import User from "#models/user";
+
+function uniqueEmail(prefix: string) {
+  const id = crypto.randomUUID().slice(0, 8);
+  return `${prefix}-${id}@pc.test`;
+}
 
 async function makeToken(user: User) {
   const token = await User.accessTokens.create(user, [], {
@@ -61,10 +68,14 @@ test.group("PermissionsController", (group) => {
   group.teardown(async () => {
     await testUtils.db().truncate();
   });
+  group.each.teardown(async () => {
+    // Cleanup any users created by this spec
+    await User.query().where("email", "like", "%@pc.test").delete();
+  });
 
   test("non-admin cannot call allow", async ({ client }) => {
     const user = await User.create({
-      email: "pc1@test.local",
+      email: uniqueEmail("pc1"),
       password: "Passw0rd!",
       fullName: "U",
     });
@@ -83,7 +94,7 @@ test.group("PermissionsController", (group) => {
 
   test("admin can grant class-level read on drafts", async ({ client }) => {
     const admin = await User.create({
-      email: "pc2@test.local",
+      email: uniqueEmail("pc2"),
       password: "Passw0rd!",
       fullName: "Admin",
     });
@@ -91,7 +102,7 @@ test.group("PermissionsController", (group) => {
     const adminToken = await makeToken(admin);
 
     const target = await User.create({
-      email: "pc3@test.local",
+      email: uniqueEmail("pc3"),
       password: "Passw0rd!",
       fullName: "Target",
     });
@@ -134,7 +145,7 @@ test.group("PermissionsController", (group) => {
     client,
   }) => {
     const admin = await User.create({
-      email: "pc4@test.local",
+      email: uniqueEmail("pc4"),
       password: "Passw0rd!",
       fullName: "Admin 2",
     });
@@ -142,7 +153,7 @@ test.group("PermissionsController", (group) => {
     const adminToken = await makeToken(admin);
 
     const target = await User.create({
-      email: "pc5@test.local",
+      email: uniqueEmail("pc5"),
       password: "Passw0rd!",
       fullName: "Target 2",
     });
@@ -204,7 +215,7 @@ test.group("PermissionsController", (group) => {
     client,
   }) => {
     const admin = await User.create({
-      email: "pc6@test.local",
+      email: uniqueEmail("pc6"),
       password: "Passw0rd!",
       fullName: "Admin 3",
     });
@@ -212,7 +223,7 @@ test.group("PermissionsController", (group) => {
     const adminToken = await makeToken(admin);
 
     const target = await User.create({
-      email: "pc7@test.local",
+      email: uniqueEmail("pc7"),
       password: "Passw0rd!",
       fullName: "Target 3",
     });
