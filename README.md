@@ -291,6 +291,18 @@ Example:
 
 To request the response to be sorted by a specified key, add a `sort` query parameter.
 
+### Permissions management (admin only)
+
+POST /api/v1/permissions/allow
+
+- body: { userId: number, action: "read"|"create"|"update"|"destroy", resource: { type: "class"|"model", name: "student_organization_drafts"|"guide_article_drafts"|"student_organizations"|"guide_articles", id?: number } }
+- requires: solvro_admin role
+
+POST /api/v1/permissions/revoke
+
+- body: same as above
+- requires: solvro_admin role
+
 To sort in ascending order, use `+<column_name>`.
 To sort in descending order, use `-<column_name>`.
 
