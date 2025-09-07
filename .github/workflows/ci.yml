@@ -8,6 +8,16 @@ on:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,6 +37,9 @@ jobs:
         run: |
           cp .env.example .env
           node ace generate:key
+
+      - name: Run migrations
+        run: node ace migration:run
 
       - name: Check commit name
         if: github.event_name == 'pull_request'
@@ -48,6 +61,11 @@ jobs:
         run: npm test
         env:
           ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_DATABASE: postgres
         if: always()
 
       - name: Build
