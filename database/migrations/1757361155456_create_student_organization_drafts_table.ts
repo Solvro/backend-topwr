@@ -67,6 +67,15 @@ export default class extends BaseSchema {
         .references("student_organizations.id")
         .onDelete("SET NULL");
 
+      table
+        .enum("branch", ["main", "jelenia_gora", "walbrzych", "legnica"], {
+          useNative: true,
+          enumName: "branch",
+          existingType: true,
+        })
+        .defaultTo("main")
+        .notNullable();
+
       table.timestamp("created_at").notNullable();
       table.timestamp("updated_at").notNullable();
     });

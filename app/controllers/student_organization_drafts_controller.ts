@@ -172,6 +172,7 @@ export default class StudentOrganizationDraftsController extends BaseController<
     const draftData = {
       name: draft.name,
       isStrategic: draft.isStrategic,
+      branch: draft.branch,
       departmentId: draft.departmentId,
       logoKey: draft.logoKey,
       coverKey: draft.coverKey,
