@@ -1,7 +1,6 @@
 import { zip } from "@solvro/utils/arrays";
 import assert from "node:assert";
 
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- ts gets angy otherwise
 export interface ICSObject {
   [K: string]: ICSValue | undefined;
 }
