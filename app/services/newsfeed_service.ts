@@ -50,7 +50,7 @@ export interface NewsfeedStats {
   lastUpdate: DateTime;
 }
 
-const CACHE_TTL = 60 * 30; //1800 seconds
+const CACHE_TTL = 60 * 60 * 2; // 2 hours
 
 export default class NewsfeedService {
   private static articleCache: Partial<Record<NewsfeedLanguage, ArticleCache>> =
