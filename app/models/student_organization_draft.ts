@@ -9,6 +9,7 @@ import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
+import { Branch } from "#enums/branch";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
@@ -36,6 +37,9 @@ export default class StudentOrganizationDraft
 
   @typedColumn({ type: "boolean" })
   declare isStrategic: boolean;
+
+  @typedColumn({ type: Branch })
+  declare branch: Branch;
 
   @typedColumn({ foreignKeyOf: () => Department, optional: true })
   declare departmentId: number | null;

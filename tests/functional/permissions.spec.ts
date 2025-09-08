@@ -5,6 +5,7 @@ import { test } from "@japa/runner";
 import testUtils from "@adonisjs/core/services/test_utils";
 import db from "@adonisjs/lucid/services/db";
 
+import { Branch } from "#enums/branch";
 import { Weekday } from "#enums/weekday";
 import Contributor from "#models/contributor";
 import Library from "#models/library";
@@ -116,7 +117,12 @@ test.group("Permissions", (group) => {
     const res = await client
       .post("/api/v1/libraries")
       .header("Authorization", `Bearer ${token}`)
-      .json({ title: "PermTest Lib 2", latitude: 11, longitude: 21 });
+      .json({
+        title: "PermTest Lib 2",
+        latitude: 11,
+        longitude: 21,
+        branch: Branch.Main,
+      });
 
     res.assertStatus(200);
     assert.equal(res.body().success, true);
@@ -138,7 +144,12 @@ test.group("Permissions", (group) => {
     const created = await client
       .post("/api/v1/libraries")
       .header("Authorization", `Bearer ${adminToken}`)
-      .json({ title: "PermTest Lib 3", latitude: 12, longitude: 22 });
+      .json({
+        title: "PermTest Lib 3",
+        latitude: 12,
+        longitude: 22,
+        branch: Branch.Main,
+      });
     created.assertStatus(200);
     const id = created.body().data.id as number;
 
@@ -179,7 +190,12 @@ test.group("Permissions", (group) => {
     const created = await client
       .post("/api/v1/libraries")
       .header("Authorization", `Bearer ${adminToken}`)
-      .json({ title: "PermTest Lib 4", latitude: 13, longitude: 23 });
+      .json({
+        title: "PermTest Lib 4",
+        latitude: 13,
+        longitude: 23,
+        branch: Branch.Main,
+      });
     created.assertStatus(200);
     const libId = created.body().data.id as number;
 
@@ -283,7 +299,12 @@ test.group("Permissions", (group) => {
     const created = await client
       .post("/api/v1/libraries")
       .header("Authorization", `Bearer ${adminToken}`)
-      .json({ title: "PermTest Lib 5", latitude: 15, longitude: 25 });
+      .json({
+        title: "PermTest Lib 5",
+        latitude: 15,
+        longitude: 25,
+        branch: Branch.Main,
+      });
     created.assertStatus(200);
     const id = created.body().data.id as number;
 
