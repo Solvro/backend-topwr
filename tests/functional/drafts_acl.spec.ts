@@ -6,6 +6,7 @@ import { test } from "@japa/runner";
 import testUtils from "@adonisjs/core/services/test_utils";
 import db from "@adonisjs/lucid/services/db";
 
+import { Branch } from "#enums/branch";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
@@ -100,6 +101,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     await Acl.model(u1).allow("read", draft);
@@ -132,6 +134,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
     const d2 = await StudentOrganizationDraft.create({
       name: "Draft Org C",
@@ -140,6 +143,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     await Acl.model(u).allow("read", StudentOrganizationDraft);
@@ -178,6 +182,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     await Acl.model(u1).allow("update", draft);
@@ -263,6 +268,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
         organizationStatus: OrganizationStatus.Unknown,
+        branch: Branch.Main,
       });
     noPerm.assertStatus(403);
 
@@ -278,6 +284,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
         organizationStatus: OrganizationStatus.Unknown,
+        branch: Branch.Main,
       });
     ok.assertStatus(200);
   });
@@ -308,6 +315,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     // grant class-level create on drafts to both
@@ -329,6 +337,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         organizationType: OrganizationType.StudentOrganization,
         organizationStatus: OrganizationStatus.Unknown,
         originalOrganizationId: base.id,
+        branch: Branch.Main,
       });
     fail.assertStatus(403);
 
@@ -343,6 +352,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         organizationType: OrganizationType.StudentOrganization,
         organizationStatus: OrganizationStatus.Unknown,
         originalOrganizationId: base.id,
+        branch: Branch.Main,
       });
     ok.assertStatus(200);
   });
@@ -425,6 +435,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     // grant per-model destroy to u1
@@ -530,6 +541,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     const response = await client
@@ -569,6 +581,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     const draft = await StudentOrganizationDraft.create({
@@ -579,6 +592,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
       originalOrganizationId: existingOrg.id,
+      branch: Branch.Main,
     });
 
     const response = await client
@@ -613,6 +627,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Unknown,
+      branch: Branch.Main,
     });
 
     const response = await client
