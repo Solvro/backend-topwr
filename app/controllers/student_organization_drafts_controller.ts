@@ -1,10 +1,23 @@
+import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import { LazyImport } from "@adonisjs/core/types/http";
 import type { Constructor } from "@adonisjs/core/types/http";
 
 import BaseController from "#controllers/base_controller";
+import type { PartialModel } from "#controllers/base_controller";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
+
+type Action =
+  | "index"
+  | "show"
+  | "store"
+  | "update"
+  | "destroy"
+  | "relationIndex"
+  | "oneToManyRelationStore"
+  | "manyToManyRelationAttach"
+  | "manyToManyRelationDetach";
 
 export default class StudentOrganizationDraftsController extends BaseController<
   typeof StudentOrganizationDraft
@@ -19,38 +32,72 @@ export default class StudentOrganizationDraftsController extends BaseController<
   protected readonly model = StudentOrganizationDraft;
 
   // All endpoints require auth; for store we also require 'create' permission on the resource class (admin bypass)
-  protected async authenticate(http: any, action: any): Promise<void> {
+  protected async authenticate(
+    http: HttpContext,
+    action: Action,
+  ): Promise<void> {
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
     }
     if (action === "store") {
-      const isAdmin =
-        (await http.auth.user?.hasRole?.("solvro_admin")) ||
-        (await http.auth.user?.hasRole?.("admin"));
-      if (isAdmin) return;
-      const allowed = await http.auth.user?.hasPermission("create", this.model);
-      if (!allowed) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).ForbiddenException();
+      const user = http.auth.user as unknown as
+        | {
+            hasRole?: (slug: string) => Promise<boolean>;
+            hasPermission?: (
+              action: string,
+              target?: unknown,
+            ) => Promise<boolean>;
+          }
+        | undefined;
+      const hasSolvroAdminRole =
+        (await user?.hasRole?.("solvro_admin")) === true;
+      const hasAdminRole = (await user?.hasRole?.("admin")) === true;
+      const isAdmin = hasSolvroAdminRole || hasAdminRole;
+      if (isAdmin) {
+        return;
+      }
+      const allowed = await user?.hasPermission?.("create", this.model);
+      if (allowed !== true) {
+        const { ForbiddenException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new ForbiddenException();
       }
     }
   }
 
-  protected requiredPermissionFor(_action: any) {
+  protected requiredPermissionFor(_action: Action) {
     return null; // disable global slug checks for this controller
   }
 
-  protected async authorizeById(http: any, action: any, ids: any) {
+  protected async authorizeById(
+    http: HttpContext,
+    action: Action,
+    ids: { id?: number | string; localId?: number | string },
+  ) {
     // Admin roles bypass handled via hasRole checks
+    const user = http.auth.user as unknown as
+      | {
+          hasRole?: (slug: string) => Promise<boolean>;
+          hasPermission?: (
+            action: string,
+            target?: unknown,
+          ) => Promise<boolean>;
+        }
+      | undefined;
     const isAdmin =
-      (await http.auth.user?.hasRole?.("solvro_admin")) ||
-      (await http.auth.user?.hasRole?.("admin"));
-    if (isAdmin) return;
+      (await user?.hasRole?.("solvro_admin")) === true ||
+      (await user?.hasRole?.("admin")) === true;
+    if (isAdmin) {
+      return;
+    }
 
-    const { id, localId } = ids ?? {};
-    const draftId = (id ?? localId) as number | undefined;
-    if (draftId === undefined) return;
+    const { id, localId } = ids;
+    const maybeId = id ?? localId;
+    const draftId = typeof maybeId === "string" ? Number(maybeId) : maybeId;
+    if (draftId === undefined) {
+      return;
+    }
 
     // Map controller action to permission slug
     const slugMap: Record<string, string> = {
@@ -67,68 +114,108 @@ export default class StudentOrganizationDraftsController extends BaseController<
     const slug = slugMap[action] ?? "read";
 
     // Check resource-scoped permission using ACL on the model instance reference
-    const allowed = await http.auth.user?.hasPermission(slug, this.model);
+    const allowed = await user?.hasPermission?.(slug, this.model);
 
     // If class-level permission is not granted, check model-level assignment
-    if (!allowed) {
+    if (allowed !== true) {
       const instance = await this.model.find(draftId);
-      if (!instance) {
+      if (instance === null) {
         // let BaseController handle not found later; just deny for now
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).ForbiddenException();
+        const { ForbiddenException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new ForbiddenException();
       }
-      const has = await http.auth.user?.hasPermission(slug, instance);
-      if (!has) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).ForbiddenException();
+      const has = await user?.hasPermission?.(slug, instance);
+      if (has !== true) {
+        const { ForbiddenException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new ForbiddenException();
       }
     }
   }
 
   // If linking to an existing organization, user must be assigned to that organization (per-model permission)
-  protected async storeHook(ctx: any) {
+  protected async storeHook(ctx: {
+    http: HttpContext;
+    request: PartialModel<typeof StudentOrganizationDraft>;
+  }) {
     const { http, request } = ctx;
-    const originalId = (request as any).originalOrganizationId as
-      | number
-      | null
-      | undefined;
-    if (!originalId) return;
+    const originalId = request.originalOrganizationId;
+    if (originalId === null || originalId === undefined) {
+      return;
+    }
 
+    const user = http.auth.user as unknown as
+      | {
+          hasRole?: (slug: string) => Promise<boolean>;
+          hasPermission?: (
+            action: string,
+            target?: unknown,
+          ) => Promise<boolean>;
+        }
+      | undefined;
     const isAdmin =
-      (await http.auth.user?.hasRole?.("solvro_admin")) ||
-      (await http.auth.user?.hasRole?.("admin"));
-    if (isAdmin) return;
+      (await user?.hasRole?.("solvro_admin")) === true ||
+      (await user?.hasRole?.("admin")) === true;
+    if (isAdmin) {
+      return;
+    }
 
     const org = await StudentOrganization.find(originalId);
-    if (!org) {
-      throw new (await import("#exceptions/http_exceptions")).NotFoundException(
+    if (org === null) {
+      const { NotFoundException } = await import("#exceptions/http_exceptions");
+      throw new NotFoundException(
         `StudentOrganization with id ${originalId} not found`,
       );
     }
-    const allowed = await http.auth.user?.hasPermission("update", org);
-    if (!allowed) {
-      throw new (
-        await import("#exceptions/http_exceptions")
-      ).ForbiddenException();
+    const allowed = await user?.hasPermission?.("update", org);
+    if (allowed !== true) {
+      const { ForbiddenException } = await import(
+        "#exceptions/http_exceptions"
+      );
+      throw new ForbiddenException();
     }
   }
 
-  async index(httpCtx: any): Promise<unknown> {
+  async index(httpCtx: HttpContext): Promise<unknown> {
     const { request } = httpCtx;
     await this.selfValidate();
     await this.authenticate(httpCtx, "index");
 
-    const { page, limit } = await request.validateUsing(
-      (await import("#validators/pagination")).paginationValidator,
-    );
-    const relations = await request.validateUsing(this.relationValidator);
+    const { paginationValidator } = await import("#validators/pagination");
+    const { page, limit } = await request.validateUsing(paginationValidator);
+    const relationsValidated = (await request.validateUsing(
+      this.relationValidator,
+    )) as unknown;
+    const relations: string[] = Array.isArray(relationsValidated)
+      ? (relationsValidated as string[])
+      : Object.entries(
+          relationsValidated as Record<string, boolean | undefined>,
+        )
+          .filter(([, enabled]) => enabled === true)
+          .map(([name]) => name);
 
-    const baseQuery = this.model.query().withScopes((scopes: any) => {
-      scopes.handleSearchQuery(request.qs());
-      scopes.preloadRelations(relations);
-      scopes.handleSortQuery(request.input("sort"));
+    const baseQuery = this.model.query().withScopes((scopes) => {
+      try {
+        // handleSearchQuery may not exist on related scopes in some models
+        (
+          scopes as unknown as {
+            handleSearchQuery?: (q: Record<string, unknown>) => void;
+          }
+        ).handleSearchQuery?.(request.qs());
+      } catch {}
+      try {
+        (
+          scopes as unknown as { preloadRelations?: (rels: string[]) => void }
+        ).preloadRelations?.(relations);
+      } catch {}
+      try {
+        (
+          scopes as unknown as { handleSortQuery?: (sort: unknown) => void }
+        ).handleSortQuery?.(request.input("sort"));
+      } catch {}
     });
 
     // For non-admins, we cannot filter by pivot (no manual relation). Optional: keep unfiltered index,
@@ -147,29 +234,54 @@ export default class StudentOrganizationDraftsController extends BaseController<
     >,
   ) {
     super.$configureRoutes(controller);
-    router.post("/:id/approve", [controller as any, "approve"]).as("approve");
+    router
+      .post("/:id/approve", async (ctx) => {
+        const module = await controller();
+        const ControllerClass = module.default;
+        const instance = new ControllerClass();
+        return (
+          instance as unknown as {
+            approve: (c: HttpContext) => Promise<unknown>;
+          }
+        ).approve(ctx as unknown as HttpContext);
+      })
+      .as("approve");
   }
 
-  async approve({ params, auth }: any) {
+  async approve({ params, auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
     // Only solvro_admin can approve drafts
-    const isSolvroAdmin = await auth.user?.hasRole?.("solvro_admin");
-    if (!isSolvroAdmin) {
-      throw new (
-        await import("#exceptions/http_exceptions")
-      ).ForbiddenException();
+    const isSolvroAdmin = await (
+      auth.user as unknown as { hasRole?: (slug: string) => Promise<boolean> }
+    ).hasRole?.("solvro_admin");
+    if (isSolvroAdmin !== true) {
+      const { ForbiddenException } = await import(
+        "#exceptions/http_exceptions"
+      );
+      throw new ForbiddenException();
     }
 
-    const draft = await StudentOrganizationDraft.find(params.id);
-    if (!draft) {
-      throw new (
-        await import("#exceptions/http_exceptions")
-      ).NotFoundException();
+    const rawId: unknown = (params as unknown as { id?: string | number }).id;
+    let draftId: number | undefined;
+    if (typeof rawId === "string") {
+      const numeric = Number(rawId);
+      draftId = Number.isNaN(numeric) ? undefined : numeric;
+    } else if (typeof rawId === "number") {
+      draftId = rawId;
+    }
+    if (draftId === undefined) {
+      const { NotFoundException } = await import("#exceptions/http_exceptions");
+      throw new NotFoundException();
+    }
+    const draft = await StudentOrganizationDraft.find(draftId);
+    if (draft === null) {
+      const { NotFoundException } = await import("#exceptions/http_exceptions");
+      throw new NotFoundException();
     }
 
-    const draftData = {
+    const draftData: PartialModel<typeof StudentOrganization> = {
       name: draft.name,
       isStrategic: draft.isStrategic,
       branch: draft.branch,
@@ -185,14 +297,15 @@ export default class StudentOrganizationDraftsController extends BaseController<
     };
 
     let organization: StudentOrganization;
-    if (draft.originalOrganizationId) {
+    if (draft.originalOrganizationId !== null) {
       const existingOrg = await StudentOrganization.find(
         draft.originalOrganizationId,
       );
-      if (!existingOrg) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).NotFoundException(
+      if (existingOrg === null) {
+        const { NotFoundException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new NotFoundException(
           `Original organization with id ${draft.originalOrganizationId} not found`,
         );
       }
