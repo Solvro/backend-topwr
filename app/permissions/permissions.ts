@@ -17,7 +17,7 @@ export const destroy = await Acl.permission().create({
   slug: "destroy",
 });
 
-export const approve_draft = await Acl.permission().create({
+export const approveDraft = await Acl.permission().create({
   slug: "approve_draft",
 });
 
@@ -25,6 +25,6 @@ export const admin = await Acl.role().create({
   slug: "admin",
 });
 
-export const solvro_admin = await Acl.role().create({
+export const solvroAdmin = await Acl.role().create({
   slug: "solvro_admin",
 });

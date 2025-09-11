@@ -15,11 +15,21 @@ import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 import User from "#models/user";
 
+function hasRelease(value: unknown): value is { release: () => string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { release?: unknown }).release === "function"
+  );
+}
+
 async function makeToken(user: User) {
   const token = await User.accessTokens.create(user, [], {
     expiresIn: "1 day",
   });
-  if (!token.value) throw new Error("Token value missing");
+  if (!hasRelease(token.value)) {
+    throw new Error("Token value missing");
+  }
   return token.value.release();
 }
 
@@ -30,13 +40,26 @@ function uniqueEmail(prefix: string) {
 
 async function ensureSolvroAdminRoleId(): Promise<number> {
   // Ensure 'solvro_admin' exists in access_roles and return its id
-  const role = await db
+  const roleExists = await db
     .knexQuery()
     .table("access_roles")
     .where({ slug: "solvro_admin" })
-    .first();
-  if (role) return Number(role.id);
-  const inserted = await db
+    .first()
+    .then((row: unknown) => row !== null && row !== undefined);
+  if (roleExists) {
+    const roleRow: unknown = await db
+      .knexQuery()
+      .table("access_roles")
+      .where({ slug: "solvro_admin" })
+      .first();
+    // row is present; fetch id using a second query to keep types simple
+    if (typeof roleRow === "object" && roleRow !== null && "id" in roleRow) {
+      return Number((roleRow as { id: number | string }).id);
+    }
+    throw new Error("Invalid roleRow payload");
+  }
+
+  const idNum = await db
     .knexQuery()
     .table("access_roles")
     .insert({
@@ -44,22 +67,34 @@ async function ensureSolvroAdminRoleId(): Promise<number> {
       created_at: new Date(),
       updated_at: new Date(),
     })
-    .returning("id");
-  const id = Array.isArray(inserted)
-    ? ((inserted as any)[0]?.id ?? inserted[0])
-    : (inserted as any);
-  return Number(id);
+    .returning("id")
+    .then((result: unknown) => {
+      if (Array.isArray(result)) {
+        const first = result[0] as unknown;
+        if (typeof first === "object" && first !== null && "id" in first) {
+          return Number((first as { id: number | string }).id);
+        }
+        return Number(first as number | string);
+      }
+      if (typeof result === "object" && result !== null && "id" in result) {
+        return Number((result as { id: number | string }).id);
+      }
+      return Number(result as number | string);
+    });
+
+  return idNum;
 }
 
 async function assignSolvroAdmin(user: User) {
   const roleId = await ensureSolvroAdminRoleId();
   // model_roles: model_type, model_id, role_id
-  const existing = await db
+  const exists = await db
     .knexQuery()
     .table("model_roles")
     .where({ model_type: "users", model_id: user.id, role_id: roleId })
-    .first();
-  if (!existing) {
+    .first()
+    .then((row: unknown) => row !== null && row !== undefined);
+  if (!exists) {
     await db.knexQuery().table("model_roles").insert({
       model_type: "users",
       model_id: user.id,
@@ -306,9 +341,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     const tOther = await makeToken(other);
 
     // create a base entity
-    const base = await (
-      await import("#models/student_organization")
-    ).default.create({
+    const studentOrgModule = await import("#models/student_organization");
+    const base = await studentOrgModule.default.create({
       name: "Org Base",
       isStrategic: false,
       coverPreview: false,
@@ -376,9 +410,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     const { default: FileEntry } = await import("#models/file_entry");
     const file = FileEntry.createNew("png");
     await file.save();
-    const article = await (
-      await import("#models/guide_article")
-    ).default.create({
+    const guideArticleModule = await import("#models/guide_article");
+    const article = await guideArticleModule.default.create({
       title: "Base A",
       shortDesc: "S",
       description: "D",
@@ -554,8 +587,10 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       "name",
       "Draft Org To Approve",
     );
-    assert.isNotNull(org);
-    assert.equal(org!.isStrategic, true);
+    if (org === null) {
+      throw new Error("Organization not found after approve");
+    }
+    assert.equal(org.isStrategic, true);
 
     // Check that draft was deleted
     const deletedDraft = await StudentOrganizationDraft.find(draft.id);

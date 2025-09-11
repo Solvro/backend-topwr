@@ -1,10 +1,23 @@
+import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import { LazyImport } from "@adonisjs/core/types/http";
 import type { Constructor } from "@adonisjs/core/types/http";
 
 import BaseController from "#controllers/base_controller";
+import type { PartialModel } from "#controllers/base_controller";
 import GuideArticle from "#models/guide_article";
 import GuideArticleDraft from "#models/guide_article_draft";
+
+type Action =
+  | "index"
+  | "show"
+  | "store"
+  | "update"
+  | "destroy"
+  | "relationIndex"
+  | "oneToManyRelationStore"
+  | "manyToManyRelationAttach"
+  | "manyToManyRelationDetach";
 
 export default class GuideArticleDraftsController extends BaseController<
   typeof GuideArticleDraft
@@ -13,37 +26,71 @@ export default class GuideArticleDraftsController extends BaseController<
   protected readonly crudRelations: string[] = [];
   protected readonly model = GuideArticleDraft;
 
-  protected async authenticate(http: any, action: any): Promise<void> {
+  protected async authenticate(
+    http: HttpContext,
+    action: Action,
+  ): Promise<void> {
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
     }
     if (action === "store") {
-      const isAdmin =
-        (await http.auth.user?.hasRole?.("solvro_admin")) ||
-        (await http.auth.user?.hasRole?.("admin"));
-      if (isAdmin) return;
-      const allowed = await http.auth.user?.hasPermission("create", this.model);
-      if (!allowed) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).ForbiddenException();
+      const user = http.auth.user as unknown as
+        | {
+            hasRole?: (slug: string) => Promise<boolean>;
+            hasPermission?: (
+              action: string,
+              target?: unknown,
+            ) => Promise<boolean>;
+          }
+        | undefined;
+      const hasSolvroAdminRole =
+        (await user?.hasRole?.("solvro_admin")) === true;
+      const hasAdminRole = (await user?.hasRole?.("admin")) === true;
+      const isAdmin = hasSolvroAdminRole || hasAdminRole;
+      if (isAdmin) {
+        return;
+      }
+      const allowed = await user?.hasPermission?.("create", this.model);
+      if (allowed !== true) {
+        const { ForbiddenException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new ForbiddenException();
       }
     }
   }
 
-  protected requiredPermissionFor(_action: any) {
+  protected requiredPermissionFor(_action: Action) {
     return null;
   }
 
-  protected async authorizeById(http: any, action: any, ids: any) {
+  protected async authorizeById(
+    http: HttpContext,
+    action: Action,
+    ids: { id?: number | string; localId?: number | string },
+  ) {
+    const user = http.auth.user as unknown as
+      | {
+          hasRole?: (slug: string) => Promise<boolean>;
+          hasPermission?: (
+            action: string,
+            target?: unknown,
+          ) => Promise<boolean>;
+        }
+      | undefined;
     const isAdmin =
-      (await http.auth.user?.hasRole?.("solvro_admin")) ||
-      (await http.auth.user?.hasRole?.("admin"));
-    if (isAdmin) return;
+      (await user?.hasRole?.("solvro_admin")) === true ||
+      (await user?.hasRole?.("admin")) === true;
+    if (isAdmin) {
+      return;
+    }
 
-    const { id, localId } = ids ?? {};
-    const draftId = (id ?? localId) as number | undefined;
-    if (draftId === undefined) return;
+    const { id, localId } = ids;
+    const maybeId = id ?? localId;
+    const draftId = typeof maybeId === "string" ? Number(maybeId) : maybeId;
+    if (draftId === undefined) {
+      return;
+    }
 
     const slugMap: Record<string, string> = {
       index: "read",
@@ -58,48 +105,65 @@ export default class GuideArticleDraftsController extends BaseController<
     };
     const slug = slugMap[action] ?? "read";
 
-    const allowed = await http.auth.user?.hasPermission(slug, this.model);
-    if (!allowed) {
+    const allowed = await user?.hasPermission?.(slug, this.model);
+    if (allowed !== true) {
       const instance = await this.model.find(draftId);
-      if (!instance) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).ForbiddenException();
+      if (instance === null) {
+        const { ForbiddenException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new ForbiddenException();
       }
-      const has = await http.auth.user?.hasPermission(slug, instance);
-      if (!has) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).ForbiddenException();
+      const has = await user?.hasPermission?.(slug, instance);
+      if (has !== true) {
+        const { ForbiddenException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new ForbiddenException();
       }
     }
   }
 
   // When linking to an existing article, require per-model permission on the original article
-  protected async storeHook(ctx: any) {
+  protected async storeHook(ctx: {
+    http: HttpContext;
+    request: PartialModel<typeof GuideArticleDraft>;
+  }) {
     const { http, request } = ctx;
-    const originalId = (request as any).originalArticleId as
-      | number
-      | null
-      | undefined;
-    if (!originalId) return;
+    const originalId = request.originalArticleId;
+    if (originalId === null || originalId === undefined) {
+      return;
+    }
 
+    const user = http.auth.user as unknown as
+      | {
+          hasRole?: (slug: string) => Promise<boolean>;
+          hasPermission?: (
+            action: string,
+            target?: unknown,
+          ) => Promise<boolean>;
+        }
+      | undefined;
     const isAdmin =
-      (await http.auth.user?.hasRole?.("solvro_admin")) ||
-      (await http.auth.user?.hasRole?.("admin"));
-    if (isAdmin) return;
+      (await user?.hasRole?.("solvro_admin")) === true ||
+      (await user?.hasRole?.("admin")) === true;
+    if (isAdmin) {
+      return;
+    }
 
     const article = await GuideArticle.find(originalId);
-    if (!article) {
-      throw new (await import("#exceptions/http_exceptions")).NotFoundException(
+    if (article === null) {
+      const { NotFoundException } = await import("#exceptions/http_exceptions");
+      throw new NotFoundException(
         `GuideArticle with id ${originalId} not found`,
       );
     }
-    const allowed = await http.auth.user?.hasPermission("update", article);
-    if (!allowed) {
-      throw new (
-        await import("#exceptions/http_exceptions")
-      ).ForbiddenException();
+    const allowed = await user?.hasPermission?.("update", article);
+    if (allowed !== true) {
+      const { ForbiddenException } = await import(
+        "#exceptions/http_exceptions"
+      );
+      throw new ForbiddenException();
     }
   }
 
@@ -109,29 +173,54 @@ export default class GuideArticleDraftsController extends BaseController<
     >,
   ) {
     super.$configureRoutes(controller);
-    router.post("/:id/approve", [controller as any, "approve"]).as("approve");
+    router
+      .post("/:id/approve", async (ctx) => {
+        const module = await controller();
+        const ControllerClass = module.default;
+        const instance = new ControllerClass();
+        return (
+          instance as unknown as {
+            approve: (c: HttpContext) => Promise<unknown>;
+          }
+        ).approve(ctx as unknown as HttpContext);
+      })
+      .as("approve");
   }
 
-  async approve({ params, auth }: any) {
+  async approve({ params, auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
     // Only solvro_admin can approve drafts
-    const isSolvroAdmin = await auth.user?.hasRole?.("solvro_admin");
-    if (!isSolvroAdmin) {
-      throw new (
-        await import("#exceptions/http_exceptions")
-      ).ForbiddenException();
+    const isSolvroAdmin = await (
+      auth.user as unknown as { hasRole?: (slug: string) => Promise<boolean> }
+    ).hasRole?.("solvro_admin");
+    if (isSolvroAdmin !== true) {
+      const { ForbiddenException } = await import(
+        "#exceptions/http_exceptions"
+      );
+      throw new ForbiddenException();
     }
 
-    const draft = await GuideArticleDraft.find(params.id);
-    if (!draft) {
-      throw new (
-        await import("#exceptions/http_exceptions")
-      ).NotFoundException();
+    const rawId: unknown = (params as unknown as { id?: string | number }).id;
+    let draftId: number | undefined;
+    if (typeof rawId === "string") {
+      const numeric = Number(rawId);
+      draftId = Number.isNaN(numeric) ? undefined : numeric;
+    } else if (typeof rawId === "number") {
+      draftId = rawId;
+    }
+    if (draftId === undefined) {
+      const { NotFoundException } = await import("#exceptions/http_exceptions");
+      throw new NotFoundException();
+    }
+    const draft = await GuideArticleDraft.find(draftId);
+    if (draft === null) {
+      const { NotFoundException } = await import("#exceptions/http_exceptions");
+      throw new NotFoundException();
     }
 
-    const draftData: any = {
+    const draftData: PartialModel<typeof GuideArticle> = {
       title: draft.title,
       shortDesc: draft.shortDesc,
       description: draft.description,
@@ -141,12 +230,13 @@ export default class GuideArticleDraftsController extends BaseController<
     }
 
     let article: GuideArticle;
-    if (draft.originalArticleId) {
+    if (draft.originalArticleId !== null) {
       const existingArticle = await GuideArticle.find(draft.originalArticleId);
-      if (!existingArticle) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).NotFoundException(
+      if (existingArticle === null) {
+        const { NotFoundException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new NotFoundException(
           `Original article with id ${draft.originalArticleId} not found`,
         );
       }
@@ -155,9 +245,10 @@ export default class GuideArticleDraftsController extends BaseController<
       article = existingArticle;
     } else {
       if (draft.imageKey === null) {
-        throw new (
-          await import("#exceptions/http_exceptions")
-        ).BadRequestException("Cannot create article without image");
+        const { BadRequestException } = await import(
+          "#exceptions/http_exceptions"
+        );
+        throw new BadRequestException("Cannot create article without image");
       }
       article = await GuideArticle.create(draftData);
     }
