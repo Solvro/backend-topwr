@@ -209,18 +209,28 @@ export default abstract class BaseController<
     action: ControllerAction,
   ): Promise<void> {
     const slug = this.requiredPermissionFor(action);
-    if (!slug) return; // public endpoint by default
+    if (slug === null || slug === undefined) {
+      return; // public endpoint by default
+    }
 
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
     }
     // Superuser bypass: solvro_admin has access to everything
-    const isSolvroAdmin = await (http.auth.user as any)?.hasRole?.(
-      "solvro_admin",
-    );
-    if (isSolvroAdmin) return;
-    const has = await http.auth.user?.hasPermission(slug);
-    if (!has) {
+    const isSolvroAdmin = await (
+      http.auth.user as unknown as {
+        hasRole?: (slug: string) => Promise<boolean>;
+      }
+    ).hasRole?.("solvro_admin");
+    if (isSolvroAdmin === true) {
+      return;
+    }
+    const has = await (
+      http.auth.user as unknown as {
+        hasPermission?: (action: string, target?: unknown) => Promise<boolean>;
+      }
+    ).hasPermission?.(slug);
+    if (has !== true) {
       throw new ForbiddenException();
     }
   }

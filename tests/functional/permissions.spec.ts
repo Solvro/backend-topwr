@@ -13,28 +13,41 @@ import Milestone from "#models/milestone";
 import Role from "#models/role";
 import User from "#models/user";
 
+function hasRelease(value: unknown): value is { release: () => string } {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    typeof (value as { release?: unknown }).release === "function"
+  );
+}
+
 function uniqueEmail(prefix: string) {
   const id = crypto.randomUUID().slice(0, 8);
   return `${prefix}-${id}@perm.test`;
 }
 
-async function makeToken(user: User) {
+async function makeToken(user: User): Promise<string> {
   const token = await User.accessTokens.create(user, [], {
     expiresIn: "1 day",
   });
-  if (!token.value) throw new Error("Token value missing");
+  if (!hasRelease(token.value)) {
+    throw new Error("Token value missing");
+  }
   return token.value.release();
 }
 
 async function ensureSolvroAdminRoleId(): Promise<number> {
   // Ensure 'solvro_admin' exists in access_roles and return its id
-  const role = await db
+  const existing: unknown = await db
     .knexQuery()
     .table("access_roles")
     .where({ slug: "solvro_admin" })
     .first();
-  if (role) return Number(role.id);
-  const inserted = await db
+  if (existing !== null && existing !== undefined) {
+    return Number((existing as { id: number | string }).id);
+  }
+
+  const idNum = await db
     .knexQuery()
     .table("access_roles")
     .insert({
@@ -42,22 +55,33 @@ async function ensureSolvroAdminRoleId(): Promise<number> {
       created_at: new Date(),
       updated_at: new Date(),
     })
-    .returning("id");
-  const id = Array.isArray(inserted)
-    ? ((inserted as any)[0]?.id ?? inserted[0])
-    : (inserted as any);
-  return Number(id);
+    .returning("id")
+    .then((result: unknown) => {
+      if (Array.isArray(result)) {
+        const first = result[0] as unknown;
+        if (typeof first === "object" && first !== null && "id" in first) {
+          return Number((first as { id: number | string }).id);
+        }
+        return Number(first as number | string);
+      }
+      if (typeof result === "object" && result !== null && "id" in result) {
+        return Number((result as { id: number | string }).id);
+      }
+      return Number(result as number | string);
+    });
+
+  return idNum;
 }
 
 async function assignSolvroAdmin(user: User) {
   const roleId = await ensureSolvroAdminRoleId();
   // model_roles: model_type, model_id, role_id
-  const existing = await db
+  const existing: unknown = await db
     .knexQuery()
     .table("model_roles")
     .where({ model_type: "users", model_id: user.id, role_id: roleId })
     .first();
-  if (!existing) {
+  if (existing === null || existing === undefined) {
     await db.knexQuery().table("model_roles").insert({
       model_type: "users",
       model_id: user.id,
@@ -125,8 +149,12 @@ test.group("Permissions", (group) => {
       });
 
     res.assertStatus(200);
-    assert.equal(res.body().success, true);
-    assert.equal(res.body().data.title, "PermTest Lib 2");
+    const body = res.body() as unknown as {
+      success?: boolean;
+      data?: { title?: string };
+    };
+    assert.equal(body.success, true);
+    assert.equal(body.data?.title, "PermTest Lib 2");
   });
 
   test("update blocked without permission; allowed for solvro_admin", async ({
@@ -151,7 +179,8 @@ test.group("Permissions", (group) => {
         branch: Branch.Main,
       });
     created.assertStatus(200);
-    const id = created.body().data.id as number;
+    const bodyC = created.body() as unknown as { data?: { id?: number } };
+    const id = Number(bodyC.data?.id);
 
     // Regular user cannot update
     const user = await User.create({
@@ -172,7 +201,8 @@ test.group("Permissions", (group) => {
       .header("Authorization", `Bearer ${adminToken}`)
       .json({ title: "PermTest Lib 3 Updated" });
     ok.assertStatus(200);
-    assert.equal(ok.body().data.title, "PermTest Lib 3 Updated");
+    const bodyOk = ok.body() as unknown as { data?: { title?: string } };
+    assert.equal(bodyOk.data?.title, "PermTest Lib 3 Updated");
   });
 
   test("relationIndex is public; 1:N relation store requires permission", async ({
@@ -197,7 +227,8 @@ test.group("Permissions", (group) => {
         branch: Branch.Main,
       });
     created.assertStatus(200);
-    const libId = created.body().data.id as number;
+    const cBody = created.body() as unknown as { data?: { id?: number } };
+    const libId = Number(cBody.data?.id);
 
     // relationIndex should be public
     const ri = await client.get(`/api/v1/libraries/${libId}/regular_hours`);
@@ -227,8 +258,12 @@ test.group("Permissions", (group) => {
         closeTime: "17:00",
       });
     okStore.assertStatus(200);
-    assert.equal(okStore.body().success, true);
-    assert.equal(okStore.body().data.libraryId, libId);
+    const okBody = okStore.body() as unknown as {
+      success?: boolean;
+      data?: { libraryId?: number };
+    };
+    assert.equal(okBody.success, true);
+    assert.equal(okBody.data?.libraryId, libId);
   });
 
   test("many-to-many attach/detach require permission; solvro_admin bypass works", async ({
@@ -267,7 +302,8 @@ test.group("Permissions", (group) => {
       .header("Authorization", `Bearer ${adminToken}`)
       .json({ milestone_id: milestone.id });
     okAttach.assertStatus(200);
-    assert.equal(okAttach.body().success, true);
+    const okAttachBody = okAttach.body() as unknown as { success?: boolean };
+    assert.equal(okAttachBody.success, true);
 
     // Regular user cannot detach
     const badDetach = await client
@@ -282,7 +318,8 @@ test.group("Permissions", (group) => {
       .header("Authorization", `Bearer ${adminToken}`)
       .json({});
     okDetach.assertStatus(200);
-    assert.equal(okDetach.body().success, true);
+    const okDetachBody = okDetach.body() as unknown as { success?: boolean };
+    assert.equal(okDetachBody.success, true);
   });
 
   test("destroy blocked without permission; allowed for solvro_admin", async ({
@@ -306,7 +343,8 @@ test.group("Permissions", (group) => {
         branch: Branch.Main,
       });
     created.assertStatus(200);
-    const id = created.body().data.id as number;
+    const cBody = created.body() as unknown as { data?: { id?: number } };
+    const id = Number(cBody.data?.id);
 
     // Regular user cannot delete
     const user = await User.create({

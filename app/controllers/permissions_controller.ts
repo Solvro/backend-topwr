@@ -12,11 +12,12 @@ import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 import User from "#models/user";
 
-type ResourceName =
-  | "student_organization_drafts"
-  | "guide_article_drafts"
-  | "student_organizations"
-  | "guide_articles";
+function isResourceKey(name: unknown): name is keyof typeof resourceRegistry {
+  return (
+    typeof name === "string" &&
+    Object.prototype.hasOwnProperty.call(resourceRegistry, name)
+  );
+}
 
 const resourceRegistry = {
   student_organization_drafts: StudentOrganizationDraft,
@@ -32,8 +33,10 @@ export default class PermissionsController {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    const isAdmin = await (auth.user as any)?.hasRole?.("solvro_admin");
-    if (!isAdmin) {
+    const isAdmin = await (
+      auth.user as unknown as { hasRole?: (slug: string) => Promise<boolean> }
+    ).hasRole?.("solvro_admin");
+    if (isAdmin !== true) {
       throw new ForbiddenException();
     }
   }
@@ -41,35 +44,79 @@ export default class PermissionsController {
   async allow({ request, auth }: HttpContext) {
     await this.ensureSolvroAdmin(auth);
 
-    const body = request.only(["userId", "action", "resource"]);
-    const { userId, action, resource } = body as {
-      userId: number;
-      action: ActionSlug;
-      resource: {
-        type: "class" | "model";
-        name: ResourceName;
-        id?: number;
-      };
-    };
+    const body = request.only(["userId", "action", "resource"]) as Record<
+      string,
+      unknown
+    >;
+    const rawUserId = body.userId;
+    const parsedUserId =
+      typeof rawUserId === "number"
+        ? rawUserId
+        : typeof rawUserId === "string"
+          ? Number(rawUserId)
+          : Number.NaN;
+    const rawAction = body.action;
+    const rawResource = body.resource;
 
-    if (!userId || !action || !resource?.type || !resource?.name) {
+    if (
+      !Number.isFinite(parsedUserId) ||
+      typeof rawAction !== "string" ||
+      typeof rawResource !== "object" ||
+      rawResource === null
+    ) {
       return { success: false, error: "Invalid request body" };
     }
+    if (
+      rawAction !== "read" &&
+      rawAction !== "create" &&
+      rawAction !== "update" &&
+      rawAction !== "destroy"
+    ) {
+      return { success: false, error: "Invalid action" };
+    }
+
+    const action = rawAction;
+    const resource = rawResource as {
+      type?: unknown;
+      name?: unknown;
+      id?: unknown;
+    };
+    const resourceType = resource.type;
+    const resourceName = resource.name;
+    if (resourceType !== "class" && resourceType !== "model") {
+      return { success: false, error: "Invalid resource.type" };
+    }
+    if (!isResourceKey(resourceName)) {
+      return { success: false, error: "Invalid resource.name" };
+    }
+    const userId = parsedUserId;
 
     const targetUser = await User.find(userId);
-    if (!targetUser) throw new NotFoundException("User not found");
+    if (targetUser === null) {
+      throw new NotFoundException("User not found");
+    }
 
-    const Model = resourceRegistry[resource.name];
-    if (!Model) return { success: false, error: "Unsupported resource" };
+    const Model = resourceRegistry[resourceName];
 
-    if (resource.type === "class") {
+    if (resourceType === "class") {
       await Acl.model(targetUser).allow(action, Model);
       return { success: true };
     }
 
-    if (!resource.id) return { success: false, error: "Missing resource.id" };
-    const instance = await Model.find(resource.id);
-    if (!instance) throw new NotFoundException("Resource not found");
+    const rawId = resource.id;
+    const parsedId =
+      typeof rawId === "number"
+        ? rawId
+        : typeof rawId === "string"
+          ? Number(rawId)
+          : Number.NaN;
+    if (!Number.isFinite(parsedId)) {
+      return { success: false, error: "Missing resource.id" };
+    }
+    const instance = await Model.find(parsedId);
+    if (instance === null) {
+      throw new NotFoundException("Resource not found");
+    }
     await Acl.model(targetUser).allow(action, instance);
     return { success: true };
   }
@@ -77,31 +124,67 @@ export default class PermissionsController {
   async revoke({ request, auth }: HttpContext) {
     await this.ensureSolvroAdmin(auth);
 
-    const body = request.only(["userId", "action", "resource"]);
-    const { userId, action, resource } = body as {
-      userId: number;
-      action: ActionSlug;
-      resource: {
-        type: "class" | "model";
-        name: ResourceName;
-        id?: number;
-      };
-    };
+    const body = request.only(["userId", "action", "resource"]) as Record<
+      string,
+      unknown
+    >;
+    const rawUserId = body.userId;
+    const parsedUserId =
+      typeof rawUserId === "number"
+        ? rawUserId
+        : typeof rawUserId === "string"
+          ? Number(rawUserId)
+          : Number.NaN;
+    const rawAction = body.action;
+    const rawResource = body.resource;
 
-    if (!userId || !action || !resource?.type || !resource?.name) {
+    if (
+      !Number.isFinite(parsedUserId) ||
+      typeof rawAction !== "string" ||
+      typeof rawResource !== "object" ||
+      rawResource === null
+    ) {
       return { success: false, error: "Invalid request body" };
     }
+    if (
+      rawAction !== "read" &&
+      rawAction !== "create" &&
+      rawAction !== "update" &&
+      rawAction !== "destroy"
+    ) {
+      return { success: false, error: "Invalid action" };
+    }
+    const action = rawAction;
+    const resource = rawResource as {
+      type?: unknown;
+      name?: unknown;
+      id?: unknown;
+    };
+    const resourceType = resource.type;
+    const resourceName = resource.name;
+    if (resourceType !== "class" && resourceType !== "model") {
+      return { success: false, error: "Invalid resource.type" };
+    }
+    if (!isResourceKey(resourceName)) {
+      return { success: false, error: "Invalid resource.name" };
+    }
+    const userId = parsedUserId;
 
     const targetUser = await User.find(userId);
-    if (!targetUser) throw new NotFoundException("User not found");
+    if (targetUser === null) {
+      throw new NotFoundException("User not found");
+    }
 
-    const Model = resourceRegistry[resource.name];
-    if (!Model) return { success: false, error: "Unsupported resource" };
+    const Model = resourceRegistry[resourceName];
 
     // Try common revoke method names; if library exposes a different API, TS will guide fixes.
-    const manager = Acl.model(targetUser) as any;
+    const manager = Acl.model(targetUser) as unknown as {
+      disallow?: (action: ActionSlug, target: unknown) => Promise<void>;
+      revoke?: (action: ActionSlug, target: unknown) => Promise<void>;
+      remove?: (action: ActionSlug, target: unknown) => Promise<void>;
+    };
 
-    if (resource.type === "class") {
+    if (resourceType === "class") {
       if (typeof manager.disallow === "function") {
         await manager.disallow(action, Model);
       } else if (typeof manager.revoke === "function") {
@@ -114,9 +197,20 @@ export default class PermissionsController {
       return { success: true };
     }
 
-    if (!resource.id) return { success: false, error: "Missing resource.id" };
-    const instance = await Model.find(resource.id);
-    if (!instance) throw new NotFoundException("Resource not found");
+    const rawId = resource.id;
+    const parsedId =
+      typeof rawId === "number"
+        ? rawId
+        : typeof rawId === "string"
+          ? Number(rawId)
+          : Number.NaN;
+    if (!Number.isFinite(parsedId)) {
+      return { success: false, error: "Missing resource.id" };
+    }
+    const instance = await Model.find(parsedId);
+    if (instance === null) {
+      throw new NotFoundException("Resource not found");
+    }
 
     if (typeof manager.disallow === "function") {
       await manager.disallow(action, instance);
