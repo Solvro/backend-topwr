@@ -12,7 +12,7 @@ import { loginValidator, refreshTokenValidator } from "#validators/auth";
 import { JWT_GUARD, JwtTokenResponse } from "../auth/guards/jwt.js";
 
 const allAccountsParamSchema = vine.object({
-  all: vine.boolean().nullable(),
+  all: vine.boolean().optional(),
 });
 
 export default class AuthController {
@@ -46,7 +46,7 @@ export default class AuthController {
     const userId = user.id;
     const { all } = await vine.validate({
       schema: allAccountsParamSchema,
-      data: request.input("all", undefined) as string | undefined,
+      data: { all: request.input("all", "false") === "true" },
     });
     if (all === true) {
       // Invalidate all tokens for the account

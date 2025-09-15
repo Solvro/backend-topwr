@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import { DateTime, Duration } from "luxon";
 import assert from "node:assert";
-import { UUID, randomUUID } from "node:crypto";
+import { UUID, createPublicKey, randomUUID } from "node:crypto";
 
 import { symbols } from "@adonisjs/auth";
 import { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
@@ -35,7 +35,13 @@ const REFRESH_EXPIRES_IN_MS = Number.parseInt(
 ); // 7 days
 const ACCESS_SECRET = assertIsDefined(env.get("ACCESS_SECRET")); // For HMAC256
 const REFRESH_PK = assertIsDefined(env.get("REFRESH_PK")); // In PEM format for ECDSA384
-const REFRESH_PUB = assertIsDefined(env.get("REFRESH_PUB")); // In PEM format for ECDSA384
+const REFRESH_PUB = derivePublicKey(assertIsDefined(env.get("REFRESH_PK")));
+
+function derivePublicKey(privateKey: string): string {
+  return createPublicKey(privateKey)
+    .export({ format: "pem", type: "spki" })
+    .toString();
+}
 
 function assertIsDefined<T>(value: T | undefined): T {
   assert(value !== undefined);
