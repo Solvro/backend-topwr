@@ -47,6 +47,9 @@
   "resolutions": {
     "strtok3": "8.0.1"
   },
+  "overrides": {
+    "strtok3": "8.0.1"
+  },
   "dependencies": {
     "@adminjs/adonis": "^1.1.0",
     "@adminjs/passwords": "^4.0.0",
@@ -106,8 +109,5 @@
     "boundaries": [
       "./app/middleware/*.ts"
     ]
-  },
-  "overrides": {
-    "strtok3": "8.0.1"
   }
 }
