@@ -240,6 +240,10 @@ export default class CleanupFiles extends BaseCommand {
   private async importModels(): Promise<LucidModel[]> {
     const models: LucidModel[] = [];
     for (const file of fs.readdirSync(this.app.modelsPath())) {
+      if (![".js", ".ts"].some((ext) => file.endsWith(ext))) {
+        // not a js/ts file
+        continue;
+      }
       const imported = (await import(
         `#models/${file.substring(0, file.length - 3)}`
       )) as { default: LucidModel };
