@@ -3,7 +3,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 
 import {
   TooManyRequestsException,
-  UnathorizedException,
+  UnauthorizedException,
 } from "#exceptions/http_exceptions";
 import ResetPasswordService from "#services/reset_password_service";
 import { updatePasswordLimiter } from "#start/limiter";
@@ -52,7 +52,7 @@ export default class UsersController {
 
     if (!token.isValid) {
       await token.user.destroyToken();
-      throw new UnathorizedException("Token expired");
+      throw new UnauthorizedException("Token expired");
     }
 
     const { password } = await request.validateUsing(passwordValidator);

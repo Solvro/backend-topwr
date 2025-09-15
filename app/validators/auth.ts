@@ -9,3 +9,9 @@ export const loginValidator = vine.compile(
     rememberMe: vine.boolean().optional(),
   }),
 );
+
+export const refreshTokenValidator = vine.compile(
+  vine.object({
+    refreshToken: vine.string().minLength(1),
+  }),
+);

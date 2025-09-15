@@ -50,7 +50,7 @@ export class TooManyRequestsException extends BaseError {
   }
 }
 
-export class UnathorizedException extends BaseError {
+export class UnauthorizedException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
     super(message ?? "Unathorized access", {
       code: "E_UNAUTHORIZED",

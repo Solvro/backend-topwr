@@ -3,11 +3,12 @@ import { DateTime, Duration } from "luxon";
 import assert from "node:assert";
 import { UUID, randomUUID } from "node:crypto";
 
-import { errors, symbols } from "@adonisjs/auth";
+import { symbols } from "@adonisjs/auth";
 import { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
 import type { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
 
+import { UnauthorizedException } from "#exceptions/http_exceptions";
 import RefreshToken from "#models/refresh_token";
 import User from "#models/user";
 import env from "#start/env";
@@ -144,7 +145,7 @@ export class JwtGuard implements GuardContract<User> {
       payload.sub,
     );
     if (!isValid) {
-      this.throw403();
+      this.throw401();
     }
     return payload;
   }
@@ -165,11 +166,11 @@ export class JwtGuard implements GuardContract<User> {
     const authHeader = this.#ctx.request.header("Authorization");
     // Exists
     if (authHeader === undefined) {
-      this.throw403();
+      this.throw401();
     }
     // Extract token
     if (!authHeader.startsWith("Bearer ")) {
-      this.throw403();
+      this.throw401();
     }
     return authHeader.substring(7);
   }
@@ -183,7 +184,7 @@ export class JwtGuard implements GuardContract<User> {
     const payload = this.validateAccessToken(token);
     const owner = await User.findBy("id", payload.sub);
     if (owner === null) {
-      this.throw403();
+      this.throw401();
     }
     this.user = owner;
     this.isAuthenticated = true;
@@ -241,15 +242,13 @@ export class JwtGuard implements GuardContract<User> {
 
   public getUserOrFail(): User {
     if (this.user === undefined) {
-      this.throw403();
+      this.throw401();
     }
     return this.user;
   }
 
-  private throw403(): never {
-    throw new errors.E_UNAUTHORIZED_ACCESS("Unauthorized access", {
-      guardDriverName: this.driverName,
-    }) as Error;
+  private throw401(): never {
+    throw new UnauthorizedException("Unauthorized access");
   }
 
   /** This is required for the interface contract, but until a use case is found,
