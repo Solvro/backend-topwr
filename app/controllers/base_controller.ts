@@ -659,7 +659,15 @@ export default abstract class BaseController<
 
     const {
       params: { id },
-    } = (await request.validateUsing(this.pathIdValidator)) as {
+    } = (await request
+      .validateUsing(this.pathIdValidator)
+      .addErrorContext(() => {
+        return {
+          message: `Attempt to delete non existent ${this.model.name}`,
+          code: "E_NOT_FOUND",
+          status: 404,
+        };
+      })) as {
       params: { id: string | number };
     };
 
