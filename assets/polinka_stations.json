@@ -9,7 +9,8 @@
       "longitude": 17.058377,
       "photoKey": "f5515c45-29a9-4b3a-8a94-aebb6978b66c",
       "externalDigitalGuideMode": "other_digital_guide_place",
-      "externalDigitalGuideIdOrUrl": "102"
+      "externalDigitalGuideIdOrUrl": "102",
+      "branch": "main"
     },
     {
       "name": "POLINKA B",
@@ -20,7 +21,8 @@
       "longitude": 17.053359,
       "photoKey": "507ba7a7-baf2-4b28-aed3-b346424e9631",
       "externalDigitalGuideMode": "other_digital_guide_place",
-      "externalDigitalGuideIdOrUrl": "103"
+      "externalDigitalGuideIdOrUrl": "103",
+      "branch": "main"
     }
   ]
 }

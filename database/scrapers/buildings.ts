@@ -6,6 +6,7 @@ import {
   TaskHandle,
   assertResponseStructure,
 } from "#commands/db_scrape";
+import { Branch } from "#enums/branch";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Building from "#models/building";
 import Campus from "#models/campus";
@@ -94,6 +95,7 @@ export default class BuildingsScraper extends BaseScraperModule {
                 ),
           externalDigitalGuideMode: data.externalDigitalGuideMode,
           externalDigitalGuideIdOrUrl: data.externalDigitalGuideIdOrURL,
+          branch: Branch.Main,
           createdAt: convertDateOrFallbackToNow(data.createdAt),
           updatedAt: convertDateOrFallbackToNow(data.updatedAt),
         };

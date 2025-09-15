@@ -1,6 +1,7 @@
 {
   "data": [
     {
+      "branch": "main",
       "roomOrNearby": "Przy pomieszczeniu 39",
       "floor": "Niski parter",
       "latitude": 51.10738,
@@ -8,6 +9,7 @@
       "buildingId": 2
     },
     {
+      "branch": "main",
       "roomOrNearby": "Pomieszczenie 1.32",
       "floor": "Na parterze",
       "latitude": 51.10804,
@@ -15,18 +17,21 @@
       "buildingId": 4
     },
     {
+      "branch": "main",
       "floor": "Na parterze",
       "latitude": 51.10918,
       "longitude": 17.05895,
       "buildingId": 26
     },
     {
+      "branch": "main",
       "floor": "Na parterze",
       "latitude": 51.10828,
       "longitude": 17.06044,
       "buildingId": 27
     },
     {
+      "branch": "main",
       "roomOrNearby": "Pomieszczenie 0.36",
       "floor": "Na parterze",
       "latitude": 51.10738,
@@ -34,6 +39,7 @@
       "buildingId": 1
     },
     {
+      "branch": "main",
       "roomOrNearby": "Pomieszczenie 0.39",
       "floor": "Na parterze",
       "latitude": 51.10882,
@@ -41,6 +47,7 @@
       "buildingId": 34
     },
     {
+      "branch": "main",
       "roomOrNearby": "Pomieszczenie 016",
       "floor": "Na parterze",
       "latitude": 51.10963,
@@ -48,12 +55,14 @@
       "buildingId": 41
     },
     {
+      "branch": "main",
       "floor": "Na parterze",
       "latitude": 51.108768,
       "longitude": 17.054569,
       "buildingId": 50
     },
     {
+      "branch": "main",
       "roomOrNearby": "Przy pomieszczeniu 0.33",
       "floor": "Przyziemie",
       "latitude": 51.11898,
@@ -61,6 +70,7 @@
       "buildingId": 42
     },
     {
+      "branch": "main",
       "roomOrNearby": "Pomieszczenie 021",
       "floor": "Na parterze, część A",
       "latitude": 51.10448,
@@ -68,12 +78,14 @@
       "buildingId": 60
     },
     {
+      "branch": "main",
       "floor": "Na parterze",
       "latitude": 51.11671,
       "longitude": 17.06619,
       "buildingId": 48
     },
     {
+      "branch": "main",
       "roomOrNearby": "Pomieszczenie 2.0.6",
       "floor": "Piętro 2",
       "latitude": 51.10076,

@@ -3,6 +3,7 @@ import {
   SourceResponse,
   TaskHandle,
 } from "#commands/db_scrape";
+import { Branch } from "#enums/branch";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
@@ -127,6 +128,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
         organizationType: this.convertType(org.type),
         organizationStatus: OrganizationStatus.Unknown,
         isStrategic: org.isStrategic,
+        branch: Branch.Main,
       });
       const undefinedTags = [];
       const tagNames = [];
