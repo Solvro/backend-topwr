@@ -23,7 +23,6 @@ const FilesController = () => import("#controllers/files_controller");
 const ResetPasswordsController = () => import("#controllers/users_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
 const NewsfeedController = () => import("#controllers/newsfeed_controller");
-
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
   "aeds",
@@ -46,6 +45,7 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "libraries",
   "milestones",
   "pink_boxes",
+  "polinka_stations",
   "regular_hours",
   "roles",
   "special_hours",
@@ -54,6 +54,9 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "student_organizations",
   "version_screenshots",
   "versions",
+  "event_calendar",
+  "mobile_config",
+  "banners",
 ]);
 
 router.get("/", async () => {
@@ -95,8 +98,12 @@ router
 
     router.get("/about_us", [AboutUsController, "index"]);
 
-    router.get("/newsfeed/latest", [NewsfeedController, "latest"]);
-
+    router
+      .group(() => {
+        router.get("/latest", [NewsfeedController, "latest"]);
+        router.get("/stats", [NewsfeedController, "stats"]);
+      })
+      .prefix("/newsfeed");
     configureBaseRoutes();
   })
   .prefix("/api/v1");

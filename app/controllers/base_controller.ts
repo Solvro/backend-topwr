@@ -121,6 +121,12 @@ export default abstract class BaseController<
    */
   protected abstract readonly crudRelations: string[];
   protected abstract readonly model: T;
+  /**
+   * If the model is intended to be a singleton, set this field to the instance's database ID.
+   * This will cause the index, store and destroy routes to be removed, while show and update will no longer take
+   * the id as an url parameter, using this value to look up the instance instead.
+   */
+  protected readonly singletonId?: number | string;
 
   /**
    * Apply extra checks to create requests
@@ -408,39 +414,48 @@ export default abstract class BaseController<
    * Configures routes for this controller when passed as the group callback
    */
   $configureRoutes(controller: LazyImport<Constructor<BaseController<T>>>) {
-    // basic routes
-    router.get("/", [controller, "index"]).as("index");
-    router.post("/", [controller, "store"]).as("store");
-    router.get("/:id", [controller, "show"]).as("show");
-    router.delete("/:id", [controller, "destroy"]).as("destroy");
-    router.patch("/:id", [controller, "update"]).as("update");
+    if (this.singletonId === undefined) {
+      // basic routes
+      router.get("/", [controller, "index"]).as("index");
+      router.post("/", [controller, "store"]).as("store");
+      router.get("/:id", [controller, "show"]).as("show");
+      router.delete("/:id", [controller, "destroy"]).as("destroy");
+      router.patch("/:id", [controller, "update"]).as("update");
 
-    // relation routes
-    for (const relationName of this.crudRelations) {
-      const snakeCaseName = adonisString.snakeCase(relationName);
-      router
-        .get(`/:id/${snakeCaseName}`, [controller, "relationIndex"])
-        .as(`relation.${relationName}.index`);
-      const relation = this.model.$relationsDefinitions.get(relationName);
-      assert(relation !== undefined);
-      if (relation.type === "hasMany") {
+      // relation routes
+      for (const relationName of this.crudRelations) {
+        const snakeCaseName = adonisString.snakeCase(relationName);
         router
-          .post(`/:id/${snakeCaseName}`, [controller, "oneToManyRelationStore"])
-          .as(`relation.${relationName}.store`);
-      } else if (relation.type === "manyToMany") {
-        router
-          .post(`/:localId/${snakeCaseName}/:relatedId`, [
-            controller,
-            "manyToManyRelationAttach",
-          ])
-          .as(`relation.${relationName}.attach`);
-        router
-          .delete(`/:localId/${snakeCaseName}/:relatedId`, [
-            controller,
-            "manyToManyRelationDetach",
-          ])
-          .as(`relation.${relationName}.detach`);
+          .get(`/:id/${snakeCaseName}`, [controller, "relationIndex"])
+          .as(`relation.${relationName}.index`);
+        const relation = this.model.$relationsDefinitions.get(relationName);
+        assert(relation !== undefined);
+        if (relation.type === "hasMany") {
+          router
+            .post(`/:id/${snakeCaseName}`, [
+              controller,
+              "oneToManyRelationStore",
+            ])
+            .as(`relation.${relationName}.store`);
+        } else if (relation.type === "manyToMany") {
+          router
+            .post(`/:localId/${snakeCaseName}/:relatedId`, [
+              controller,
+              "manyToManyRelationAttach",
+            ])
+            .as(`relation.${relationName}.attach`);
+          router
+            .delete(`/:localId/${snakeCaseName}/:relatedId`, [
+              controller,
+              "manyToManyRelationDetach",
+            ])
+            .as(`relation.${relationName}.detach`);
+        }
       }
+    } else {
+      // singleton special routes
+      router.get("/", [controller, "show"]).as("show");
+      router.patch("/", [controller, "update"]).as("update");
     }
   }
 
@@ -482,10 +497,10 @@ export default abstract class BaseController<
         scopes.preloadRelations(relations);
         scopes.handleSortQuery(request.input("sort"));
       });
-    if (page === undefined) {
+    if (page === undefined && limit === undefined) {
       return { data: await baseQuery };
     }
-    return await baseQuery.paginate(page, limit ?? 10);
+    return await baseQuery.paginate(page ?? 1, limit ?? 10);
   }
 
   /**
@@ -496,11 +511,17 @@ export default abstract class BaseController<
   async show({ request }: HttpContext): Promise<unknown> {
     await this.selfValidate();
 
-    const {
-      params: { id },
-    } = (await request.validateUsing(this.pathIdValidator)) as {
-      params: { id: string | number };
-    };
+    let id: string | number;
+    if (this.singletonId !== undefined) {
+      id = this.singletonId;
+    } else {
+      const { params } = (await request.validateUsing(
+        this.pathIdValidator,
+      )) as {
+        params: { id: string | number };
+      };
+      id = params.id;
+    }
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
     const relations = await request.validateUsing(this.relationValidator);
@@ -573,11 +594,17 @@ export default abstract class BaseController<
     }
     await this.selfValidate();
 
-    const {
-      params: { id },
-    } = (await request.validateUsing(this.pathIdValidator)) as {
-      params: { id: string | number };
-    };
+    let id: string | number;
+    if (this.singletonId !== undefined) {
+      id = this.singletonId;
+    } else {
+      const { params } = (await request.validateUsing(
+        this.pathIdValidator,
+      )) as {
+        params: { id: string | number };
+      };
+      id = params.id;
+    }
     let updates = (await request.validateUsing(
       this.updateValidator,
     )) as PartialModel<T>;
@@ -735,10 +762,10 @@ export default abstract class BaseController<
         }
       });
 
-    if (page === undefined) {
+    if (page === undefined && limit === undefined) {
       return { data: await relatedQuery };
     }
-    return await relatedQuery.paginate(page, limit ?? 10);
+    return await relatedQuery.paginate(page ?? 1, limit ?? 10);
   }
 
   /**

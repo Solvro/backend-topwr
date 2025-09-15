@@ -17,9 +17,7 @@ export async function fixSequence(
   column = "id",
   sequenceName?: string,
 ): Promise<bigint> {
-  if (sequenceName === undefined) {
-    sequenceName = `${table}_${column}_seq`;
-  }
+  sequenceName ??= `${table}_${column}_seq`;
 
   const result = await db.rawQuery<QueryResult<{ next_val: string }>>(
     "SELECT setval(?, GREATEST(nextval(?), (SELECT MAX(??)+1 FROM ??)), FALSE) AS next_val",

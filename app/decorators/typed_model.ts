@@ -406,7 +406,7 @@ function dateTypedColumn(
   if (options.validator !== undefined) {
     options.meta.typing.validator = options.validator;
   } else if (options.meta.typing.optional) {
-    options.meta.typing.validator = vine.luxonDateTime().optional();
+    options.meta.typing.validator = vine.luxonDateTime().nullable().optional();
   } else {
     options.meta.typing.validator = vine.luxonDateTime();
   }

@@ -5,7 +5,7 @@ import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
 import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
-import { BuildingIcon } from "#enums/building_icon";
+import { Branch } from "#enums/branch";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
@@ -17,6 +17,7 @@ import Campus from "./campus.js";
 import FileEntry from "./file_entry.js";
 import FoodSpot from "./food_spot.js";
 import Library from "./library.js";
+import PinkBox from "./pink_box.js";
 
 export default class Building extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
@@ -27,9 +28,6 @@ export default class Building extends BaseModel {
 
   @typedColumn({ type: "string", optional: true })
   declare specialName: string | null;
-
-  @typedColumn({ type: BuildingIcon })
-  declare iconType: BuildingIcon;
 
   @typedColumn({ foreignKeyOf: () => Campus })
   declare campusId: number;
@@ -48,6 +46,9 @@ export default class Building extends BaseModel {
 
   @typedColumn({ type: "boolean" })
   declare haveFood: boolean;
+
+  @typedColumn({ type: Branch })
+  declare branch: Branch;
 
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare coverKey: string | null;
@@ -72,6 +73,9 @@ export default class Building extends BaseModel {
 
   @hasMany(() => Library)
   declare libraries: HasMany<typeof Library>;
+
+  @hasMany(() => PinkBox)
+  declare pinkBoxes: HasMany<typeof PinkBox>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",

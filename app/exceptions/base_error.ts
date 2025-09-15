@@ -1,4 +1,3 @@
-// eslint-disable-next-line @typescript-eslint/consistent-indexed-object-style -- doesnt work lol
 interface JsonObject {
   [k: string]: JsonEncodable;
 }

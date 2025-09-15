@@ -1,50 +1,39 @@
 import { DateTime } from "luxon";
-import { Readable } from "node:stream";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import {
+  BaseScraperModule,
+  SourceResponse,
+  TaskHandle,
+} from "#commands/db_scrape";
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
-import FilesService from "#services/files_service";
 import { fixSequence } from "#utils/db";
 
-interface GuideArticlesOld {
-  data: {
-    id: number;
-    name: string;
-    cover: string;
-    short_description: string;
-    description: string | null;
-    order: number;
-    questions: number[];
-  }[];
+interface GuideArticleOld {
+  id: number;
+  name: string;
+  cover: string;
+  short_description: string;
+  description: string | null;
+  order: number;
+  questions: number[];
 }
 
-interface GuideQuestionsOld {
-  data: {
-    id: number;
-    status: string;
-    date_created: string;
-    date_updated: string;
-    question: string;
-    answer: string;
-    type: number;
-  }[];
+interface GuideQuestionOld {
+  id: number;
+  status: string;
+  date_created: string;
+  date_updated: string;
+  question: string;
+  answer: string;
+  type: number;
 }
 
 interface PivotTable {
-  data: {
-    id: number;
-    FAQ_Types_id: number | null;
-    FAQ_id: number;
-    sort: number | null;
-  }[];
-}
-
-interface ImageMetadata {
-  data: {
-    filename_disk: string | null;
-    filename_download: string | null;
-  };
+  id: number;
+  FAQ_Types_id: number | null;
+  FAQ_id: number;
+  sort: number | null;
 }
 
 export default class FaqSectionScrapper extends BaseScraperModule {
@@ -53,88 +42,31 @@ export default class FaqSectionScrapper extends BaseScraperModule {
     "Articles, questions, answers, and authors of the FAQ section";
   static taskTitle = "Scrape the faq section";
 
-  async uploadImage(imageUrl: string): Promise<string> {
-    const [fetchedImage, fetchedImageMetadata] = await Promise.all([
-      fetch(`https://admin.topwr.solvro.pl/assets/${imageUrl}`),
-      fetch(`https://admin.topwr.solvro.pl/files/${imageUrl}`),
-    ]);
-
-    if (!fetchedImage.ok) {
-      throw new Error(
-        `Failed to fetch the image. HTTP status: ${fetchedImage.status}`,
-      );
-    }
-
-    if (!fetchedImageMetadata.ok) {
-      throw new Error(
-        `Failed to fetch the image metadata. HTTP status: ${fetchedImageMetadata.status}`,
-      );
-    }
-
-    const imageMetadata = (await fetchedImageMetadata.json()) as ImageMetadata;
-    let extension: string | undefined = "";
-    if (imageMetadata.data.filename_disk !== null) {
-      const filenameDiskParts = imageMetadata.data.filename_disk.split(".");
-      if (filenameDiskParts.length > 1) {
-        extension = filenameDiskParts.pop();
-      }
-    }
-    if (extension === "") {
-      if (imageMetadata.data.filename_download !== null) {
-        const filenameDownloadParts =
-          imageMetadata.data.filename_download.split(".");
-        if (filenameDownloadParts.length > 1) {
-          extension = filenameDownloadParts.pop();
-        }
-      }
-    }
-
-    if (extension === undefined || extension === "") {
-      this.logger.warning(
-        "Failed to determine image extension, using a .bin instead.",
-      );
-    }
-
-    const stream = Readable.fromWeb(fetchedImage.body as ReadableStream);
-
-    const file = await FilesService.uploadStream(stream, extension);
-    return file.id;
-  }
-
   async shouldRun(): Promise<boolean> {
     return await this.modelHasNoRows(GuideArticle, GuideQuestion);
   }
 
   async run(task: TaskHandle) {
     task.update("Fetching data...");
-    const [articlesResponse, questionsResponse, pivotTableResponse] =
-      await Promise.all([
-        fetch("https://admin.topwr.solvro.pl/items/FAQ_Types"),
-        fetch("https://admin.topwr.solvro.pl/items/FAQ"),
-        fetch("https://admin.topwr.solvro.pl/items/FAQ_Types_FAQ"),
-      ]);
-
-    if (!articlesResponse.ok) {
-      throw new Error(
-        `Failed to fetch articles - got response status code ${articlesResponse.status}`,
-      );
-    }
-    if (!questionsResponse.ok) {
-      throw new Error(
-        `Failed to fetch questions - got response status code ${questionsResponse.status}`,
-      );
-    }
-    if (!pivotTableResponse.ok) {
-      throw new Error(
-        `Failed to fetch pivot table - got response status code ${pivotTableResponse.status}`,
-      );
-    }
     const [articlesResult, questionsResult, pivotTableResult] =
-      await Promise.all([
-        articlesResponse.json() as Promise<GuideArticlesOld>,
-        questionsResponse.json() as Promise<GuideQuestionsOld>,
-        pivotTableResponse.json() as Promise<PivotTable>,
-      ]);
+      (await Promise.all([
+        this.fetchDirectusJSON(
+          "https://admin.topwr.solvro.pl/items/FAQ_Types",
+          "FAQ types",
+        ),
+        this.fetchDirectusJSON(
+          "https://admin.topwr.solvro.pl/items/FAQ",
+          "FAQ",
+        ),
+        this.fetchDirectusJSON(
+          "https://admin.topwr.solvro.pl/items/FAQ_Types_FAQ",
+          "FAQ Pivot Table",
+        ),
+      ])) as [
+        SourceResponse<GuideArticleOld>,
+        SourceResponse<GuideQuestionOld>,
+        SourceResponse<PivotTable>,
+      ];
 
     task.update("Migrating images & saving data...");
     for (const article of articlesResult.data) {
@@ -167,22 +99,16 @@ export default class FaqSectionScrapper extends BaseScraperModule {
           updatedAt = questionUpdatedAt;
         }
       }
-
-      let imageKey = "";
-      try {
-        imageKey = await this.uploadImage(article.cover);
-      } catch (error) {
-        this.logger.error(
-          `Failed to upload article cover image for article: ${article.id}: ${error}`,
-        );
-      }
-
       await GuideArticle.create({
         id: article.id,
         title: article.name,
         shortDesc: article.short_description,
         description: article.description ?? "",
-        imageKey,
+        imageKey: await this.directusUploadFieldAndGetKey(
+          article.cover,
+        ).addErrorContext(
+          `Cover upload for Guide Article ${article.id} failed.`,
+        ),
         createdAt,
         updatedAt,
       });

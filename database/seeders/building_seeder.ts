@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
-import { BuildingIcon } from "#enums/building_icon";
+import { Branch } from "#enums/branch";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { Weekday } from "#enums/weekday";
 import Building from "#models/building";
@@ -17,14 +17,17 @@ export default class BuildingSeeder extends BaseSeeder {
       {
         name: "taki",
         coverKey: null,
+        branch: Branch.Main,
       },
       {
         name: "siaki",
         coverKey: null,
+        branch: Branch.Main,
       },
       {
         name: "i owaki",
         coverKey: null,
+        branch: Branch.Main,
       },
     ]);
 
@@ -32,13 +35,13 @@ export default class BuildingSeeder extends BaseSeeder {
       {
         identifier: "B001",
         specialName: "Main Admin Building",
-        iconType: BuildingIcon.Icon,
         addressLine1: "123 University Ave",
         addressLine2: "Building A",
         latitude: 40.7128,
         longitude: -74.006,
         haveFood: true,
         coverKey: null,
+        branch: Branch.Main,
         externalDigitalGuideMode: ExternalDigitalGuideMode.WebUrl,
         externalDigitalGuideIdOrUrl:
           "https://dostepnosc.pwr.edu.pl/dostepnosc-architektoniczna/deklaracje-dostepnosci-budynkow/budynki-a/a2",
@@ -46,26 +49,26 @@ export default class BuildingSeeder extends BaseSeeder {
       {
         identifier: "B002",
         specialName: "Engineering Block",
-        iconType: BuildingIcon.Icon,
         addressLine1: "124 University Ave",
         addressLine2: "Building B",
         latitude: 40.7129,
         longitude: -74.0061,
         haveFood: false,
         coverKey: null,
+        branch: Branch.Main,
         externalDigitalGuideMode: ExternalDigitalGuideMode.DigitalGuideBuilding,
         externalDigitalGuideIdOrUrl: "5",
       },
       {
         identifier: "B003",
         specialName: null,
-        iconType: BuildingIcon.Icon,
         addressLine1: "500 Science Park",
         addressLine2: "kolowe sny",
         latitude: 37.7749,
         longitude: -122.4194,
         haveFood: true,
         coverKey: null,
+        branch: Branch.Main,
       },
     ];
 
@@ -87,6 +90,7 @@ export default class BuildingSeeder extends BaseSeeder {
         latitude: 40.7128,
         longitude: -74.006,
         photoKey: null,
+        branch: Branch.Main,
       },
       {
         title: "New library",
@@ -98,6 +102,7 @@ export default class BuildingSeeder extends BaseSeeder {
         latitude: 48.1683,
         longitude: -217.072,
         photoKey: null,
+        branch: Branch.Main,
       },
       {
         title: "Sun library",
@@ -109,6 +114,7 @@ export default class BuildingSeeder extends BaseSeeder {
         latitude: 37.7749,
         longitude: -122.4194,
         photoKey: null,
+        branch: Branch.Main,
       },
     ]);
 
@@ -181,6 +187,7 @@ export default class BuildingSeeder extends BaseSeeder {
         addressLine1: "123 University Ave",
         addressLine2: "Building A",
         photoKey: null,
+        branch: Branch.Main,
       },
       {
         latitude: 40.7824,
@@ -188,6 +195,7 @@ export default class BuildingSeeder extends BaseSeeder {
         addressLine1: "124 University Ave",
         addressLine2: "Building B",
         photoKey: null,
+        branch: Branch.Main,
       },
       {
         latitude: 37.7292,
@@ -195,6 +203,7 @@ export default class BuildingSeeder extends BaseSeeder {
         addressLine1: "500 Science Park",
         addressLine2: "Tower",
         photoKey: null,
+        branch: Branch.Main,
       },
     ];
 
@@ -207,6 +216,7 @@ export default class BuildingSeeder extends BaseSeeder {
         addressLine1: "123 University Ave",
         addressLine2: "Building A",
         photoKey: null,
+        branch: Branch.Main,
       },
       {
         room: "219",
@@ -216,6 +226,7 @@ export default class BuildingSeeder extends BaseSeeder {
         addressLine1: "124 University Ave",
         addressLine2: "Building B",
         photoKey: null,
+        branch: Branch.Main,
       },
     ];
 
@@ -226,6 +237,7 @@ export default class BuildingSeeder extends BaseSeeder {
       addressLine1: "123 University Ave",
       addressLine2: "Building A",
       photoKey: null,
+      branch: Branch.Main,
     };
 
     await updatedBuildings[0]

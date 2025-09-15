@@ -5,6 +5,7 @@ import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
+import { Branch } from "#enums/branch";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -27,6 +28,12 @@ export default class Aed extends BaseModel {
 
   @typedColumn({ type: "string", optional: true, columnName: "address_line2" })
   declare addressLine2: string | null;
+
+  @typedColumn({ type: Branch })
+  declare branch: Branch;
+
+  @typedColumn({ type: "string", optional: true })
+  declare instructions: string | null;
 
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
