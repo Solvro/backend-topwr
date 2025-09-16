@@ -8,7 +8,10 @@ import { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
 import type { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
 
-import { UnauthorizedException } from "#exceptions/http_exceptions";
+import {
+  ForbiddenException,
+  UnauthorizedException,
+} from "#exceptions/http_exceptions";
 import RefreshToken from "#models/refresh_token";
 import User from "#models/user";
 import env from "#start/env";
@@ -151,7 +154,7 @@ export class JwtGuard implements GuardContract<User> {
       payload.sub,
     );
     if (!isValid) {
-      this.throw401();
+      this.throw403();
     }
     return payload;
   }
@@ -248,13 +251,17 @@ export class JwtGuard implements GuardContract<User> {
 
   public getUserOrFail(): User {
     if (this.user === undefined) {
-      this.throw401();
+      this.throw403();
     }
     return this.user;
   }
 
   private throw401(): never {
-    throw new UnauthorizedException("Unauthorized access");
+    throw new UnauthorizedException("Authentication required");
+  }
+
+  private throw403(): never {
+    throw new ForbiddenException("Invalid token");
   }
 
   /** This is required for the interface contract, but until a use case is found,
