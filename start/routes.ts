@@ -81,7 +81,7 @@ router
               .use(resetPasswordThrottle);
             router.put("/:token", [AuthController, "resetPassword"]);
           })
-          .prefix("/resetpassword");
+          .prefix("/reset_password");
         router.put("/change_password", [AuthController, "changePassword"]);
       })
       .use(middleware.sensitive())
