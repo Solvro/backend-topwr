@@ -6,8 +6,10 @@ import type {
   InferAuthenticators,
 } from "@adonisjs/auth/types";
 
+import { JwtGuard } from "../app/auth/guards/jwt.js";
+
 const authConfig = defineConfig({
-  default: "api",
+  default: "jwt",
   guards: {
     api: tokensGuard({
       provider: tokensUserProvider({
@@ -15,6 +17,9 @@ const authConfig = defineConfig({
         model: () => import("#models/user"),
       }),
     }),
+    jwt: (ctx) => {
+      return new JwtGuard(ctx);
+    },
   },
 });
 

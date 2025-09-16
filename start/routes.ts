@@ -80,6 +80,7 @@ router
     router
       .group(() => {
         router.post("/login", [AuthController, "login"]);
+        router.post("/refresh", [AuthController, "refreshAccessToken"]);
         router
           .post("/logout", [AuthController, "logout"])
           .use(middleware.auth());
