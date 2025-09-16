@@ -68,19 +68,21 @@ export default class User extends compose(BaseModel, AuthFinder) {
    *
    * @param password new password
    */
-  async resetPassword(password: string) {
+  async updatePassword(password: string, options?: { reset: boolean }) {
     this.password = password;
-    await this.destroyToken();
+    if (options?.reset ?? false) {
+      this.clearResetToken();
+    }
+    await this.save();
     logger.info(`Password changed for user ${this.email}`);
   }
 
   /**
    * Invalidates any existing reset tokens and saves the model
    */
-  async destroyToken() {
+  clearResetToken() {
     this.resetPasswordToken = null;
     this.resetPasswordTokenExpiration = null;
-    await this.save();
   }
 
   /**

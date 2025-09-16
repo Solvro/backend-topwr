@@ -98,8 +98,7 @@ export default class AuthController {
     const user = auth.getUserOrFail();
 
     const form = await request.validateUsing(changePasswordValidator(user));
-    user.password = form.newPassword;
-    await user.save();
+    await user.updatePassword(form.newPassword);
   }
 
   /**
@@ -140,12 +139,13 @@ export default class AuthController {
     const token = result.params.token;
 
     if (!token.isValid) {
-      await token.user.destroyToken();
+      token.user.clearResetToken();
+      await token.user.save();
       throw new UnauthorizedException("Token expired");
     }
 
     const { password } = await request.validateUsing(newPasswordValidator);
-    await token.user.resetPassword(password);
+    await token.user.updatePassword(password, { reset: true });
 
     return response.ok({ message: "Password updated successfully" });
   }
