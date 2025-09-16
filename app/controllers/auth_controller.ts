@@ -3,8 +3,8 @@ import vine from "@vinejs/vine";
 import { HttpContext } from "@adonisjs/core/http";
 
 import {
+  ForbiddenException,
   InternalServerException,
-  UnauthorizedException,
 } from "#exceptions/http_exceptions";
 import User from "#models/user";
 import { loginValidator, refreshTokenValidator } from "#validators/auth";
@@ -30,7 +30,8 @@ export default class AuthController {
         .refreshAccessToken(refreshToken);
       return response.ok({ body: newAccessToken });
     } catch (e) {
-      throw new UnauthorizedException((e as { message?: string }).message, {
+      throw new ForbiddenException("Invalid refresh token", {
+        cause: e,
         sensitive: true,
       });
     }
