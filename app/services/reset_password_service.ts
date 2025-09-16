@@ -21,9 +21,10 @@ export default class ResetPasswordService {
       DateTime.now().plus({ minutes: 15 }),
     );
     await mail.send(
+      // TODO: url for form page from frontend. The link is invalid because it is a PUT request
       new ResetPasswordNotification(
         email,
-        `${env.get("APP_URL")}/admin/resetpassword/${token}`,
+        `${env.get("APP_URL")}/auth/resetpassword/${token}`,
       ),
     );
     logger.info(`Reset password email sent to ${email}`);
