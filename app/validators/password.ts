@@ -1,54 +1,54 @@
-import vine from "@vinejs/vine";
+import vine, { VineString } from "@vinejs/vine";
+import { FieldContext } from "@vinejs/vine/types";
 
-const lowerCaseLetterRule = vine.createRule((value, _, field) => {
+function newPassword(value: unknown, _: unknown, field: FieldContext) {
   if (!vine.helpers.isString(value)) {
     return;
+  }
+  if (value.length < 8) {
+    field.report(
+      "The {{field}} field must have at least 8 characters",
+      "newPasswordRule",
+      field,
+    );
   }
   if (/.*[a-z].*/.test(value) === false) {
     field.report(
       "The {{field}} field does not contain any lower case letter",
-      "lowerCaseLetterRule",
+      "newPasswordRule",
       field,
     );
-  }
-});
-
-const upperCaseLetterRule = vine.createRule((value, _, field) => {
-  if (!vine.helpers.isString(value)) {
-    return;
   }
   if (/.*[A-Z].*/.test(value) === false) {
     field.report(
       "The {{field}} field does not contain any upper case letter",
-      "upperCaseLetterRule",
+      "newPasswordRule",
       field,
     );
-  }
-});
-
-const digitRule = vine.createRule((value, _, field) => {
-  if (!vine.helpers.isString(value)) {
-    return;
   }
   if (/.*[0-9].*/.test(value) === false) {
     field.report(
       "The {{field}} field does not contain any digit",
-      "digitRule",
+      "newPasswordRule",
       field,
     );
   }
+}
+
+const newPasswordRule = vine.createRule(newPassword);
+
+declare module "@vinejs/vine" {
+  interface VineString {
+    newPassword(): this;
+  }
+}
+
+VineString.macro("newPassword", function (this: VineString) {
+  return this.use(newPasswordRule());
 });
 
-export const passwordRules = vine
-  .string()
-  .minLength(8)
-  .use(lowerCaseLetterRule())
-  .use(upperCaseLetterRule())
-  .use(digitRule())
-  .bail(false);
-
-export const passwordValidator = vine.compile(
+export const newPasswordValidator = vine.compile(
   vine.object({
-    password: passwordRules,
+    password: vine.string().newPassword(),
   }),
 );

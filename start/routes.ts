@@ -20,7 +20,6 @@ const { default: BaseController } = await (() =>
 
 const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
-const ResetPasswordsController = () => import("#controllers/users_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
 const NewsfeedController = () => import("#controllers/newsfeed_controller");
 const configureBaseRoutes = await BaseController.configureByNames([
@@ -68,16 +67,6 @@ router.get("/metrics", [MetricsMiddleware, "emitMetrics"]);
 router
   .group(() => {
     router
-      .post("/", [ResetPasswordsController, "resetPassword"])
-      .use(resetPasswordThrottle);
-    router.put("/:token", [ResetPasswordsController, "updatePassword"]);
-  })
-  .use(middleware.sensitive())
-  .prefix("admin/resetpassword"); //reset_password_service dependency
-
-router
-  .group(() => {
-    router
       .group(() => {
         router.post("/login", [AuthController, "login"]);
         router.post("/refresh", [AuthController, "refreshAccessToken"]);
@@ -85,6 +74,15 @@ router
           .post("/logout", [AuthController, "logout"])
           .use(middleware.auth());
         router.get("/me", [AuthController, "me"]).use(middleware.auth());
+        router
+          .group(() => {
+            router
+              .post("/", [AuthController, "forgotPassword"])
+              .use(resetPasswordThrottle);
+            router.put("/:token", [AuthController, "resetPassword"]);
+          })
+          .prefix("/resetpassword");
+        router.put("/change_password", [AuthController, "changePassword"]);
       })
       .use(middleware.sensitive())
       .prefix("/auth");
