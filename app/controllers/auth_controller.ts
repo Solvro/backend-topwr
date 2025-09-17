@@ -28,7 +28,7 @@ export default class AuthController {
       const newAccessToken = await auth
         .use(JWT_GUARD)
         .refreshAccessToken(refreshToken);
-      return response.ok({ body: newAccessToken });
+      return response.ok({ newAccessToken });
     } catch (e) {
       throw new ForbiddenException("Invalid refresh token", {
         cause: e,
