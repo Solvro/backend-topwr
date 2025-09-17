@@ -37,8 +37,13 @@ const REFRESH_EXPIRES_IN_MS = Number.parseInt(
   env.get("REFRESH_EXPIRES_IN_MS", "604800000"),
 ); // 7 days
 const ACCESS_SECRET = assertIsDefined(env.get("ACCESS_SECRET")); // For HMAC256
-const REFRESH_PK = assertIsDefined(env.get("REFRESH_PK")); // In PEM format for ECDSA384
-const REFRESH_PUB = derivePublicKey(assertIsDefined(env.get("REFRESH_PK")));
+const REFRESH_PK = formatPrivateAsPem(assertIsDefined(env.get("REFRESH_PK"))); // In for ECDSA384, as single line string, without /n and PEM headers
+const REFRESH_PUB = derivePublicKey(assertIsDefined(REFRESH_PK));
+
+function formatPrivateAsPem(key: string): string {
+  const formattedKey = key.match(/.{1,64}/g)?.join("\n") ?? key;
+  return `-----BEGIN EC PRIVATE KEY-----\n${formattedKey}\n-----END EC PRIVATE KEY-----`;
+}
 
 function derivePublicKey(privateKey: string): string {
   return createPublicKey(privateKey)
