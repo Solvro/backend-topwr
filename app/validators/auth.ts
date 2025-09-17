@@ -34,35 +34,7 @@ export const changePasswordValidator = (user: User) =>
       newPassword: vine
         .string()
         .newPassword()
-        .use(
-          vine.createRule((value: unknown, _, field: FieldContext) => {
-            const oldPassword = vine.helpers.getNestedValue(
-              "oldPassword",
-              field,
-            ) as string;
-            if (oldPassword === value) {
-              field.report(
-                "New password can't be the same as the old one",
-                "distinctPassword",
-                field,
-              );
-            }
-          })(),
-        ),
-      newPasswordConfirm: vine.string().use(
-        vine.createRule((value: unknown, _, field: FieldContext) => {
-          const newPassword = vine.helpers.getNestedValue(
-            "newPassword",
-            field,
-          ) as string;
-          if (newPassword !== value) {
-            field.report(
-              "Passwords do not match",
-              "matchConfirmPassword",
-              field,
-            );
-          }
-        })(),
-      ),
+        .notSameAs("oldPassword")
+        .confirmed({ confirmationField: "newPasswordConfirm" }),
     }),
   );
