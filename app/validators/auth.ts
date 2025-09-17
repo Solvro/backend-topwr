@@ -6,7 +6,6 @@ export const loginValidator = vine.compile(
     // requiring an email here breaks my local test account
     email: vine.string(),
     password: vine.string(),
-    rememberMe: vine.boolean().optional(),
   }),
 );
 
