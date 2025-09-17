@@ -41,19 +41,54 @@ The following controllers were implemented manually and contain custom endpoints
 ##### Authentication
 
 - **POST /api/v1/auth/login**
-  - Requires a json request body: `{ "email": string, "password": string, "rememberMe"?: boolean }`
+  - Requires a json request body: `{ "email": string, "password": string }`
     - technically you can also pass these with query parameters, but please don't
-  - Creates and returns a new token for the specified user, if the credentials are correct
-    - the token is valid for **30 days** if `rememberMe` = true, **1 day** otherwise.
-  - Response: `{ "user": User, "token": "<token string>" }`
+  - Provided the credentials are correct, creates and persists a refresh token, and creates an access token for the given user
+    - the access token should be included in each authenticated request as a bearer token
+    - the refresh token should not be sent with each request
+      - Response:
+        - If successful:
+        ```json
+          {
+             "type": "bearer",
+             "accessToken": string,
+             "accessExpiresInMs": number,
+             "refreshToken": string,
+             "refreshExpiresInMs": number
+          }
+        ```
+        - If failure: standard error response
 - **GET /api/v1/auth/me**
   - **Requires authentication**
   - Returns your user object
   - Response: serialized `User` instance
 - **POST /api/v1/auth/logout**
   - **Requires authentication**
-  - Invalidates the current token
-  - Response: `{ "success": true, "message": "Logged out" }`
+  - Query params:
+    - Name: `all`; Type: boolean; Required: No; Defaults to: `false`
+  - Request body:
+    - `{ "refreshToken": string }`
+    - Required if query param `all` has value `false` (or is not given as it defaults to `false`)
+      If the query param `all` has value `true`, will invalidate **all existing** refresh tokens assigned to the requesting user.
+      Otherwise, it will invalidate only the refresh token passed in the request body.
+  - Response:
+    - If successful: `{ "message": "All refresh tokens marked as invalid" | "Invalidated the provided refresh token" }`
+    - If failure: standard error response
+- **POST /api/v1/auth/refresh**
+  - Request body: `{ "refreshToken": string }`
+    Validates the given refresh token. If valid, generates a new access token for the connected user.
+    - Response:
+      - If successful:
+        ```json
+        {
+          "newAccessToken": {
+              "type": "bearer",
+              "accessToken": string,
+              "accessExpiresInMs": number
+          }
+        }
+        ```
+      - If failure: standard error response
 
 ##### Newsfeed
 
