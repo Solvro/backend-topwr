@@ -89,6 +89,14 @@ The following controllers were implemented manually and contain custom endpoints
         }
         ```
       - If failure: standard error response
+- **PUT /api/v1/auth/change_password**
+  - **Requires authentication**
+  - Request body:
+    - `{"oldPassword": string, "newPassword": string, "newPasswordConfirm": string}`
+    - `newPassword` needs to be different than the old one
+  - Response:
+    - If successful: `{ "message": "Password changed successfully" }`
+    - if failure: standard error response
 
 ##### Newsfeed
 
