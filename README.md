@@ -92,11 +92,29 @@ The following controllers were implemented manually and contain custom endpoints
 - **PUT /api/v1/auth/change_password**
   - **Requires authentication**
   - Request body:
-    - `{"oldPassword": string, "newPassword": string, "newPasswordConfirm": string}`
+    - `{ "oldPassword": string, "newPassword": string, "newPasswordConfirm": string }`
     - `newPassword` needs to be different than the old one
   - Response:
     - If successful: `{ "message": "Password changed successfully" }`
-    - if failure: standard error response
+    - If failure: standard error response
+- **POST /api/v1/auth/reset_password**
+  - Request body:
+    - `{ "email": string }
+  - Tries to send an email with instructions and url to reset user's password.
+  - Response:
+    - If successful: `{ "message": "If an account with that email exists,
+      you will receive instructions to reset your password shortly." }`
+    - If failure: standard error response
+  - Note: All emails are considered sucessful due to safety concerns. Though the email is send only to existing accounts.
+  - Note: Currently the email includes **PUT** endpoint url (described below), as the proper form page is not implemented yet. The url includes UUID token for validation
+  - Note: The endpoint is rate limited: 5 requests per 15 minutes, no block
+- **PUT /api/v1/auth/reset_password/:token**
+  - Request body:
+    - `{ "password": string }`
+  - Response:
+    - If sucessful: `{ "message": "Password updated successfully" }`
+    - If failure: standard error response
+  - Note: The endpoint is rate limited: 3 requests per 10 minutes, after 1h block. Only failed attempts count
 
 ##### Newsfeed
 
