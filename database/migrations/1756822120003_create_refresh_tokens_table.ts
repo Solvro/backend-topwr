@@ -17,8 +17,9 @@ export default class extends BaseSchema {
       table.timestamp("updated_at").notNullable();
     });
 
+    // TODO: Remove 'OR REPLACE' once #235 is completed
     this.schema.raw(`
-        CREATE FUNCTION is_token_valid(
+        CREATE OR REPLACE FUNCTION is_token_valid(
             token_id UUID,
             user_id BIGINT
         )
