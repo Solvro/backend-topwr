@@ -91,7 +91,7 @@ export default class AuthController {
   /*
    * Change password for currently logged in user, using it's active session
    */
-  async changePassword({ request, auth }: HttpContext) {
+  async changePassword({ request, response, auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
@@ -99,6 +99,9 @@ export default class AuthController {
 
     const form = await request.validateUsing(changePasswordValidator(user));
     await user.updatePassword(form.newPassword);
+    return response.ok({
+      message: "Password changed successfully",
+    });
   }
 
   /**
