@@ -154,14 +154,25 @@ export default class FilesService {
     if (fetchedEntity === null) {
       return false;
     }
+    return await FilesService.deleteFileByEntry(fetchedEntity);
+  }
+
+  /**
+   * Deletes a file from storage
+   *
+   * @param entry - File entry representing the file to be deleted
+   * @return - true if delete is successful, false if no file to delete, throws if error occurs
+   * @throws {FileServiceFileDiskDeleteError} There was an issue deleting the file. Check the cause prop for details.
+   */
+  static async deleteFileByEntry(entry: FileEntry): Promise<boolean> {
     return await db.transaction(async (trx) => {
       try {
-        await fetchedEntity.useTransaction(trx).delete();
+        await entry.useTransaction(trx).delete();
       } catch (error) {
         throw new FileServiceFileMetadataDeleteError(error as Error);
       }
       try {
-        await drive.use().delete(fetchedEntity.keyWithExtension);
+        await drive.use().delete(entry.keyWithExtension);
       } catch (error) {
         throw new FileServiceFileDiskDeleteError(error as Error);
       }
