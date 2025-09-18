@@ -2,7 +2,7 @@ import assert from "node:assert";
 import * as fs from "node:fs";
 import path from "node:path";
 
-import { BaseCommand } from "@adonisjs/core/ace";
+import { BaseCommand, flags } from "@adonisjs/core/ace";
 import router from "@adonisjs/core/services/router";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 import { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
@@ -50,7 +50,26 @@ export default class CleanupFiles extends BaseCommand {
     startApp: true,
   };
 
+  @flags.boolean({
+    description: "Run all cleanup stages without asking",
+  })
+  declare force: boolean;
+
   async run() {
+    // hijack the prompting functions and make them always return default if --force is set
+    // really dumb, but works
+    if (this.force) {
+      this.logger.warning(
+        "--force passed, correcting all inconsistencies without asking!",
+      );
+      this.prompt.choice = (_, choices, opts) =>
+        // @ts-expect-error -- can't convince TS that this is correct, but it should be
+        Promise.resolve(opts?.default ?? choices[0]);
+      this.prompt.confirm = (_, opts) =>
+        // @ts-expect-error -- okay here adonis devs just screwed up the typing, this ain't my fault
+        Promise.resolve(opts?.default ?? false);
+    }
+
     if (!router.commited) {
       router.commit();
     }
@@ -177,7 +196,7 @@ export default class CleanupFiles extends BaseCommand {
       await this.askForListing("List all orphaned files' ids?", orphanedFiles);
       const orphanedConfirmation = await this.prompt.confirm(
         "Delete all orphaned files from the file system?",
-        { default: false },
+        { default: this.force },
       );
       if (orphanedConfirmation) {
         await this.removeOrphanedFiles(
@@ -202,7 +221,7 @@ export default class CleanupFiles extends BaseCommand {
       await this.askForListing("List all unused files' ids?", unusedFiles);
       const unusedConfirmation = await this.prompt.confirm(
         "Delete all unused files from the file system and the database?",
-        { default: false },
+        { default: this.force },
       );
       if (unusedConfirmation) {
         await this.removeUnusedFiles(
@@ -227,7 +246,7 @@ export default class CleanupFiles extends BaseCommand {
       await this.askForListing("List all ghost files' ids?", ghostFiles);
       const ghostConfirmation = await this.prompt.confirm(
         "For all nullable references: Replace all ghost files references with null and delete them from FileEntry table?",
-        { default: false },
+        { default: this.force },
       );
       if (ghostConfirmation) {
         await this.removeGhostFiles(task, usedFiles, ghostFiles);
