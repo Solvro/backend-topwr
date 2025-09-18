@@ -27,8 +27,12 @@ The following controllers were implemented manually and contain custom endpoints
 - **POST /api/v1/files**
   - **Requres authentication**
   - Uploads a new file to the server
-  - Requires a multipart request body
-    - File must be uploaded in a field called `file`
+  - Files can be uploaded in two ways:
+    - HTTP form: upload the file as a `file` field
+    - Direct: upload the file as body content
+      - requires the extension to be specified as the `ext` query parameter
+      - `Content-Type` **MUST NOT** imply an HTTP form or JSON body - these trigger adonis to parse the body, taking the "HTTP form" route
+        - this header is otherwise disregarded
   - Response: `{ "key": "<full key of the uploaded file>" }`
 
 ##### About Us
