@@ -102,8 +102,7 @@ The following controllers were implemented manually and contain custom endpoints
     - `{ "email": string }
   - Tries to send an email with instructions and url to reset user's password.
   - Response:
-    - If successful: `{ "message": "If an account with that email exists,
-      you will receive instructions to reset your password shortly." }`
+    - If successful: `{ "message": "If an account with that email exists, you will receive instructions to reset your password shortly." }`
     - If failure: standard error response
   - Note: All emails are considered sucessful due to safety concerns. Though the email is send only to existing accounts.
   - Note: Currently the email includes **PUT** endpoint url (described below), as the proper form page is not implemented yet. The url includes UUID token for validation
