@@ -64,7 +64,7 @@ VineString.macro(
 
 /**
  * Will fail on invalid token formats OR no user assigned to the token.
- * Expiration date must be handled by checking `isValid()` method on output
+ * Expiration date must be handled by checking `isValid` field on output
  */
 export const resetPasswordTokenValidator = vine.compile(
   vine.object({
