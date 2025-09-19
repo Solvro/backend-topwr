@@ -22,6 +22,8 @@ const AuthController = () => import("#controllers/auth_controller");
 const FilesController = () => import("#controllers/files_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
 const NewsfeedController = () => import("#controllers/newsfeed_controller");
+const PermissionsController = () =>
+  import("#controllers/permissions_controller");
 const configureBaseRoutes = await BaseController.configureByNames([
   "academic_calendars",
   "aeds",
@@ -56,6 +58,8 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "event_calendar",
   "mobile_config",
   "banners",
+  "student_organization_drafts",
+  "guide_article_drafts",
 ]);
 
 router.get("/", async () => {
@@ -86,6 +90,13 @@ router
       })
       .use(middleware.sensitive())
       .prefix("/auth");
+    // ACL management (solvro_admin only)
+    router
+      .group(() => {
+        router.post("/allow", [PermissionsController, "allow"]);
+        router.post("/revoke", [PermissionsController, "revoke"]);
+      })
+      .prefix("/permissions");
 
     router
       .group(() => {

@@ -159,6 +159,17 @@ All names in paths are in `snake_case`.
   - **Requres authentication**
   - Deletes the requested object
   - Response: `{ "success": true }`
+
+##### Draft approval
+
+For draft models (`student_organization_drafts`, `guide_article_drafts`), there is an additional endpoint:
+
+- **POST /api/v1/:model/:id/approve**
+  - **Requires authentication and solvro_admin role**
+  - Approves the draft by updating the corresponding main model instance (if `original*Id` is set) or creating a new one
+  - Deletes the draft after approval
+  - Response: `{ "data": Model }`
+
 - **GET /api/v1/:model/:id/:crudRelation**
   - Lists all objects associated with the requested object (`id`) via the specified relation (`crudRelation`)
   - Supports pagination, on-demand recursive relations (relative to the requested relation), filtering and sorting
@@ -262,6 +273,18 @@ Example:
 ##### How do I request custom sorting?
 
 To request the response to be sorted by a specified key, add a `sort` query parameter.
+
+### Permissions management (admin only)
+
+POST /api/v1/permissions/allow
+
+- body: { userId: number, action: "read"|"create"|"update"|"destroy", resource: { type: "class"|"model", name: "student_organization_drafts"|"guide_article_drafts"|"student_organizations"|"guide_articles", id?: number } }
+- requires: solvro_admin role
+
+POST /api/v1/permissions/revoke
+
+- body: same as above
+- requires: solvro_admin role
 
 To sort in ascending order, use `+<column_name>`.
 To sort in descending order, use `-<column_name>`.
