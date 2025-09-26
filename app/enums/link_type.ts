@@ -1,7 +1,3 @@
-import { ActionRequest } from "adminjs";
-
-import logger from "@adonisjs/core/services/logger";
-
 export enum LinkType {
   TopwrBuildings = "topwr:buildings",
   Phone = "tel",
@@ -116,62 +112,9 @@ const linkPatterns: [string, RegExp | undefined, LinkType][] = [
   ["pwr.edu.pl", undefined, LinkType.Default],
 ];
 
-/**
- * Spread this in a model with 'link' and 'linkType' properties for automatic link detection configuration.
- * Remember to add new properties instead of overriding existing ones.
- */
-export const linkTypeAutodetectSetUp = {
-  additionalProperties: {
-    linkType: {
-      availableValues: linkTypeEnumsValues,
-      isVisible: {
-        list: true,
-        show: true,
-        filter: true,
-        edit: false,
-      },
-    },
-  },
-  additionalActions: {
-    new: {
-      before: autoReplaceLinkType,
-    },
-    edit: {
-      before: autoReplaceLinkType,
-    },
-  },
-};
-
 export interface DetectionResult {
   type: LinkType;
   warning?: string;
-}
-
-/**
- *  Function to add a hook on an Admin Panel field with a link.
- *  It will automatically set the 'linkType' property of a model with a link field.
- *  This hook will override any user-chosen link type value and, as such,
- *  it is advised to set 'type' property visibility to false on new and edit views.
- *  Use the 'linkTypeAutodetectSetUp' instead of directly using this function if possible.
- */
-export async function autoReplaceLinkType(
-  request: ActionRequest,
-): Promise<ActionRequest> {
-  if (request.payload !== undefined) {
-    if (request.payload.link !== undefined) {
-      if (typeof request.payload.link !== "string") {
-        throw new Error("Link must be a string");
-      }
-      const detectedType: DetectionResult = detectLinkType(
-        request.payload.link,
-      );
-      if (detectedType.warning !== undefined) {
-        logger.info(`Admin panel: ${detectedType.warning}`);
-      }
-      request.payload.linkType = detectedType.type;
-    }
-  }
-  return request;
 }
 
 /**
