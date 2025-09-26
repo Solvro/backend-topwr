@@ -52,6 +52,7 @@ The following controllers were implemented manually and contain custom endpoints
     - the refresh token should not be sent with each request
       - Response:
         - If successful:
+
         ```json
           {
              "type": "bearer",
@@ -61,7 +62,9 @@ The following controllers were implemented manually and contain custom endpoints
              "refreshExpiresInMs": number
           }
         ```
+
         - If failure: standard error response
+
 - **GET /api/v1/auth/me**
   - **Requires authentication**
   - Returns your user object
