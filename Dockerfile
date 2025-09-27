@@ -1,4 +1,4 @@
-FROM node:22.14.0-alpine3.21 AS base
+FROM node:22-alpine AS base
 WORKDIR /app
 ADD package.json package-lock.json ./
 
