@@ -4,23 +4,15 @@ ADD package.json package-lock.json ./
 
 # Production only deps stage
 FROM base AS prod-deps
-# try to do a regular install (as it doesn't remove the existing node_modules dir)
-# then diff the package-lock - if it changed, do a clean install instead
 RUN --mount=type=cache,dst=/root/.npm \
     --mount=type=cache,dst=/tmp/node-compile-cache \
-    cp package-lock.json package-lock.json.old && \
-    npm i --omit=dev --ignore-scripts --no-audit --no-fund && \
-    (diff package-lock.json package-lock.json.old > /dev/null || npm ci --omit=dev --ignore-scripts --no-audit --no-fund) && \
-    rm package-lock.json.old
+    npm ci --omit=dev --ignore-scripts --no-audit --no-fund
 
 # All deps stage
 FROM prod-deps AS dev-deps
 RUN --mount=type=cache,dst=/root/.npm \
     --mount=type=cache,dst=/tmp/node-compile-cache/ \
-    cp package-lock.json package-lock.json.old && \
-    npm i --ignore-scripts --no-audit --no-fund && \
-    (diff package-lock.json package-lock.json.old > /dev/null || npm ci --ignore-scripts --no-audit --no-fund) && \
-    rm package-lock.json.old
+    npm ci --ignore-scripts --no-audit --no-fund
 
 # Production stage
 FROM prod-deps
