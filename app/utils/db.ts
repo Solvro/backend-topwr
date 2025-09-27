@@ -38,3 +38,38 @@ export async function modelCount(model: LucidModel): Promise<number> {
   const res = (await model.query().knexQuery.count()) as [{ count: string }];
   return Number.parseInt(res[0].count);
 }
+
+/**
+ * Normalizes the "order" field by replacing it with a fresh integer sequence
+ *
+ * Relative order of the rows is unchanged.
+ * @param table name of the table to normalize
+ */
+export async function normalizeOrderField(table: string): Promise<void> {
+  await db.transaction(async (tx) => {
+    await tx.rawQuery(
+      `
+      -- create temp table
+      CREATE TEMPORARY TABLE IF NOT EXISTS "temp_normalize_order" (
+        id INTEGER PRIMARY KEY,
+        new_order SERIAL
+      )
+      ON COMMIT DROP;
+      TRUNCATE TABLE "temp_normalize_order";
+
+      -- populate it with ids of the target table (ordered by current order)
+      -- this will generate the new order values
+      INSERT INTO "temp_normalize_order" (id)
+      SELECT "id" FROM ??
+      ORDER BY "order" ASC, "id" ASC;
+
+      -- update target table
+      UPDATE ?? AS "target"
+      SET "order" = "tmp"."new_order"
+      FROM "temp_normalize_order" AS "tmp"
+      WHERE "target"."id" = "tmp"."id";
+    `,
+      [table, table],
+    );
+  });
+}

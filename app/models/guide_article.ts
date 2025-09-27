@@ -30,6 +30,9 @@ export default class GuideArticle extends BaseModel {
   @typedColumn({ type: "string" })
   declare description: string;
 
+  @typedColumn({ type: "number", hasDefault: true })
+  declare order: number;
+
   @typedColumn({ foreignKeyOf: () => FileEntry })
   declare imageKey: string;
 
