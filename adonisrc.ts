@@ -42,10 +42,6 @@ export default defineConfig({
     () => import("@adonisjs/drive/drive_provider"),
     () => import("@adonisjs/auth/auth_provider"),
     () => import("@adonisjs/session/session_provider"),
-    {
-      file: () => import("@adminjs/adonis/adminjs_provider"),
-      environment: ["web"],
-    },
     () => import("@adonisjs/mail/mail_provider"),
     () => import("@adonisjs/static/static_provider"),
     () => import("@adonisjs/limiter/limiter_provider"),

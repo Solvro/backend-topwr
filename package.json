@@ -51,9 +51,6 @@
     "strtok3": "8.0.1"
   },
   "dependencies": {
-    "@adminjs/adonis": "^1.1.0",
-    "@adminjs/passwords": "^4.0.0",
-    "@adminjs/relations": "^1.1.2",
     "@adonisjs/auth": "^9.4.0",
     "@adonisjs/core": "^6.14.1",
     "@adonisjs/cors": "^2.2.1",
@@ -66,9 +63,7 @@
     "@adonisjs/static": "^1.1.1",
     "@solvro/solvronis-metrics": "^1.0.0",
     "@solvro/utils": "^1.1.2",
-    "@types/jsonwebtoken": "^9.0.10",
     "@vinejs/vine": "^2.1.0",
-    "adminjs": "^7.8.13",
     "argon2": "^0.41.1",
     "jsonwebtoken": "^9.0.2",
     "luxon": "^3.5.0",
@@ -88,6 +83,7 @@
     "@japa/runner": "^3.1.4",
     "@solvro/config": "^2.0.6",
     "@swc/core": "1.7.26",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/luxon": "^3.4.2",
     "@types/node": "^22.7.5",
     "@types/pg": "^8.11.11",
