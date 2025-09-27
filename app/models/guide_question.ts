@@ -19,7 +19,7 @@ export default class GuideQuestion extends BaseModel {
   @typedColumn({ type: "string" })
   declare answer: string;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", hasDefault: true })
   declare order: number;
 
   @typedColumn({ foreignKeyOf: () => GuideArticle })

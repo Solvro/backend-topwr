@@ -28,7 +28,7 @@ export default class Contributor extends BaseModel {
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
-  @typedColumn({ type: "number" })
+  @typedColumn({ type: "number", hasDefault: true })
   declare order: number;
 
   @typedColumn.dateTime({ autoCreate: true })
