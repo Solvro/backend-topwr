@@ -19,6 +19,9 @@ export default class GuideQuestion extends BaseModel {
   @typedColumn({ type: "string" })
   declare answer: string;
 
+  @typedColumn({ type: "number" })
+  declare order: number;
+
   @typedColumn({ foreignKeyOf: () => GuideArticle })
   declare articleId: number;
 
