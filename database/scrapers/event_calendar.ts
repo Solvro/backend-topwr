@@ -1,8 +1,8 @@
+import { ICSObject, ICSRoot, ICSValue, parseICS } from "@solvro/utils/ics";
 import { DateTime } from "luxon";
 
 import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
 import CalendarEvent from "#models/calendar_event";
-import { ICSObject, ICSRoot, ICSValue, parseICS } from "#utils/ics";
 
 const FETCH_LIMIT_DAYS = 30;
 const CALENDAR_ID = "9ke30hbjjke60u5jbii42g2rpo@group.calendar.google.com";
