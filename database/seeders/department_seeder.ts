@@ -1,5 +1,6 @@
 import { BaseSeeder } from "@adonisjs/lucid/seeders";
 
+import { Branch } from "#enums/branch";
 import { LinkType } from "#enums/link_type";
 import { StudiesType } from "#enums/studies_type";
 import Department from "#models/department";
@@ -17,7 +18,7 @@ export default class extends BaseSeeder {
         code: "W1",
         betterCode: "WA",
         logoKey: null,
-        isBranch: false,
+        branch: Branch.Main,
         description: "Wydział Architektury - Jakis opis",
         gradientStart: "#BFBEBE",
         gradientStop: "#868585",
@@ -29,7 +30,7 @@ export default class extends BaseSeeder {
         code: "W2",
         betterCode: "WBLIW",
         logoKey: null,
-        isBranch: false,
+        branch: Branch.Main,
         description: "Wydział Budownictwa Lądowego i Wodnego - Jakis opis",
         gradientStart: "#CA6846",
         gradientStop: "#FFA07E",
