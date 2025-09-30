@@ -1,9 +1,8 @@
+import { optionMap } from "@solvro/utils/option";
 import { DateTime } from "luxon";
 import { HTMLElement, NodeType, parse } from "node-html-parser";
 
 import logger from "@adonisjs/core/services/logger";
-
-import { optionMap } from "#utils/option";
 
 const PWR_URL: Record<NewsfeedLanguage, string> = {
   pl: "https://pwr.edu.pl/uczelnia/aktualnosci/page1.html",

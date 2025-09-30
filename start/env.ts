@@ -71,4 +71,8 @@ export default await Env.create(new URL("../", import.meta.url), {
   |----------------------------------------------------------
   */
   LIMITER_STORE: Env.schema.enum(["database", "memory"] as const),
+
+  // JWT stuff
+  ACCESS_SECRET: Env.schema.string(), // HMAC secret (can be literally anything)
+  REFRESH_PK: Env.schema.string(), // In for ECDSA384, as single line string, without /n and PEM headers
 });
