@@ -5,11 +5,12 @@ import { HTMLElement, NodeType, parse } from "node-html-parser";
 import logger from "@adonisjs/core/services/logger";
 
 const PWR_URL: Record<NewsfeedLanguage, string> = {
-  pl: "https://pwr.edu.pl/uczelnia/aktualnosci/page1.html",
-  en: "https://pwr.edu.pl/en/university/news/page1.html",
+  pl: "https://pwr.edu.pl/uczelnia/aktualnosci",
+  en: "https://pwr.edu.pl/en/university/news",
 };
 export const NEWSFEED_LANGAUGES = Object.keys(PWR_URL) as NewsfeedLanguage[];
 const DATE_REGEX = /Dat[ae]:\s*([\d.]+)/;
+const NEWSFEED_PAGES = 4;
 
 export type NewsfeedLanguage = "pl" | "en";
 
@@ -115,10 +116,24 @@ export default class NewsfeedService {
   }
 
   private static async updateArticles(language: NewsfeedLanguage) {
-    const articles = await this.scrapeNewsfeed(PWR_URL[language]);
-    if (articles === null) {
-      return;
+    // scrape multiple pages
+    const pages = [];
+    for (let i = 1; i <= NEWSFEED_PAGES; i++) {
+      const page = await this.scrapeNewsfeed(
+        `${PWR_URL[language]}/page${i}.html`,
+      );
+      if (page === null) {
+        // bail if we can't scrape page 1
+        if (i === 1) {
+          return;
+        }
+        continue;
+      }
+      pages.push(page);
     }
+
+    // flatten into one array (thanks javascript for not having an .append/extend function)
+    const articles = pages.flat();
     this.articleCache[language] = {
       articles,
       completeArticles: articles.filter(isCompleteArticle),
