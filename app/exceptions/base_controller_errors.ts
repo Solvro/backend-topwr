@@ -1,4 +1,4 @@
-import { BaseError } from "./base_error.js";
+import { BaseError } from "@solvro/error-handling/base";
 
 export class InternalControllerValidationError extends BaseError {
   constructor(validationIssues: string[]) {

@@ -1,3 +1,8 @@
+import { toIBaseError } from "@solvro/error-handling/base";
+import {
+  analyzeErrorStack,
+  prepareReportForLogging,
+} from "@solvro/error-handling/reporting";
 import assert from "node:assert";
 import * as fs from "node:fs";
 import path from "node:path";
@@ -10,11 +15,6 @@ import { Dictionary } from "@adonisjs/lucid/types/querybuilder";
 
 import { TaskHandle } from "#commands/db_scrape";
 import { ValidatedColumnDef } from "#decorators/typed_model";
-import {
-  analyzeErrorStack,
-  prepareReportForLogging,
-  toIBaseError,
-} from "#exceptions/base_error";
 import FileEntry from "#models/file_entry";
 
 interface DbFileEntry {

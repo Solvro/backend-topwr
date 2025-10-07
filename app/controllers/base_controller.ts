@@ -1,4 +1,5 @@
 import adonisString from "@poppinss/utils/string";
+import { BaseError } from "@solvro/error-handling/base";
 import assert from "node:assert";
 
 import { HttpContext } from "@adonisjs/core/http";
@@ -33,7 +34,6 @@ import {
   InternalControllerError,
   InternalControllerValidationError,
 } from "#exceptions/base_controller_errors";
-import { BaseError } from "#exceptions/base_error";
 import { NotFoundException } from "#exceptions/http_exceptions";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
