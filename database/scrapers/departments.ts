@@ -5,6 +5,7 @@ import {
   SourceResponse,
   TaskHandle,
 } from "#commands/db_scrape";
+import { Branch } from "#enums/branch";
 import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
@@ -104,7 +105,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
             addressLine2,
             code: departmentEntry.code,
             betterCode: departmentEntry.betterCode,
-            isBranch: false,
+            branch: Branch.Main,
             logoKey: fileId,
             description: departmentEntry.description,
             gradientStart: departmentEntry.gradient_start,
