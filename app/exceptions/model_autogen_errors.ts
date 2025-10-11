@@ -1,4 +1,5 @@
-import { BaseErrorOptions } from "./base_error.js";
+import { BaseErrorOptions } from "@solvro/error-handling/base";
+
 import { InternalServerException } from "./http_exceptions.js";
 
 export class InvalidModelDefinition extends InternalServerException {

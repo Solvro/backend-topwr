@@ -1,4 +1,4 @@
-import { BaseError } from "./base_error.js";
+import { BaseError } from "@solvro/error-handling/base";
 
 class FileServiceError extends BaseError {}
 

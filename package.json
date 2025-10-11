@@ -61,6 +61,7 @@
     "@adonisjs/mail": "^9.2.2",
     "@adonisjs/session": "^7.5.0",
     "@adonisjs/static": "^1.1.1",
+    "@solvro/error-handling": "^1.0.0",
     "@solvro/solvronis-metrics": "^1.0.0",
     "@solvro/utils": "^1.2.0",
     "@vinejs/vine": "^2.1.0",

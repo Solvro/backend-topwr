@@ -1,5 +1,10 @@
 import { Logger } from "@poppinss/cliui";
 import { TaskCallback } from "@poppinss/cliui/types";
+import { toIBaseError } from "@solvro/error-handling/base";
+import {
+  analyzeErrorStack,
+  prepareReportForLogging,
+} from "@solvro/error-handling/reporting";
 import { Semaphore } from "@solvro/utils/semaphore";
 import * as fs from "node:fs/promises";
 import path from "node:path";
@@ -10,11 +15,6 @@ import type { CommandOptions } from "@adonisjs/core/types/ace";
 import { LucidModel } from "@adonisjs/lucid/types/model";
 
 import { LinkType, detectLinkType } from "#enums/link_type";
-import {
-  analyzeErrorStack,
-  prepareReportForLogging,
-  toIBaseError,
-} from "#exceptions/base_error";
 import FilesService from "#services/files_service";
 import { modelCount } from "#utils/db";
 

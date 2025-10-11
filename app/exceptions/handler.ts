@@ -1,13 +1,13 @@
+import { toIBaseError } from "@solvro/error-handling/base";
+import {
+  analyzeErrorStack,
+  prepareReportForLogging,
+  serializeErrorReport,
+} from "@solvro/error-handling/reporting";
+
 import { ExceptionHandler, HttpContext } from "@adonisjs/core/http";
 import app from "@adonisjs/core/services/app";
 import logger from "@adonisjs/core/services/logger";
-
-import {
-  ErrorResponse,
-  analyzeErrorStack,
-  prepareReportForLogging,
-  toIBaseError,
-} from "./base_error.js";
 
 export interface ExceptionHandlerContextExtras {
   extras?: {
@@ -46,21 +46,12 @@ export default class HttpExceptionHandler extends ExceptionHandler {
         report.code = "E_UNEXPECTED_ERROR";
       }
     }
-    const sensitive =
+    report.sensitive =
       ctx.extras?.sensitive ??
       (report.sensitive || this.#isSensitiveCode(report.code));
-    const response: ErrorResponse = {
-      error: {
-        message: report.message,
-        code: report.code,
-        validationIssues: report.code.includes("VALIDATION_ERROR")
-          ? (report.validationIssues ?? [])
-          : undefined,
-        causeStack: sensitive ? undefined : report.causeStack,
-        rootStackTrace: this.debug ? report.rootStackTrace : undefined,
-      },
-      ...report.extraResponseFields,
-    };
+    const response = serializeErrorReport(report, {
+      includeStackTrace: this.debug,
+    });
     ctx.response.status(report.status).send(response);
   }
 

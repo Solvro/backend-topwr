@@ -1,4 +1,4 @@
-import { BaseError, BaseErrorOptions } from "./base_error.js";
+import { BaseError, BaseErrorOptions } from "@solvro/error-handling/base";
 
 export class BadRequestException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
