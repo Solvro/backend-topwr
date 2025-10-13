@@ -56,6 +56,7 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "event_calendar",
   "mobile_config",
   "banners",
+  "sks_opening_hours",
 ]);
 
 router.get("/", async () => {
