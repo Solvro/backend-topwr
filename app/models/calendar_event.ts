@@ -1,3 +1,4 @@
+import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel } from "@adonisjs/lucid/orm";
@@ -6,6 +7,7 @@ import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
+import { HEX_COLOR_REGEX } from "#validators/colors";
 
 export default class CalendarEvent extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
@@ -32,6 +34,18 @@ export default class CalendarEvent extends BaseModel {
 
   @typedColumn({ type: "string", optional: true })
   declare description: string | null;
+
+  @typedColumn({
+    type: "string",
+    optional: true,
+    validator: vine
+      .string()
+      .toLowerCase()
+      .regex(HEX_COLOR_REGEX)
+      .nullable()
+      .optional(),
+  })
+  declare accentColor: string | null;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
