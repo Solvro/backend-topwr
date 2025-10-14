@@ -7,8 +7,7 @@ import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
-
-const HEX_COLOR_REGEX = /^#[\da-f]{6}(?:[\da-f]{2})?$/;
+import { HEX_COLOR_REGEX } from "#validators/colors";
 
 export default class Banner extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })

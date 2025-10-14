@@ -62,6 +62,15 @@ export default class StudentOrganization extends BaseModel {
   @typedColumn({ type: OrganizationStatus })
   declare organizationStatus: OrganizationStatus;
 
+  @typedColumn({ type: "string", optional: true })
+  declare enName: string;
+
+  @typedColumn({ type: "string", optional: true })
+  declare enDescription: string;
+
+  @typedColumn({ type: "string", optional: true })
+  declare enShortDescription: string;
+
   @hasMany(() => StudentOrganizationLink, {
     onQuery: (query) => {
       return query.orderByRaw(applyLinkTypeSorting);
