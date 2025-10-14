@@ -126,7 +126,7 @@ export default class OrganizationsScraper extends BaseScraperModule {
         coverPreview: org.useCoverAsPreviewPhoto,
         source: this.convertSource(org.source),
         organizationType: this.convertType(org.type),
-        organizationStatus: OrganizationStatus.Unknown,
+        organizationStatus: OrganizationStatus.Active,
         isStrategic: org.isStrategic,
         branch: Branch.Main,
       });
