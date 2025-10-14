@@ -17,6 +17,7 @@ if (!fs.existsSync(STORAGE_PATH)) {
 
 export const MAIN_DRIVE = env.get("DRIVE_DISK");
 export const MINIATURES_DRIVE = "miniatures";
+export type DriveType = typeof MAIN_DRIVE | typeof MINIATURES_DRIVE;
 
 const driveConfig = defineConfig({
   default: MAIN_DRIVE,
