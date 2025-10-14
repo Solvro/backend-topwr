@@ -11,6 +11,7 @@ import {
   computed,
 } from "@adonisjs/lucid/orm";
 
+import { MINIATURES_DRIVE } from "#config/drive";
 import { typedColumn } from "#decorators/typed_model";
 
 export default class FileEntry extends BaseModel {
@@ -29,12 +30,18 @@ export default class FileEntry extends BaseModel {
   @computed()
   url: string | undefined;
 
+  @computed()
+  miniaturesUrl: string | undefined;
+
   get keyWithExtension() {
     return `${this.id}.${this.fileExtension}`;
   }
 
   async computeExtraProps() {
     this.url = await drive.use().getUrl(this.keyWithExtension);
+    this.miniaturesUrl = this.isPhoto()
+      ? await drive.use(MINIATURES_DRIVE).getUrl(this.keyWithExtension)
+      : undefined;
   }
 
   @afterFetch()
@@ -45,6 +52,11 @@ export default class FileEntry extends BaseModel {
   @afterFind()
   static async afterFind(file: FileEntry) {
     await file.computeExtraProps();
+  }
+
+  // This helper method can be extended - right now for what I've seen we only have the following types
+  public isPhoto(): boolean {
+    return this.fileExtension === "png" || this.fileExtension === "jpg";
   }
 
   public static createNew(extname: string | undefined): FileEntry {
