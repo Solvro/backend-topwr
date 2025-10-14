@@ -72,7 +72,11 @@ export default await Env.create(new URL("../", import.meta.url), {
   */
   LIMITER_STORE: Env.schema.enum(["database", "memory"] as const),
 
-  // JWT stuff
+  // JWT secrets
   ACCESS_SECRET: Env.schema.string(), // HMAC secret (can be literally anything)
   REFRESH_PK: Env.schema.string(), // In for ECDSA384, as single line string, without /n and PEM headers
+
+  // Image resizing options
+  IMAGE_MAX_HEIGHT_PX: Env.schema.number(), // Height of resized images - width auto-scales according to the height to prevent stretching
+  IMAGE_MAX_PROCESSING_TIME_S: Env.schema.number(), // Maximum time in seconds per image resizing - will throw if the time exceeds the value
 });

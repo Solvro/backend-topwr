@@ -1,11 +1,34 @@
+import sharp, { ResizeOptions, TimeoutOptions } from "sharp";
+
 import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 
-export async function resizeFromBytes(
-  data: string | Uint8Array,
-): Promise<Uint8Array> {}
+import env from "#start/env";
 
-export async function resizeFromPath(path: string): Promise<Uint8Array> {}
+const resizeOptions: ResizeOptions = {
+  height: env.get("IMAGE_MAX_HEIGHT_PX"),
+  fit: "inside",
+  withoutEnlargement: true,
+};
+
+const timeoutOptions: TimeoutOptions = {
+  seconds: env.get("IMAGE_MAX_PROCESSING_TIME_S"),
+}; // Prevents infinite waits
+
+export async function resizeFromPathOrBytes(
+  dataOrPath: string | Uint8Array,
+): Promise<Uint8Array> {
+  const buffer = await sharp(dataOrPath)
+    .resize(resizeOptions)
+    .timeout(timeoutOptions)
+    .toBuffer();
+  return new Uint8Array(buffer);
+}
 
 export async function resizeFromMultipart(
   file: MultipartFile,
-): Promise<Uint8Array> {}
+): Promise<Uint8Array> {
+  if (file.tmpPath === undefined) {
+    throw new Error("Invalid file provided");
+  }
+  return resizeFromPathOrBytes(file.tmpPath);
+}

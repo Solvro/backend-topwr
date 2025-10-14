@@ -16,11 +16,7 @@ import {
   FileServiceUploadMiniatureConversionError,
 } from "#exceptions/file_service_errors";
 import FileEntry from "#models/file_entry";
-import {
-  resizeFromBytes,
-  resizeFromMultipart,
-  resizeFromPath,
-} from "#utils/images";
+import { resizeFromMultipart, resizeFromPathOrBytes } from "#utils/images";
 
 function getMainDrive(): Disk {
   return drive.use(MAIN_DRIVE);
@@ -121,7 +117,7 @@ export default class FilesService {
    * @throws {FileServiceFileUploadError} There was an issue uploading the file. Check the cause prop for details.
    */
   static async uploadFromMemory(
-    data: string | Uint8Array,
+    data: Uint8Array,
     extname: string | undefined = undefined,
   ): Promise<FileEntry> {
     const fileEntry = FileEntry.createNew(extname);
@@ -129,7 +125,7 @@ export default class FilesService {
   }
 
   private static async uploadFromMemoryInternal(
-    data: string | Uint8Array,
+    data: Uint8Array,
     fileEntry: FileEntry,
   ): Promise<FileEntry> {
     return await db.transaction(async (trx) => {
@@ -139,7 +135,7 @@ export default class FilesService {
         throw new FileServiceFilePersistError(error as Error);
       }
       const miniatureSaved = await this.uploadMiniatureIfApplicableOrFail(
-        () => resizeFromBytes(data),
+        () => resizeFromPathOrBytes(data),
         fileEntry,
       );
       const key = fileEntry.keyWithExtension;
@@ -176,7 +172,7 @@ export default class FilesService {
         throw new FileServiceFilePersistError(error as Error);
       }
       const miniatureSaved = await this.uploadMiniatureIfApplicableOrFail(
-        () => resizeFromPath(path),
+        () => resizeFromPathOrBytes(path),
         fileEntry,
       );
       try {

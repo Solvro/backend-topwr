@@ -56,7 +56,12 @@ export default class FileEntry extends BaseModel {
 
   // This helper method can be extended - right now for what I've seen we only have the following types
   public isPhoto(): boolean {
-    return this.fileExtension === "png" || this.fileExtension === "jpg";
+    return (
+      this.fileExtension === "png" ||
+      this.fileExtension === "jpg" ||
+      this.fileExtension === "jpeg" ||
+      this.fileExtension === "webp"
+    );
   }
 
   public static createNew(extname: string | undefined): FileEntry {
