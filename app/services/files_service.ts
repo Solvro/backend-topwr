@@ -87,9 +87,9 @@ export default class FilesService {
   ): Promise<FileEntry> {
     const fileEntry = FileEntry.createNew(extname);
     if (fileEntry.isPhoto()) {
-      // To compute the miniature, we need the entire content
+      // To compute the miniature, we need to consume the stream. We also need its content in two places (miniature and original)
       const rawData = await stream.toArray();
-      const data = new Uint8Array(rawData);
+      const data = Buffer.concat(rawData);
       return this.uploadFromMemoryInternal(data, fileEntry);
     }
     return await db.transaction(async (trx) => {

@@ -5,13 +5,13 @@ import { MultipartFile } from "@adonisjs/core/types/bodyparser";
 import env from "#start/env";
 
 const resizeOptions: ResizeOptions = {
-  height: env.get("IMAGE_MAX_HEIGHT_PX"),
+  height: env.get("MINIATURE_MAX_HEIGHT_PX"),
   fit: "inside",
   withoutEnlargement: true,
 };
 
 const timeoutOptions: TimeoutOptions = {
-  seconds: env.get("IMAGE_MAX_PROCESSING_TIME_S"),
+  seconds: env.get("MINIATURE_MAX_PROCESSING_TIME_S"),
 }; // Prevents infinite waits
 
 export async function resizeFromPathOrBytes(
