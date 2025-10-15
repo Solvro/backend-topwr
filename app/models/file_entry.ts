@@ -14,6 +14,8 @@ import {
 import { MINIATURES_DRIVE } from "#config/drive";
 import { typedColumn } from "#decorators/typed_model";
 
+export const PHOTO_LIKE_EXT = ["png", "jpg", "jpeg", "webp"];
+
 export default class FileEntry extends BaseModel {
   @typedColumn({ type: "uuid", isPrimary: true })
   declare id: UUID;
@@ -32,6 +34,11 @@ export default class FileEntry extends BaseModel {
 
   @computed()
   miniaturesUrl: string | undefined;
+
+  @computed()
+  isPhoto() {
+    return PHOTO_LIKE_EXT.includes(this.fileExtension);
+  }
 
   get keyWithExtension() {
     return `${this.id}.${this.fileExtension}`;
@@ -52,16 +59,6 @@ export default class FileEntry extends BaseModel {
   @afterFind()
   static async afterFind(file: FileEntry) {
     await file.computeExtraProps();
-  }
-
-  // This helper method can be extended - right now for what I've seen we only have the following types
-  public isPhoto(): boolean {
-    return (
-      this.fileExtension === "png" ||
-      this.fileExtension === "jpg" ||
-      this.fileExtension === "jpeg" ||
-      this.fileExtension === "webp"
-    );
   }
 
   public static createNew(extname: string | undefined): FileEntry {

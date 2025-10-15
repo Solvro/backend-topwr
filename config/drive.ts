@@ -6,14 +6,18 @@ import { defineConfig, services } from "@adonisjs/drive";
 
 import env from "#start/env";
 
-const STORAGE_PATH = app.makePath("storage");
-const MINIATURES_STORAGE_PATH = app.makePath(
+export const STORAGE_PATH = app.makePath("storage");
+export const MINIATURES_STORAGE_PATH = app.makePath(
   Path.join(STORAGE_PATH, "miniatures"),
 );
 
-if (!fs.existsSync(STORAGE_PATH)) {
-  fs.mkdirSync(STORAGE_PATH, { recursive: true });
+export function ensureStorageDirsExist() {
+  if (!fs.existsSync(MINIATURES_STORAGE_PATH)) {
+    fs.mkdirSync(MINIATURES_STORAGE_PATH, { recursive: true });
+  }
 }
+
+ensureStorageDirsExist();
 
 export const MAIN_DRIVE = env.get("DRIVE_DISK");
 export const MINIATURES_DRIVE = "miniatures";

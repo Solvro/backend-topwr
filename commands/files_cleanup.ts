@@ -7,13 +7,15 @@ import assert from "node:assert";
 import * as fs from "node:fs";
 import path from "node:path";
 
-import { BaseCommand, flags } from "@adonisjs/core/ace";
+import { flags } from "@adonisjs/core/ace";
 import router from "@adonisjs/core/services/router";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 import { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
 import { Dictionary } from "@adonisjs/lucid/types/querybuilder";
 
+import BaseCommandExtended from "#commands/base_command_extended";
 import { TaskHandle } from "#commands/db_scrape";
+import { STORAGE_PATH } from "#config/drive";
 import { ValidatedColumnDef } from "#decorators/typed_model";
 import FileEntry from "#models/file_entry";
 
@@ -39,10 +41,9 @@ interface DBUsedFiles {
   relationData: DBRelation;
 }
 
-const DEFAULT_FILE_PATH = path.resolve(".", "storage");
 const TIME_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day; anything newer than this will not get indexed
 
-export default class CleanupFiles extends BaseCommand {
+export default class CleanupFiles extends BaseCommandExtended {
   static commandName = "file_cleanup";
   static description = `Runs a script that will remove unused, orphaned and ghost files from the database and local storage. Only affects files older than ${TIME_LIMIT_MS} ms.`;
 
@@ -51,25 +52,15 @@ export default class CleanupFiles extends BaseCommand {
   };
 
   @flags.boolean({
-    description: "Run all cleanup stages without asking",
+    description:
+      "Run all cleanup stages without asking. Use default values for all prompts",
   })
   declare force: boolean;
 
   async run() {
-    // hijack the prompting functions and make them always return default if --force is set
-    // really dumb, but works
     if (this.force) {
-      this.logger.warning(
-        "--force passed, correcting all inconsistencies without asking!",
-      );
-      this.prompt.choice = (_, choices, opts) =>
-        // @ts-expect-error -- can't convince TS that this is correct, but it should be
-        Promise.resolve(opts?.default ?? choices[0]);
-      this.prompt.confirm = (_, opts) =>
-        // @ts-expect-error -- okay here adonis devs just screwed up the typing, this ain't my fault
-        Promise.resolve(opts?.default ?? false);
+      this.enableForcePromptAgreement();
     }
-
     if (!router.commited) {
       router.commit();
     }
@@ -93,8 +84,8 @@ export default class CleanupFiles extends BaseCommand {
 
   private async runInternal(task: TaskHandle) {
     task.update("Stage 1 - Fetching files from local storage");
-    let storagePath = DEFAULT_FILE_PATH;
-    const defaultOption = `Default: ${DEFAULT_FILE_PATH}`;
+    let storagePath = STORAGE_PATH;
+    const defaultOption = `Default: ${STORAGE_PATH}`;
     const storagePrompt = await this.prompt.choice(
       "Choose local storage directory",
       [defaultOption, "Custom"],
@@ -103,7 +94,7 @@ export default class CleanupFiles extends BaseCommand {
     if (storagePrompt === "Custom") {
       const customOption = await this.prompt.ask(
         "Enter custom local storage directory (or nothing for default):",
-        { default: DEFAULT_FILE_PATH },
+        { default: STORAGE_PATH },
       );
       if (!this.checkIfValidDir(customOption)) {
         return task.error("The provided path is not a valid directory");
@@ -405,17 +396,6 @@ export default class CleanupFiles extends BaseCommand {
     task.update(
       `Removed ${safeToNullIds.length} entries from the FileEntry table.`,
     );
-  }
-
-  private async askForListing(prompt: string, values: string[] | Set<string>) {
-    const response = await this.prompt.confirm(prompt, {
-      default: false,
-    });
-    if (response) {
-      values.forEach((value) => {
-        this.logger.info(value);
-      });
-    }
   }
 
   private checkIfValidDir(filePath: string): boolean {
