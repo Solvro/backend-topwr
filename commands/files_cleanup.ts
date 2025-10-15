@@ -15,7 +15,7 @@ import { Dictionary } from "@adonisjs/lucid/types/querybuilder";
 
 import BaseCommandExtended from "#commands/base_command_extended";
 import { TaskHandle } from "#commands/db_scrape";
-import { STORAGE_PATH } from "#config/drive";
+import { MINIATURES_STORAGE_PATH, STORAGE_PATH } from "#config/drive";
 import { ValidatedColumnDef } from "#decorators/typed_model";
 import FileEntry from "#models/file_entry";
 
@@ -24,9 +24,12 @@ interface DbFileEntry {
   createdAt: number;
 }
 
-interface LocalFileEntry {
+interface MiniatureEntry {
   uuid: string;
   ext: string;
+}
+
+interface LocalFileEntry extends MiniatureEntry {
   createdAt: number;
 }
 
@@ -57,6 +60,9 @@ export default class CleanupFiles extends BaseCommandExtended {
   })
   declare force: boolean;
 
+  private storagePath: string = STORAGE_PATH;
+  private miniaturesStoragePath: string = MINIATURES_STORAGE_PATH;
+
   async run() {
     if (this.force) {
       this.enableForcePromptAgreement();
@@ -82,29 +88,58 @@ export default class CleanupFiles extends BaseCommandExtended {
     this.exitCode = tasks.getState() === "succeeded" ? 0 : 1;
   }
 
-  private async runInternal(task: TaskHandle) {
-    task.update("Stage 1 - Fetching files from local storage");
-    let storagePath = STORAGE_PATH;
-    const defaultOption = `Default: ${STORAGE_PATH}`;
+  private async promptForDirectory(
+    domain: string,
+    defaultOption: string,
+  ): Promise<string | undefined> {
+    const defaultOptionPrompt = `Default: ${defaultOption}`;
     const storagePrompt = await this.prompt.choice(
-      "Choose local storage directory",
-      [defaultOption, "Custom"],
+      `Choose storage directory for ${domain}`,
+      [defaultOptionPrompt, "Custom"],
       { default: defaultOption },
     );
     if (storagePrompt === "Custom") {
       const customOption = await this.prompt.ask(
-        "Enter custom local storage directory (or nothing for default):",
-        { default: STORAGE_PATH },
+        `Enter custom storage directory for ${domain} (or nothing for default):`,
+        { default: defaultOption },
       );
-      if (!this.checkIfValidDir(customOption)) {
-        return task.error("The provided path is not a valid directory");
-      }
-      storagePath = customOption;
+      return this.checkIfValidDir(customOption) ? customOption : undefined;
     }
-    task.update(`Will register files under path: ${storagePath}`);
+    return defaultOption;
+  }
+
+  private async runInternal(task: TaskHandle) {
+    task.update("Stage 1 - Fetching files from local storage");
+    const inputStoragePath = await this.promptForDirectory(
+      "local files",
+      STORAGE_PATH,
+    );
+    if (inputStoragePath === undefined) {
+      return task.error("Provided storage path is not a valid directory.");
+    }
+    this.storagePath = inputStoragePath;
+    const inputMiniaturesStoragePath = await this.promptForDirectory(
+      "miniatures",
+      MINIATURES_STORAGE_PATH,
+    );
+    if (inputMiniaturesStoragePath === undefined) {
+      return task.error(
+        "Provided miniatures storage path is not a valid directory.",
+      );
+    }
+    this.miniaturesStoragePath = inputMiniaturesStoragePath;
+    task.update(`Will register files under path: ${this.storagePath}`);
+    task.update(
+      `Will register miniatures under path: ${this.miniaturesStoragePath}`,
+    );
     task.update("Collecting files...");
-    const localFiles = this.getValidFiles(storagePath);
+    const localFiles = this.getValidFiles();
     task.update(`Found ${localFiles.length} valid files on local disk`);
+    const miniatureFiles = this.getValidMiniatures();
+    task.update(
+      `Found ${miniatureFiles.length} valid miniature files on local disk`,
+    );
+
     // ----
     task.update("Stage 2 - Fetching files from FileEntries table");
     const fetchedFileEntries = await FileEntry.all();
@@ -155,6 +190,9 @@ export default class CleanupFiles extends BaseCommandExtended {
     const localSet: Set<string> = new Set<string>(
       localFiles.map((file) => file.uuid),
     );
+    const miniatureSet: Set<string> = new Set<string>(
+      miniatureFiles.map((file) => file.uuid),
+    );
     const fileEntrySet: Set<string> = new Set<string>(
       dbFileEntry.map((file) => file.uuid),
     );
@@ -168,6 +206,8 @@ export default class CleanupFiles extends BaseCommandExtended {
         localSet.delete(file.uuid);
         fileEntrySet.delete(file.uuid);
         modelSet.delete(file.uuid);
+        // Assuming the lifetime of a miniature is tied to the lifetime of the file, we should ignore it as well - worst case, it can be recomputed
+        miniatureSet.delete(file.uuid);
       }
     }
     for (const file of dbFileEntry) {
@@ -175,6 +215,7 @@ export default class CleanupFiles extends BaseCommandExtended {
         fileEntrySet.delete(file.uuid);
         localSet.delete(file.uuid);
         modelSet.delete(file.uuid);
+        miniatureSet.delete(file.uuid);
       }
     }
     // ----
@@ -194,7 +235,6 @@ export default class CleanupFiles extends BaseCommandExtended {
           task,
           orphanedFiles,
           localFiles,
-          storagePath,
           localSet,
         );
       } else {
@@ -215,13 +255,7 @@ export default class CleanupFiles extends BaseCommandExtended {
         { default: this.force },
       );
       if (unusedConfirmation) {
-        await this.removeUnusedFiles(
-          task,
-          unusedFiles,
-          localFiles,
-          localSet,
-          storagePath,
-        );
+        await this.removeUnusedFiles(task, unusedFiles, localFiles, localSet);
       } else {
         task.update(`Skipping deletion of unused files`);
       }
@@ -243,6 +277,27 @@ export default class CleanupFiles extends BaseCommandExtended {
         await this.removeGhostFiles(task, usedFiles, ghostFiles);
       } else {
         task.update(`Skipping ghost file cleanup`);
+      }
+    }
+    // ----
+    task.update("Stage 9 - orphaned miniatures");
+    const orphanedMiniatures = miniatureSet.difference(localSet);
+    if (orphanedMiniatures.size === 0) {
+      task.update(`No orphaned miniatures found`);
+    } else {
+      task.update(`Found ${orphanedMiniatures.size} orphaned miniatures`);
+      await this.askForListing(
+        "List all orphaned miniatures' ids?",
+        orphanedMiniatures,
+      );
+      const miniatureConfirmation = await this.prompt.confirm(
+        "Delete all orphaned miniatures from the file system?",
+        { default: this.force },
+      );
+      if (miniatureConfirmation) {
+        await this.removeOrphanedMiniatures(task, miniatureSet, miniatureFiles);
+      } else {
+        task.update(`Skipping orphaned miniatures cleanup`);
       }
     }
   }
@@ -291,11 +346,17 @@ export default class CleanupFiles extends BaseCommandExtended {
     });
   }
 
+  private removeFromDisk(entry: LocalFileEntry) {
+    const key = `${entry.uuid}${entry.ext}`;
+    // Miniature first in case of a failure as it can be recomputed
+    fs.rmSync(path.join(this.miniaturesStoragePath, key));
+    fs.rmSync(path.join(this.storagePath, key));
+  }
+
   private async removeOrphanedFiles(
     task: TaskHandle,
     orphanedFiles: Set<string>,
     localFiles: LocalFileEntry[],
-    storagePath: string,
     localSet: Set<string>,
   ) {
     const size = orphanedFiles.size;
@@ -305,7 +366,7 @@ export default class CleanupFiles extends BaseCommandExtended {
       .filter((file) => orphanedFiles.has(file.uuid))
       .forEach((file) => {
         try {
-          fs.rmSync(path.join(storagePath, `${file.uuid}${file.ext}`));
+          this.removeFromDisk(file);
           orphanedFiles.delete(file.uuid);
           localSet.delete(file.uuid);
         } catch (e) {
@@ -317,12 +378,38 @@ export default class CleanupFiles extends BaseCommandExtended {
     task.update(`Deleted ${size - orphanedFiles.size} orphaned files`);
   }
 
+  private async removeOrphanedMiniatures(
+    task: TaskHandle,
+    orphanedMiniatures: Set<string>,
+    miniatureFiles: MiniatureEntry[],
+  ) {
+    const size = orphanedMiniatures.size;
+    task.update(`Attempting to delete ${size} orphaned miniatures...`);
+    // Remove miniature from filesystem
+    miniatureFiles
+      .filter((file) => orphanedMiniatures.has(file.uuid))
+      .forEach((file) => {
+        try {
+          fs.rmSync(
+            path.join(this.miniaturesStoragePath, `${file.uuid}${file.ext}`),
+          );
+          orphanedMiniatures.delete(file.uuid);
+        } catch (e) {
+          this.logger.warning(
+            `Failed to delete miniature ${file.uuid}${file.ext} from the file system: ${e}`,
+          );
+        }
+      });
+    task.update(
+      `Deleted ${size - orphanedMiniatures.size} orphaned miniatures`,
+    );
+  }
+
   private async removeUnusedFiles(
     task: TaskHandle,
     unusedFiles: Set<string>,
     localFiles: LocalFileEntry[],
     localSet: Set<string>,
-    storagePath: string,
   ) {
     const size = unusedFiles.size;
     task.update(`Attempting to delete ${size} unused files...`);
@@ -336,7 +423,7 @@ export default class CleanupFiles extends BaseCommandExtended {
       .filter((file) => unusedFiles.has(file.uuid))
       .forEach((file) => {
         try {
-          fs.rmSync(path.join(storagePath, `${file.uuid}${file.ext}`));
+          this.removeFromDisk(file);
           unusedFiles.delete(file.uuid);
           localSet.delete(file.uuid);
         } catch (e) {
@@ -407,14 +494,17 @@ export default class CleanupFiles extends BaseCommandExtended {
     }
   }
 
+  private static getUuidRegex(): RegExp {
+    return /^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i;
+  }
+
   //Filter out only files that have valid UUIDs as filenames
-  private getValidFiles(dirPath: string): LocalFileEntry[] {
-    const uuidRegex =
-      /^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i;
-    const filenames = fs.readdirSync(dirPath);
+  private getValidFiles(): LocalFileEntry[] {
+    const uuidRegex = CleanupFiles.getUuidRegex();
+    const filenames = fs.readdirSync(this.storagePath);
     return filenames
       .map((filename) => {
-        const filePath = path.join(dirPath, filename);
+        const filePath = path.join(this.storagePath, filename);
         const stats = fs.statSync(filePath);
         return { ...path.parse(filePath), createdAt: stats.birthtimeMs };
       })
@@ -423,6 +513,19 @@ export default class CleanupFiles extends BaseCommandExtended {
         uuid: pathObj.name,
         ext: pathObj.ext,
         createdAt: pathObj.createdAt,
+      }));
+  }
+
+  //Filter out only files that have valid UUIDs as filenames
+  private getValidMiniatures(): MiniatureEntry[] {
+    const uuidRegex = CleanupFiles.getUuidRegex();
+    const filenames = fs.readdirSync(this.miniaturesStoragePath);
+    return filenames
+      .map((filename) => path.parse(path.join(this.storagePath, filename)))
+      .filter((pathObj) => uuidRegex.test(pathObj.name))
+      .map((pathObj) => ({
+        uuid: pathObj.name,
+        ext: pathObj.ext,
       }));
   }
 }

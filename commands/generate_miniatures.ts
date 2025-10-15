@@ -4,7 +4,7 @@ import {
   prepareReportForLogging,
 } from "@solvro/error-handling/reporting";
 import * as fs from "node:fs";
-import * as Path from "node:path";
+import path from "node:path";
 
 import { flags } from "@adonisjs/core/ace";
 import router from "@adonisjs/core/services/router";
@@ -101,21 +101,24 @@ export default class GenerateMiniatures extends BaseCommandExtended {
       "fileExtension",
       PHOTO_LIKE_EXT,
     );
-    const entryNames = new Set<string>(
+    const entryFullNames = new Set<string>(
       photoLike.map((entry) => entry.keyWithExtension),
     );
-    task.update(`Found ${entryNames.size} photo-like file entries`);
-    if (entryNames.size === 0) {
+    task.update(`Found ${entryFullNames.size} photo-like file entries`);
+    if (entryFullNames.size === 0) {
       task.update("No photo-like file entries found. Exiting early");
       return;
     }
-    await this.askForListing("List all photo-like file entries?", entryNames);
+    await this.askForListing(
+      "List all photo-like file entries?",
+      entryFullNames,
+    );
     // Stage 2 - Get all matching files from the disk with information about their miniature existence
     task.update("Stage 2 - Fetching matching original files from the disk");
     const matchingFiles = this.getValidFiles(
       STORAGE_PATH,
       MINIATURES_STORAGE_PATH,
-      entryNames,
+      entryFullNames,
     );
     task.update(`Found ${matchingFiles.length} matching files on disk`);
     const withoutMiniatures = matchingFiles.filter(
@@ -151,11 +154,11 @@ export default class GenerateMiniatures extends BaseCommandExtended {
     let failureCount = 0;
     for (let i = 0; i < toGenerate.length; i++) {
       const current = toGenerate[i];
-      const path = Path.join(STORAGE_PATH, current.key);
+      const filepath = path.join(STORAGE_PATH, current.key);
       let miniature;
       // Try to generate miniature
       try {
-        miniature = await resizeFromPathOrBytes(path);
+        miniature = await resizeFromPathOrBytes(filepath);
       } catch (error) {
         failureCount += 1;
         this.logger.warning(
@@ -182,12 +185,12 @@ export default class GenerateMiniatures extends BaseCommandExtended {
   private getValidFiles(
     dirPath: string,
     miniaturesDirPath: string,
-    entryNames: Set<string>,
+    entryFullNames: Set<string>,
   ): LocalFileEntry[] {
     const miniaturesFiles = new Set<string>(fs.readdirSync(miniaturesDirPath));
     return fs
       .readdirSync(dirPath)
-      .filter((name) => entryNames.has(name))
+      .filter((name) => entryFullNames.has(name))
       .map((name) => {
         // Check if miniature exists
         return new LocalFileEntry(name, miniaturesFiles.has(name));

@@ -1,5 +1,5 @@
 import * as fs from "node:fs";
-import * as Path from "node:path";
+import path from "node:path";
 
 import app from "@adonisjs/core/services/app";
 import { defineConfig, services } from "@adonisjs/drive";
@@ -8,7 +8,7 @@ import env from "#start/env";
 
 export const STORAGE_PATH = app.makePath("storage");
 export const MINIATURES_STORAGE_PATH = app.makePath(
-  Path.join(STORAGE_PATH, "miniatures"),
+  path.join(STORAGE_PATH, "miniatures"),
 );
 
 export function ensureStorageDirsExist() {
