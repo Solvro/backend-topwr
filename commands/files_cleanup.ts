@@ -46,6 +46,9 @@ interface DBUsedFiles {
 
 const TIME_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day; anything newer than this will not get indexed
 
+const UUID_REGEX =
+  /^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i;
+
 export default class CleanupFiles extends BaseCommandExtended {
   static commandName = "file_cleanup";
   static description = `Runs a script that will remove unused, orphaned and ghost files from the database and local storage. Only affects files older than ${TIME_LIMIT_MS} ms.`;
@@ -56,7 +59,7 @@ export default class CleanupFiles extends BaseCommandExtended {
 
   @flags.boolean({
     description:
-      "Run all cleanup stages without asking. Use default values for all prompts",
+      "Run all cleanup stages without asking. Use default (agreement for all proposed changes) values for all prompts",
   })
   declare force: boolean;
 
@@ -65,7 +68,7 @@ export default class CleanupFiles extends BaseCommandExtended {
 
   async run() {
     if (this.force) {
-      this.enableForcePromptAgreement();
+      this.autoUseDefaultPromptValues();
     }
     if (!router.commited) {
       router.commit();
@@ -349,7 +352,7 @@ export default class CleanupFiles extends BaseCommandExtended {
   private removeFromDisk(entry: LocalFileEntry) {
     const key = `${entry.uuid}${entry.ext}`;
     // Miniature first in case of a failure as it can be recomputed
-    fs.rmSync(path.join(this.miniaturesStoragePath, key));
+    fs.rmSync(path.join(this.miniaturesStoragePath, key), { force: true });
     fs.rmSync(path.join(this.storagePath, key));
   }
 
@@ -494,13 +497,8 @@ export default class CleanupFiles extends BaseCommandExtended {
     }
   }
 
-  private static getUuidRegex(): RegExp {
-    return /^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i;
-  }
-
   //Filter out only files that have valid UUIDs as filenames
   private getValidFiles(): LocalFileEntry[] {
-    const uuidRegex = CleanupFiles.getUuidRegex();
     const filenames = fs.readdirSync(this.storagePath);
     return filenames
       .map((filename) => {
@@ -508,7 +506,7 @@ export default class CleanupFiles extends BaseCommandExtended {
         const stats = fs.statSync(filePath);
         return { ...path.parse(filePath), createdAt: stats.birthtimeMs };
       })
-      .filter((pathObj) => uuidRegex.test(pathObj.name))
+      .filter((pathObj) => UUID_REGEX.test(pathObj.name))
       .map((pathObj) => ({
         uuid: pathObj.name,
         ext: pathObj.ext,
@@ -518,11 +516,10 @@ export default class CleanupFiles extends BaseCommandExtended {
 
   //Filter out only files that have valid UUIDs as filenames
   private getValidMiniatures(): MiniatureEntry[] {
-    const uuidRegex = CleanupFiles.getUuidRegex();
     const filenames = fs.readdirSync(this.miniaturesStoragePath);
     return filenames
       .map((filename) => path.parse(path.join(this.storagePath, filename)))
-      .filter((pathObj) => uuidRegex.test(pathObj.name))
+      .filter((pathObj) => UUID_REGEX.test(pathObj.name))
       .map((pathObj) => ({
         uuid: pathObj.name,
         ext: pathObj.ext,

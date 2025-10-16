@@ -69,7 +69,7 @@ export default class GenerateMiniatures extends BaseCommandExtended {
       );
     }
     if (this.force) {
-      this.enableForcePromptAgreement();
+      this.autoUseDefaultPromptValues();
     }
     const tasks = this.ui.tasks({ verbose: true });
     tasks.add("GenerateMiniatures", async (task) => {

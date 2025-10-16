@@ -16,7 +16,7 @@ export default abstract class BaseCommandExtended extends BaseCommand {
   /** Hijack the prompting functions and make them always return the default value or false if none provided
    * It just works
    */
-  protected enableForcePromptAgreement(this: BaseCommand) {
+  protected autoUseDefaultPromptValues(this: BaseCommand) {
     this.logger.warning(
       "Will use the default value for all prompts automatically!",
     );

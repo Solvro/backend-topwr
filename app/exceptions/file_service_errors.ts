@@ -6,7 +6,7 @@ class FileServiceError extends BaseError {}
 
 class FileServiceFSError extends FileServiceError {
   constructor(message: string, cause: unknown, driveType: DriveType) {
-    super(message, {
+    super(`${driveType}: ${message}`, {
       code: "E_FILE_SYSTEM_ERROR",
       cause,
       extraResponseFields: {

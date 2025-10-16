@@ -19,7 +19,7 @@ export function ensureStorageDirsExist() {
 
 ensureStorageDirsExist();
 
-export const MAIN_DRIVE = env.get("DRIVE_DISK");
+export const MAIN_DRIVE = "fs";
 export const MINIATURES_DRIVE = "miniatures";
 export type DriveType = typeof MAIN_DRIVE | typeof MINIATURES_DRIVE;
 
