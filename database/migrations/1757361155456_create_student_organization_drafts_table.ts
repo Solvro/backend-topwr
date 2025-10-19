@@ -13,7 +13,7 @@ export default class extends BaseSchema {
       table
         .foreign("department_id")
         .references("departments.id")
-        .onDelete("SET NULL");
+        .onDelete("RESTRICT");
 
       table.text("logo_key").nullable();
       table.text("cover_key").nullable();
@@ -65,7 +65,7 @@ export default class extends BaseSchema {
       table
         .foreign("original_organization_id")
         .references("student_organizations.id")
-        .onDelete("SET NULL");
+        .onDelete("CASCADE");
 
       table
         .enum("branch", ["main", "jelenia_gora", "walbrzych", "legnica"], {
