@@ -5,6 +5,11 @@ import type { Constructor } from "@adonisjs/core/types/http";
 
 import BaseController from "#controllers/base_controller";
 import type { PartialModel } from "#controllers/base_controller";
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from "#exceptions/http_exceptions";
 import GuideArticle from "#models/guide_article";
 import GuideArticleDraft from "#models/guide_article_draft";
 
@@ -52,9 +57,6 @@ export default class GuideArticleDraftsController extends BaseController<
       }
       const allowed = await user?.hasPermission?.("create", this.model);
       if (allowed !== true) {
-        const { ForbiddenException } = await import(
-          "#exceptions/http_exceptions"
-        );
         throw new ForbiddenException();
       }
     }
@@ -67,7 +69,7 @@ export default class GuideArticleDraftsController extends BaseController<
   protected async authorizeById(
     http: HttpContext,
     action: Action,
-    ids: { id?: number | string; localId?: number | string },
+    ids: { localId?: number | string },
   ) {
     const user = http.auth.user as unknown as
       | {
@@ -85,8 +87,8 @@ export default class GuideArticleDraftsController extends BaseController<
       return;
     }
 
-    const { id, localId } = ids;
-    const maybeId = id ?? localId;
+    const { localId } = ids;
+    const maybeId = localId;
     const draftId = typeof maybeId === "string" ? Number(maybeId) : maybeId;
     if (draftId === undefined) {
       return;
@@ -109,16 +111,10 @@ export default class GuideArticleDraftsController extends BaseController<
     if (allowed !== true) {
       const instance = await this.model.find(draftId);
       if (instance === null) {
-        const { ForbiddenException } = await import(
-          "#exceptions/http_exceptions"
-        );
         throw new ForbiddenException();
       }
       const has = await user?.hasPermission?.(slug, instance);
       if (has !== true) {
-        const { ForbiddenException } = await import(
-          "#exceptions/http_exceptions"
-        );
         throw new ForbiddenException();
       }
     }
@@ -153,16 +149,12 @@ export default class GuideArticleDraftsController extends BaseController<
 
     const article = await GuideArticle.find(originalId);
     if (article === null) {
-      const { NotFoundException } = await import("#exceptions/http_exceptions");
       throw new NotFoundException(
         `GuideArticle with id ${originalId} not found`,
       );
     }
     const allowed = await user?.hasPermission?.("update", article);
     if (allowed !== true) {
-      const { ForbiddenException } = await import(
-        "#exceptions/http_exceptions"
-      );
       throw new ForbiddenException();
     }
   }
@@ -196,9 +188,6 @@ export default class GuideArticleDraftsController extends BaseController<
       auth.user as unknown as { hasRole?: (slug: string) => Promise<boolean> }
     ).hasRole?.("solvro_admin");
     if (isSolvroAdmin !== true) {
-      const { ForbiddenException } = await import(
-        "#exceptions/http_exceptions"
-      );
       throw new ForbiddenException();
     }
 
@@ -211,12 +200,10 @@ export default class GuideArticleDraftsController extends BaseController<
       draftId = rawId;
     }
     if (draftId === undefined) {
-      const { NotFoundException } = await import("#exceptions/http_exceptions");
       throw new NotFoundException();
     }
     const draft = await GuideArticleDraft.find(draftId);
     if (draft === null) {
-      const { NotFoundException } = await import("#exceptions/http_exceptions");
       throw new NotFoundException();
     }
 
@@ -233,9 +220,6 @@ export default class GuideArticleDraftsController extends BaseController<
     if (draft.originalArticleId !== null) {
       const existingArticle = await GuideArticle.find(draft.originalArticleId);
       if (existingArticle === null) {
-        const { NotFoundException } = await import(
-          "#exceptions/http_exceptions"
-        );
         throw new NotFoundException(
           `Original article with id ${draft.originalArticleId} not found`,
         );
@@ -245,9 +229,6 @@ export default class GuideArticleDraftsController extends BaseController<
       article = existingArticle;
     } else {
       if (draft.imageKey === null) {
-        const { BadRequestException } = await import(
-          "#exceptions/http_exceptions"
-        );
         throw new BadRequestException("Cannot create article without image");
       }
       article = await GuideArticle.create(draftData);

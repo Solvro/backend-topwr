@@ -243,7 +243,6 @@ export default abstract class BaseController<
     http: HttpContext,
     action: ControllerAction,
     ids: {
-      id?: string | number;
       localId?: string | number;
       relatedId?: string | number;
       relationName?: string;
@@ -755,7 +754,7 @@ export default abstract class BaseController<
     }
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    await this.authorizeById(httpCtx, "show", { id });
+    await this.authorizeById(httpCtx, "show", { localId: id });
     const relations = await request.validateUsing(this.relationValidator);
     const data = await this.model
       .query()
@@ -1002,18 +1001,12 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async oneToManyRelationStore({
-    request,
-    route,
-    auth,
-  }: HttpContext): Promise<unknown> {
+  async oneToManyRelationStore(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await this.authenticate(
-      { request, route, auth } as unknown as HttpContext,
-      "oneToManyRelationStore",
-    );
+    await this.authenticate(httpCtx, "oneToManyRelationStore");
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
 
@@ -1022,11 +1015,10 @@ export default abstract class BaseController<
     } = (await request.validateUsing(this.pathIdValidator)) as {
       params: { id: string | number };
     };
-    await this.authorizeById(
-      { request, route, auth } as unknown as HttpContext,
-      "oneToManyRelationStore",
-      { id, relationName },
-    );
+    await this.authorizeById(httpCtx, "oneToManyRelationStore", {
+      localId: id,
+      relationName,
+    });
     const toStore = (await request.validateUsing(
       this.relatedStoreValidator(relationName),
     )) as Partial<ModelAttributes<LucidRow>>;
@@ -1072,18 +1064,12 @@ export default abstract class BaseController<
     };
   }
 
-  async manyToManyRelationAttach({
-    request,
-    route,
-    auth,
-  }: HttpContext): Promise<unknown> {
+  async manyToManyRelationAttach(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await this.authenticate(
-      { request, route, auth } as unknown as HttpContext,
-      "manyToManyRelationAttach",
-    );
+    await this.authenticate(httpCtx, "manyToManyRelationAttach");
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
 
@@ -1096,11 +1082,11 @@ export default abstract class BaseController<
       this.attachValidator(relationName),
     )) as Record<string, unknown>;
 
-    await this.authorizeById(
-      { request, route, auth } as unknown as HttpContext,
-      "manyToManyRelationAttach",
-      { localId, relatedId, relationName },
-    );
+    await this.authorizeById(httpCtx, "manyToManyRelationAttach", {
+      localId,
+      relatedId,
+      relationName,
+    });
 
     const mainInstance = await this.getFirstOrFail(localId);
     await this.authorizeRecord(
@@ -1135,18 +1121,12 @@ export default abstract class BaseController<
     return { success: true };
   }
 
-  async manyToManyRelationDetach({
-    request,
-    route,
-    auth,
-  }: HttpContext): Promise<unknown> {
+  async manyToManyRelationDetach(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await this.authenticate(
-      { request, route, auth } as unknown as HttpContext,
-      "manyToManyRelationDetach",
-    );
+    await this.authenticate(httpCtx, "manyToManyRelationDetach");
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
 
@@ -1159,11 +1139,11 @@ export default abstract class BaseController<
       this.detachValidator(relationName),
     )) as Record<string, unknown>;
 
-    await this.authorizeById(
-      { request, route, auth } as unknown as HttpContext,
-      "manyToManyRelationDetach",
-      { localId, relatedId, relationName },
-    );
+    await this.authorizeById(httpCtx, "manyToManyRelationDetach", {
+      localId,
+      relatedId,
+      relationName,
+    });
 
     const relation = this.model.$relationsDefinitions.get(relationName);
     if (relation === undefined) {

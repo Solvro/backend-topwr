@@ -73,7 +73,7 @@ export default class StudentOrganizationDraftsController extends BaseController<
   protected async authorizeById(
     http: HttpContext,
     action: Action,
-    ids: { id?: number | string; localId?: number | string },
+    ids: { localId?: number | string },
   ) {
     // Admin roles bypass handled via hasRole checks
     const user = http.auth.user as unknown as
@@ -92,8 +92,8 @@ export default class StudentOrganizationDraftsController extends BaseController<
       return;
     }
 
-    const { id, localId } = ids;
-    const maybeId = id ?? localId;
+    const { localId } = ids;
+    const maybeId = localId;
     const draftId = typeof maybeId === "string" ? Number(maybeId) : maybeId;
     if (draftId === undefined) {
       return;

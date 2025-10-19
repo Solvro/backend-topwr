@@ -20,7 +20,7 @@ export default class extends BaseSchema {
       table
         .foreign("original_article_id")
         .references("guide_articles.id")
-        .onDelete("SET NULL");
+        .onDelete("CASCADE");
 
       table.timestamp("created_at").notNullable();
       table.timestamp("updated_at").notNullable();
