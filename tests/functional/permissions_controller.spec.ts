@@ -1,4 +1,5 @@
 import { Acl } from "@holoyan/adonisjs-permissions";
+import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 
 import { test } from "@japa/runner";
@@ -14,28 +15,36 @@ import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 import User from "#models/user";
-
-function hasRelease(value: unknown): value is { release: () => string } {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    typeof (value as { release?: unknown }).release === "function"
-  );
-}
-
-async function makeToken(user: User): Promise<string> {
-  const token = await User.accessTokens.create(user, [], {
-    expiresIn: "1 day",
-  });
-  if (!hasRelease(token.value)) {
-    throw new Error("Token value missing");
-  }
-  return token.value.release();
-}
+import env from "#start/env";
 
 function uniqueEmail(prefix: string) {
   const id = crypto.randomUUID().slice(0, 8);
   return `${prefix}-${id}@drafts.test`;
+}
+
+async function makeToken(user: User): Promise<string> {
+  const ACCESS_SECRET = env.get("ACCESS_SECRET");
+  const AUDIENCE = "admin.topwr.solvro.pl";
+  const ISSUER = "admin.topwr.solvro.pl";
+  const ACCESS_EXPIRES_IN_MS = Number.parseInt(
+    env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
+  );
+
+  return jwt.sign(
+    {
+      isRefresh: false,
+    },
+    ACCESS_SECRET,
+    {
+      subject: user.id.toString(),
+      audience: AUDIENCE,
+      issuer: ISSUER,
+      expiresIn: ACCESS_EXPIRES_IN_MS,
+      algorithm: "HS256",
+      allowInsecureKeySizes: false,
+      allowInvalidAsymmetricKeyTypes: false,
+    },
+  );
 }
 
 async function ensureSolvroAdminRoleId(): Promise<number> {
