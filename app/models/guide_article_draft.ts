@@ -37,8 +37,8 @@ export default class GuideArticleDraft
   @typedColumn({ type: "string" })
   declare description: string;
 
-  @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
-  declare imageKey: string | null;
+  @typedColumn({ foreignKeyOf: () => FileEntry })
+  declare imageKey: string;
 
   // Link to original published article
   @typedColumn({ foreignKeyOf: () => GuideArticle, optional: true })

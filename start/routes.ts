@@ -96,6 +96,7 @@ router
       .group(() => {
         router.post("/allow", [PermissionsController, "allow"]);
         router.post("/revoke", [PermissionsController, "revoke"]);
+        router.get("/list", [PermissionsController, "listUserPermissions"]);
       })
       .prefix("/permissions");
 

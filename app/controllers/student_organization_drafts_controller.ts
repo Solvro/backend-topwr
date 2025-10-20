@@ -2,9 +2,14 @@ import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import { LazyImport } from "@adonisjs/core/types/http";
 import type { Constructor } from "@adonisjs/core/types/http";
+import db from "@adonisjs/lucid/services/db";
 
 import BaseController from "#controllers/base_controller";
 import type { PartialModel } from "#controllers/base_controller";
+import {
+  ForbiddenException,
+  NotFoundException,
+} from "#exceptions/http_exceptions";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 
@@ -31,7 +36,11 @@ export default class StudentOrganizationDraftsController extends BaseController<
   protected readonly crudRelations: string[] = [];
   protected readonly model = StudentOrganizationDraft;
 
-  // All endpoints require auth; for store we also require 'create' permission on the resource class (admin bypass)
+  /**
+   * Override to require authentication for all actions.
+   * Admin role OR class-level permission grants access.
+   * Instance-level permissions are checked in authorizeById().
+   */
   protected async authenticate(
     http: HttpContext,
     action: Action,
@@ -39,35 +48,56 @@ export default class StudentOrganizationDraftsController extends BaseController<
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
     }
-    if (action === "store") {
-      const user = http.auth.user as unknown as
-        | {
-            hasRole?: (slug: string) => Promise<boolean>;
-            hasPermission?: (
-              action: string,
-              target?: unknown,
-            ) => Promise<boolean>;
-          }
-        | undefined;
-      const hasSolvroAdminRole =
-        (await user?.hasRole?.("solvro_admin")) === true;
-      const hasAdminRole = (await user?.hasRole?.("admin")) === true;
-      const isAdmin = hasSolvroAdminRole || hasAdminRole;
-      if (isAdmin) {
-        return;
-      }
-      const allowed = await user?.hasPermission?.("create", this.model);
-      if (allowed !== true) {
-        const { ForbiddenException } = await import(
-          "#exceptions/http_exceptions"
-        );
-        throw new ForbiddenException();
-      }
+
+    // Admin roles (solvro_admin or admin) bypass all permission checks
+    const user = http.auth.user as unknown as
+      | {
+          hasRole?: (slug: string) => Promise<boolean>;
+          hasPermission?: (
+            action: string,
+            target?: unknown,
+          ) => Promise<boolean>;
+        }
+      | undefined;
+    const hasSolvroAdminRole = (await user?.hasRole?.("solvro_admin")) === true;
+    const hasAdminRole = (await user?.hasRole?.("admin")) === true;
+    if (hasSolvroAdminRole || hasAdminRole) {
+      return;
+    }
+
+    // For actions with IDs (show, update, destroy), allow class-level permission check to pass through
+    // and rely on authorizeById for instance-level checks
+    const actionsWithIds: Action[] = ["show", "update", "destroy"];
+    if (actionsWithIds.includes(action)) {
+      // Don't enforce permission here, let authorizeById handle it
+      return;
+    }
+
+    // For actions without IDs (index, store), check class-level permission
+    const slugMap: Record<Action, string> = {
+      index: "read",
+      show: "read",
+      store: "create",
+      update: "update",
+      destroy: "destroy",
+      relationIndex: "read",
+      oneToManyRelationStore: "update",
+      manyToManyRelationAttach: "update",
+      manyToManyRelationDetach: "update",
+    };
+    const slug = slugMap[action];
+
+    const allowed = await user?.hasPermission?.(slug, this.model);
+    if (allowed !== true) {
+      throw new ForbiddenException();
     }
   }
 
+  /**
+   * Override to disable the base permission check since we handle it in authenticate()
+   */
   protected requiredPermissionFor(_action: Action) {
-    return null; // disable global slug checks for this controller
+    return null;
   }
 
   protected async authorizeById(
@@ -121,22 +151,25 @@ export default class StudentOrganizationDraftsController extends BaseController<
       const instance = await this.model.find(draftId);
       if (instance === null) {
         // let BaseController handle not found later; just deny for now
-        const { ForbiddenException } = await import(
-          "#exceptions/http_exceptions"
-        );
         throw new ForbiddenException();
       }
       const has = await user?.hasPermission?.(slug, instance);
       if (has !== true) {
-        const { ForbiddenException } = await import(
-          "#exceptions/http_exceptions"
-        );
         throw new ForbiddenException();
       }
     }
   }
 
-  // If linking to an existing organization, user must be assigned to that organization (per-model permission)
+  /**
+   * If linking to an existing organization, user must be assigned to that organization (per-model permission).
+   *
+   * Note: Multiple drafts can be created for the same organization. This is intentional to allow:
+   * - Different users to propose different changes to the same organization
+   * - A user to create multiple draft versions before deciding which to submit
+   * - Parallel editing workflows
+   *
+   * The solvro_admin can approve/reject drafts individually, choosing which changes to apply.
+   */
   protected async storeHook(ctx: {
     http: HttpContext;
     request: PartialModel<typeof StudentOrganizationDraft>;
@@ -165,16 +198,12 @@ export default class StudentOrganizationDraftsController extends BaseController<
 
     const org = await StudentOrganization.find(originalId);
     if (org === null) {
-      const { NotFoundException } = await import("#exceptions/http_exceptions");
       throw new NotFoundException(
         `StudentOrganization with id ${originalId} not found`,
       );
     }
     const allowed = await user?.hasPermission?.("update", org);
     if (allowed !== true) {
-      const { ForbiddenException } = await import(
-        "#exceptions/http_exceptions"
-      );
       throw new ForbiddenException();
     }
   }
@@ -248,7 +277,7 @@ export default class StudentOrganizationDraftsController extends BaseController<
       .as("approve");
   }
 
-  async approve({ params, auth }: HttpContext) {
+  async approve({ request, auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
@@ -257,29 +286,23 @@ export default class StudentOrganizationDraftsController extends BaseController<
       auth.user as unknown as { hasRole?: (slug: string) => Promise<boolean> }
     ).hasRole?.("solvro_admin");
     if (isSolvroAdmin !== true) {
-      const { ForbiddenException } = await import(
-        "#exceptions/http_exceptions"
-      );
       throw new ForbiddenException();
     }
 
-    const rawId: unknown = (params as unknown as { id?: string | number }).id;
-    let draftId: number | undefined;
-    if (typeof rawId === "string") {
-      const numeric = Number(rawId);
-      draftId = Number.isNaN(numeric) ? undefined : numeric;
-    } else if (typeof rawId === "number") {
-      draftId = rawId;
-    }
-    if (draftId === undefined) {
-      const { NotFoundException } = await import("#exceptions/http_exceptions");
-      throw new NotFoundException();
-    }
-    const draft = await StudentOrganizationDraft.find(draftId);
-    if (draft === null) {
-      const { NotFoundException } = await import("#exceptions/http_exceptions");
-      throw new NotFoundException();
-    }
+    // Use autogenerated validator for ID
+    const {
+      params: { id: draftId },
+    } = (await request.validateUsing(this.pathIdValidator)) as {
+      params: { id: string | number };
+    };
+
+    // Use findOrFail with error context
+    const draft = await StudentOrganizationDraft.findOrFail(
+      draftId,
+    ).addErrorContext(
+      () =>
+        `StudentOrganizationDraft with id ${draftId} not found or user lacks permission`,
+    );
 
     const draftData: PartialModel<typeof StudentOrganization> = {
       name: draft.name,
@@ -296,28 +319,43 @@ export default class StudentOrganizationDraftsController extends BaseController<
       organizationStatus: draft.organizationStatus,
     };
 
-    let organization: StudentOrganization;
-    if (draft.originalOrganizationId !== null) {
-      const existingOrg = await StudentOrganization.find(
-        draft.originalOrganizationId,
-      );
-      if (existingOrg === null) {
-        const { NotFoundException } = await import(
-          "#exceptions/http_exceptions"
+    // Use database transaction to ensure atomicity
+    const trx = await db.transaction();
+    try {
+      let organization: StudentOrganization;
+      if (draft.originalOrganizationId !== null) {
+        // Update existing organization
+        const existingOrg = await StudentOrganization.findOrFail(
+          draft.originalOrganizationId,
+          { client: trx },
+        ).addErrorContext(
+          () =>
+            `Original organization with id ${draft.originalOrganizationId} not found`,
         );
-        throw new NotFoundException(
-          `Original organization with id ${draft.originalOrganizationId} not found`,
-        );
+        existingOrg.merge(draftData);
+        await existingOrg
+          .useTransaction(trx)
+          .save()
+          .addErrorContext("Failed to update organization");
+        organization = existingOrg;
+      } else {
+        // Create new organization
+        organization = await StudentOrganization.create(draftData, {
+          client: trx,
+        }).addErrorContext("Failed to create organization");
       }
-      existingOrg.merge(draftData);
-      await existingOrg.save();
-      organization = existingOrg;
-    } else {
-      organization = await StudentOrganization.create(draftData);
+
+      // Delete draft after successful organization creation/update
+      await draft
+        .useTransaction(trx)
+        .delete()
+        .addErrorContext("Failed to delete draft after approval");
+
+      await trx.commit();
+      return { data: organization };
+    } catch (error) {
+      await trx.rollback();
+      throw error;
     }
-
-    await draft.delete();
-
-    return { data: organization };
   }
 }
