@@ -3,10 +3,7 @@ import { Acl } from "@holoyan/adonisjs-permissions";
 import type { HttpContext } from "@adonisjs/core/http";
 import db from "@adonisjs/lucid/services/db";
 
-import {
-  ForbiddenException,
-  InternalServerException,
-} from "#exceptions/http_exceptions";
+import { ForbiddenException } from "#exceptions/http_exceptions";
 import GuideArticle from "#models/guide_article";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganization from "#models/student_organization";
@@ -30,8 +27,6 @@ const resourceRegistry = {
   student_organizations: StudentOrganization,
   guide_articles: GuideArticle,
 } as const;
-
-type ActionSlug = "read" | "create" | "update" | "destroy";
 
 export default class PermissionsController {
   private async ensureSolvroAdmin(auth: HttpContext["auth"]) {
@@ -101,30 +96,10 @@ export default class PermissionsController {
     );
 
     const Model = resourceRegistry[resource.name];
-
-    /**
-     * The ACL library doesn't export proper types for the manager object.
-     * We need to cast to unknown and then to an interface with the expected methods.
-     * This is safe because we check for method existence before calling.
-     */
-    const manager = Acl.model(targetUser) as unknown as {
-      disallow?: (action: ActionSlug, target: unknown) => Promise<void>;
-      revoke?: (action: ActionSlug, target: unknown) => Promise<void>;
-      remove?: (action: ActionSlug, target: unknown) => Promise<void>;
-    };
+    const manager = Acl.model(targetUser);
 
     if (resource.type === "class") {
-      if (typeof manager.disallow === "function") {
-        await manager.disallow(action, Model);
-      } else if (typeof manager.revoke === "function") {
-        await manager.revoke(action, Model);
-      } else if (typeof manager.remove === "function") {
-        await manager.remove(action, Model);
-      } else {
-        throw new InternalServerException(
-          "Revoke operation not supported by ACL library API",
-        );
-      }
+      await manager.revoke(action, Model);
       return { success: true };
     }
 
@@ -137,17 +112,7 @@ export default class PermissionsController {
       () => `${resource.name} with id ${resource.id} not found`,
     );
 
-    if (typeof manager.disallow === "function") {
-      await manager.disallow(action, instance);
-    } else if (typeof manager.revoke === "function") {
-      await manager.revoke(action, instance);
-    } else if (typeof manager.remove === "function") {
-      await manager.remove(action, instance);
-    } else {
-      throw new InternalServerException(
-        "Revoke operation not supported by ACL library API",
-      );
-    }
+    await manager.revoke(action, instance);
     return { success: true };
   }
 
