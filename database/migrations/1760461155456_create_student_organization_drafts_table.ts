@@ -49,17 +49,13 @@ export default class extends BaseSchema {
         .notNullable();
 
       table
-        .enum(
-          "organization_status",
-          ["active", "inactive", "dissolved", "unknown"],
-          {
-            useNative: true,
-            enumName: "organization_status",
-            existingType: true,
-          },
-        )
+        .enum("organization_status", ["active", "inactive", "dissolved"], {
+          useNative: true,
+          enumName: "organization_status",
+          existingType: true,
+        })
         .notNullable()
-        .defaultTo("unknown");
+        .defaultTo("active");
 
       table.integer("original_organization_id").unsigned().nullable();
       table
