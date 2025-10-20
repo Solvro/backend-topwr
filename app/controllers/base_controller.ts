@@ -164,8 +164,14 @@ export default abstract class BaseController<
   protected readonly singletonId?: number | string;
 
   /**
-   * Return the permission slug required for the given action, or null/undefined if none is required.
+   * Return the permission slug(s) required for the given action, or null/undefined if none is required.
    * Override this in derived controllers to impose custom requirements per action.
+   *
+   * Can return:
+   *  - string: A single required permission
+   *  - string[]: Multiple alternative permissions (user needs ANY of them)
+   *  - null/undefined: Public endpoint
+   *
    * Defaults:
    *  - store -> "create"
    *  - update -> "update"
@@ -175,10 +181,15 @@ export default abstract class BaseController<
    *  - manyToManyRelationAttach -> "update"
    *  - manyToManyRelationDetach -> "update"
    *  - index/show -> none (public by default)
+   *
+   * @param action The controller action being performed
+   * @param relationName Optional relation name for relation-specific permissions
    */
   protected requiredPermissionFor(
     action: ControllerAction,
-  ): string | null | undefined {
+    relationName?: string,
+  ): string | string[] | null | undefined {
+    void relationName; // Available for derived controllers to use
     switch (action) {
       case "store":
         return "create";
@@ -202,20 +213,27 @@ export default abstract class BaseController<
   /**
    * Authenticate and check permission for the given action.
    * If no permission is required, this is a no-op and does not force authentication.
+   * Supports both single permissions and alternative permissions (array).
    * Throws ForbiddenException on failure with minimal info.
+   *
+   * @param http The HTTP context
+   * @param action The controller action being performed
+   * @param relationName Optional relation name for relation-specific permissions
    */
   protected async authenticate(
     http: HttpContext,
     action: ControllerAction,
+    relationName?: string,
   ): Promise<void> {
-    const slug = this.requiredPermissionFor(action);
-    if (slug === null || slug === undefined) {
+    const slugs = this.requiredPermissionFor(action, relationName);
+    if (slugs === null || slugs === undefined) {
       return; // public endpoint by default
     }
 
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
     }
+
     // Superuser bypass: solvro_admin has access to everything
     const isSolvroAdmin = await (
       http.auth.user as unknown as {
@@ -225,19 +243,38 @@ export default abstract class BaseController<
     if (isSolvroAdmin === true) {
       return;
     }
-    const has = await (
-      http.auth.user as unknown as {
-        hasPermission?: (action: string, target?: unknown) => Promise<boolean>;
+
+    // Handle array of alternative permissions (user needs ANY of them)
+    const slugArray = Array.isArray(slugs) ? slugs : [slugs];
+
+    for (const slug of slugArray) {
+      const has = await (
+        http.auth.user as unknown as {
+          hasPermission?: (
+            action: string,
+            target?: unknown,
+          ) => Promise<boolean>;
+        }
+      ).hasPermission?.(slug);
+      if (has === true) {
+        return; // User has at least one of the required permissions
       }
-    ).hasPermission?.(slug);
-    if (has !== true) {
-      throw new ForbiddenException();
     }
+
+    // User doesn't have any of the required permissions
+    throw new ForbiddenException();
   }
 
   /**
    * Optional id-based authorization hook. Override to enforce row-level checks
    * before interacting with the database to avoid leaking resource existence.
+   *
+   * @param http - The HTTP context
+   * @param action - The controller action being performed
+   * @param ids - Object containing optional localId, relatedId, and relationName for row-level authorization
+   * @param ids.localId - The local resource ID (optional)
+   * @param ids.relatedId - The related resource ID for many-to-many relations (optional)
+   * @param ids.relationName - The relation name being accessed (optional)
    */
   protected async authorizeById(
     http: HttpContext,
@@ -943,8 +980,8 @@ export default abstract class BaseController<
   async relationIndex(httpCtx: HttpContext): Promise<unknown> {
     const { request, route } = httpCtx;
     await this.selfValidate();
-    await this.authenticate(httpCtx, "relationIndex");
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "relationIndex", relationName);
 
     const {
       params: { id },
@@ -1006,9 +1043,9 @@ export default abstract class BaseController<
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await this.authenticate(httpCtx, "oneToManyRelationStore");
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "oneToManyRelationStore", relationName);
 
     const {
       params: { id },
@@ -1069,9 +1106,9 @@ export default abstract class BaseController<
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await this.authenticate(httpCtx, "manyToManyRelationAttach");
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "manyToManyRelationAttach", relationName);
 
     const {
       params: { localId, relatedId },
@@ -1126,9 +1163,9 @@ export default abstract class BaseController<
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await this.authenticate(httpCtx, "manyToManyRelationDetach");
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "manyToManyRelationDetach", relationName);
 
     const {
       params: { localId, relatedId },

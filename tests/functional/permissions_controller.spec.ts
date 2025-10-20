@@ -238,11 +238,15 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     const t1 = await makeToken(u1);
     const t2 = await makeToken(u2);
 
+    const { default: FileEntry } = await import("#models/file_entry");
+    const file = FileEntry.createNew("png");
+    await file.save();
+
     const draft = await GuideArticleDraft.create({
       title: "Guide Draft A",
       shortDesc: "Short",
       description: "Long description",
-      imageKey: null,
+      imageKey: file.id,
     });
 
     await Acl.model(u1).allow("read", draft);
@@ -411,6 +415,11 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     await Acl.model(other).allow("create", GuideArticleDraft);
     await Acl.model(owner).allow("update", article);
 
+    const file2 = FileEntry.createNew("png");
+    await file2.save();
+    const file3 = FileEntry.createNew("png");
+    await file3.save();
+
     const fail = await client
       .post(`/api/v1/guide_article_drafts`)
       .header("Authorization", `Bearer ${tOther}`)
@@ -418,6 +427,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         title: "Ref Draft",
         shortDesc: "S",
         description: "D",
+        imageKey: file2.id,
         originalArticleId: article.id,
       });
     fail.assertStatus(403);
@@ -427,6 +437,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       .header("Authorization", `Bearer ${tOwner}`)
       .json({
         title: "Ref Draft",
+        imageKey: file3.id,
         shortDesc: "S",
         description: "D",
         originalArticleId: article.id,
@@ -484,6 +495,12 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     });
     const token = await makeToken(user);
 
+    const { default: FileEntry } = await import("#models/file_entry");
+    const file3 = FileEntry.createNew("png");
+    await file3.save();
+    const file4 = FileEntry.createNew("png");
+    await file4.save();
+
     const noPerm = await client
       .post(`/api/v1/guide_article_drafts`)
       .header("Authorization", `Bearer ${token}`)
@@ -491,7 +508,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         title: "Guide Draft New",
         shortDesc: "Short",
         description: "Long",
-        imageKey: null,
+        imageKey: file3.id,
       });
     noPerm.assertStatus(403);
 
@@ -503,7 +520,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         title: "Guide Draft New 2",
         shortDesc: "Short",
         description: "Long",
-        imageKey: null,
+        imageKey: file4.id,
       });
     ok.assertStatus(200);
   });
@@ -524,11 +541,15 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     const t1 = await makeToken(u1);
     const t2 = await makeToken(u2);
 
+    const { default: FileEntry } = await import("#models/file_entry");
+    const file2 = FileEntry.createNew("png");
+    await file2.save();
+
     const draft = await GuideArticleDraft.create({
       title: "Guide To Delete",
       shortDesc: "Short",
       description: "Long",
-      imageKey: null,
+      imageKey: file2.id,
     });
 
     await Acl.model(u1).allow("destroy", draft);

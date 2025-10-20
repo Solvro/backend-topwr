@@ -10,7 +10,7 @@ export default class extends BaseSchema {
       table.text("short_desc").notNullable();
       table.text("description").notNullable();
 
-      table.uuid("image_key").nullable();
+      table.uuid("image_key").notNullable();
       table
         .foreign("image_key")
         .references("file_entries.id")
