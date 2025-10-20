@@ -31,7 +31,6 @@ import {
   InternalControllerError,
   InternalControllerValidationError,
 } from "#exceptions/base_controller_errors";
-import { BaseError } from "#exceptions/base_error";
 import {
   ForbiddenException,
   NotFoundException,
