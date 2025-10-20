@@ -135,7 +135,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 
@@ -168,7 +168,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
     const d2 = await StudentOrganizationDraft.create({
@@ -177,7 +177,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 
@@ -216,7 +216,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 
@@ -306,7 +306,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         coverPreview: false,
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
-        organizationStatus: OrganizationStatus.Unknown,
+        organizationStatus: OrganizationStatus.Active,
         branch: Branch.Main,
       });
     noPerm.assertStatus(403);
@@ -322,7 +322,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         coverPreview: false,
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
-        organizationStatus: OrganizationStatus.Unknown,
+        organizationStatus: OrganizationStatus.Active,
         branch: Branch.Main,
       });
     ok.assertStatus(200);
@@ -352,7 +352,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 
@@ -373,7 +373,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         coverPreview: false,
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
-        organizationStatus: OrganizationStatus.Unknown,
+        organizationStatus: OrganizationStatus.Active,
         originalOrganizationId: base.id,
         branch: Branch.Main,
       });
@@ -388,7 +388,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         coverPreview: false,
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
-        organizationStatus: OrganizationStatus.Unknown,
+        organizationStatus: OrganizationStatus.Active,
         originalOrganizationId: base.id,
         branch: Branch.Main,
       });
@@ -478,7 +478,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 
@@ -594,7 +594,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 
@@ -636,7 +636,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 
@@ -646,7 +646,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       originalOrganizationId: existingOrg.id,
       branch: Branch.Main,
     });
@@ -682,7 +682,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       coverPreview: false,
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
-      organizationStatus: OrganizationStatus.Unknown,
+      organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
     });
 

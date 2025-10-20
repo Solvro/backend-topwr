@@ -6,9 +6,6 @@ import type { Constructor } from "@adonisjs/core/types/http";
 import BaseController from "#controllers/base_controller";
 import MobileConfig from "#models/mobile_config";
 
-// Local constructor alias to avoid depending on internal core types
-type Ctor<T> = new (...args: any[]) => T;
-
 export default class MobileConfigController extends BaseController<
   typeof MobileConfig
 > {
