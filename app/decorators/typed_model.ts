@@ -503,10 +503,10 @@ export function typedManyToMany<Related extends LucidModel>(
   model: () => Related,
   options: TypedManyToManyOptions<Related>,
 ) {
-  const meta = (options.meta ?? { declaredColumnTypes: {} }) as {
+  options.meta ??= { declaredColumnTypes: {} };
+  const meta = options.meta as {
     declaredColumnTypes: Record<string, RelationColumnDef>;
   };
-  options.meta = meta;
   meta.declaredColumnTypes = Object.fromEntries(
     Object.entries(options.pivotColumns).map(([name, opts]) => {
       const { declaredType, validator } = decoratorTypeToValidatorAndType(

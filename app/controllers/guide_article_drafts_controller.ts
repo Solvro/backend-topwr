@@ -108,15 +108,17 @@ export default class GuideArticleDraftsController extends BaseController<
     const slug = slugMap[action] ?? "read";
 
     const allowed = await user?.hasPermission?.(slug, this.model);
-    if (allowed !== true) {
-      const instance = await this.model.find(draftId);
-      if (instance === null) {
-        throw new ForbiddenException();
-      }
-      const has = await user?.hasPermission?.(slug, instance);
-      if (has !== true) {
-        throw new ForbiddenException();
-      }
+    if (allowed === true) {
+      return;
+    }
+
+    const instance = await this.model.find(draftId);
+    if (instance === null) {
+      throw new ForbiddenException();
+    }
+    const has = await user?.hasPermission?.(slug, instance);
+    if (has !== true) {
+      throw new ForbiddenException();
     }
   }
 
@@ -166,16 +168,10 @@ export default class GuideArticleDraftsController extends BaseController<
   ) {
     super.$configureRoutes(controller);
     router
-      .post("/:id/approve", async (ctx) => {
-        const module = await controller();
-        const ControllerClass = module.default;
-        const instance = new ControllerClass();
-        return (
-          instance as unknown as {
-            approve: (c: HttpContext) => Promise<unknown>;
-          }
-        ).approve(ctx as unknown as HttpContext);
-      })
+      .post("/:id/approve", [
+        controller as LazyImport<Constructor<GuideArticleDraftsController>>,
+        "approve",
+      ])
       .as("approve");
   }
 
