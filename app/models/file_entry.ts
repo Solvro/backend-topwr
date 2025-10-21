@@ -14,6 +14,8 @@ import {
 import { typedColumn } from "#decorators/typed_model";
 
 export default class FileEntry extends BaseModel {
+  public static selfAssignPrimaryKey = true;
+
   @typedColumn({ type: "uuid", isPrimary: true })
   declare id: UUID;
 
