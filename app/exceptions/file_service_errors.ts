@@ -9,7 +9,7 @@ class FileServiceFSError extends FileServiceError {
     super(`${driveType}: ${message}`, {
       code: "E_FILE_SYSTEM_ERROR",
       cause,
-      extraResponseFields: {
+      extraErrorFields: {
         driveType,
       },
     });
