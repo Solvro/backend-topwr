@@ -83,9 +83,8 @@ export default class FilesController {
     const {
       params: { key },
     } = await request.validateUsing(getValidator);
-    const file = await FileEntry.findOrFail(
+    return await FileEntry.findOrFail(
       FilesService.trimKey(key),
     ).addErrorContext(() => `File with key '${key}' does not exist`);
-    return file;
   }
 }
