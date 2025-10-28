@@ -106,6 +106,20 @@ export type DeleteHookContext<T extends LucidModel> = Omit<
   "request"
 >;
 
+/**
+ * Additional configuration options for the BaseController.$configureRoutes.
+ * `skipRoutes` property: if a route should be skipped, set it to true. Defaults to false
+ */
+export interface RouteConfigurationOptions {
+  skipRoutes: {
+    index?: boolean;
+    store?: boolean;
+    show?: boolean;
+    destroy?: boolean;
+    update?: boolean;
+  };
+}
+
 export default abstract class BaseController<
   T extends LucidModel & Scopes<LucidModel>,
 > {
@@ -416,15 +430,27 @@ export default abstract class BaseController<
   /**
    * Configures routes for this controller when passed as the group callback
    */
-  $configureRoutes(controller: LazyImport<Constructor<BaseController<T>>>) {
+  $configureRoutes(
+    controller: LazyImport<Constructor<BaseController<T>>>,
+    configurationOptions?: RouteConfigurationOptions,
+  ) {
     if (this.singletonId === undefined) {
       // basic routes
-      router.get("/", [controller, "index"]).as("index");
-      router.post("/", [controller, "store"]).as("store");
-      router.get("/:id", [controller, "show"]).as("show");
-      router.delete("/:id", [controller, "destroy"]).as("destroy");
-      router.patch("/:id", [controller, "update"]).as("update");
-
+      if (!(configurationOptions?.skipRoutes.index === true)) {
+        router.get("/", [controller, "index"]).as("index");
+      }
+      if (!(configurationOptions?.skipRoutes.store === true)) {
+        router.post("/", [controller, "store"]).as("store");
+      }
+      if (!(configurationOptions?.skipRoutes.show === true)) {
+        router.get("/", [controller, "show"]).as("show");
+      }
+      if (!(configurationOptions?.skipRoutes.destroy === true)) {
+        router.delete("/:id", [controller, "destroy"]).as("destroy");
+      }
+      if (!(configurationOptions?.skipRoutes.update === true)) {
+        router.patch("/:id", [controller, "update"]).as("update");
+      }
       // relation routes
       for (const relationName of this.crudRelations) {
         const snakeCaseName = adonisString.snakeCase(relationName);
@@ -457,8 +483,12 @@ export default abstract class BaseController<
       }
     } else {
       // singleton special routes
-      router.get("/", [controller, "show"]).as("show");
-      router.patch("/", [controller, "update"]).as("update");
+      if (!(configurationOptions?.skipRoutes.show === true)) {
+        router.get("/", [controller, "show"]).as("show");
+      }
+      if (!(configurationOptions?.skipRoutes.update === true)) {
+        router.patch("/", [controller, "update"]).as("update");
+      }
     }
   }
 
@@ -585,6 +615,26 @@ export default abstract class BaseController<
     };
   }
 
+  protected async getFirstOrFail(id: string | number) {
+    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    return await this.model
+      .query()
+      .where(primaryColumnName, id)
+      .firstOrFail()
+      .addErrorContext(
+        () =>
+          `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
+      );
+  }
+
+  protected async saveOrFail(row: InstanceType<T>) {
+    await row.save().addErrorContext({
+      message: "Failed to commit updates",
+      code: "E_DB_ERROR",
+      status: 500,
+    });
+  }
+
   /**
    * Update an existing object
    *
@@ -612,16 +662,7 @@ export default abstract class BaseController<
       this.updateValidator,
     )) as PartialModel<T>;
 
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    const row = await this.model
-      .query()
-      .where(primaryColumnName, id)
-      .firstOrFail()
-      .addErrorContext(
-        () =>
-          `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-      );
-
+    const row = await this.getFirstOrFail(id);
     updates =
       (await this.updateHook({
         http: httpCtx,
@@ -631,11 +672,7 @@ export default abstract class BaseController<
       })) ?? updates;
 
     row.merge(updates);
-    await row.save().addErrorContext({
-      message: "Failed to commit updates",
-      code: "E_DB_ERROR",
-      status: 500,
-    });
+    await this.saveOrFail(row);
     await row.refresh().addErrorContext({
       message: "Failed to fetch updated object",
       code: "E_DB_ERROR",
@@ -674,18 +711,9 @@ export default abstract class BaseController<
       params: { id: string | number };
     };
 
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-
     // smol opt: we know the base destroyHook does nothing, so just don't fetch the model if noone overwrote it
     if (this.destroyHook !== BaseController.prototype.destroyHook) {
-      const record = await this.model
-        .query()
-        .where(primaryColumnName, id)
-        .firstOrFail()
-        .addErrorContext(
-          () =>
-            `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-        );
+      const record = await this.getFirstOrFail(id);
 
       await this.destroyHook({
         http: httpCtx,
@@ -699,6 +727,7 @@ export default abstract class BaseController<
         status: 500,
       });
     } else {
+      const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
       const result = await this.model
         .query()
         .where(primaryColumnName, id)
@@ -738,14 +767,8 @@ export default abstract class BaseController<
     );
     const { page, limit } = await request.validateUsing(paginationValidator);
 
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    const mainInstance = await this.model
-      .query()
-      .where(primaryColumnName, id)
-      .firstOrFail()
-      .addErrorContext(
-        `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-      );
+    const mainInstance = await this.getFirstOrFail(id);
+
     const relatedQuery = mainInstance
       .related(relationName as ExtractModelRelations<InstanceType<T>>)
       .query()
@@ -804,14 +827,7 @@ export default abstract class BaseController<
       this.relatedStoreValidator(relationName),
     )) as Partial<ModelAttributes<LucidRow>>;
 
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    const mainInstance = await this.model
-      .query()
-      .where(primaryColumnName, id)
-      .firstOrFail()
-      .addErrorContext(
-        `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-      );
+    const mainInstance = await this.getFirstOrFail(id);
 
     const relationClient = mainInstance.related(
       relationName as ExtractModelRelations<InstanceType<T>>,
@@ -867,15 +883,7 @@ export default abstract class BaseController<
       this.attachValidator(relationName),
     )) as Record<string, unknown>;
 
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    const mainInstance = await this.model
-      .query()
-      .where(primaryColumnName, localId)
-      .firstOrFail()
-      .addErrorContext(
-        `${this.model.name} with '${primaryColumnName}' = '${localId}' does not exist`,
-      );
-
+    const mainInstance = await this.getFirstOrFail(localId);
     const relationClient = mainInstance.related(
       relationName as ExtractModelRelations<InstanceType<T>>,
     );
