@@ -13,7 +13,7 @@ export interface TopicState {
   deactivatedTopics: string[];
 }
 
-export default class FbTopic extends BaseModel {
+export default class FirebaseTopic extends BaseModel {
   // Overall, updating the topic or removing it can lead to sync errors between us and the mobile application
   // Thus a created topic cannot be deleted or have its name changed - only deactivation is permitted
 

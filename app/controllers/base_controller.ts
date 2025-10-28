@@ -443,7 +443,7 @@ export default abstract class BaseController<
         router.post("/", [controller, "store"]).as("store");
       }
       if (!(configurationOptions?.skipRoutes.show === true)) {
-        router.get("/", [controller, "show"]).as("show");
+        router.get("/:id", [controller, "show"]).as("show");
       }
       if (!(configurationOptions?.skipRoutes.destroy === true)) {
         router.delete("/:id", [controller, "destroy"]).as("destroy");
