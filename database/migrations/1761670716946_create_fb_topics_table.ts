@@ -23,15 +23,15 @@ export default class extends BaseSchema {
             CREATE OR REPLACE FUNCTION get_fb_topic_state(deactivated_since TIMESTAMP)
             RETURNS TABLE
                     (
-                        active_topics      VARCHAR[],
-                        deactivated_topics VARCHAR[]
+                        activeTopics      VARCHAR[],
+                        deactivatedTopics VARCHAR[]
                     )
             AS
             $$
             BEGIN
                 RETURN QUERY
-                    SELECT COALESCE(ARRAY_AGG(tp.topic_name) FILTER (WHERE tp.is_active = TRUE), []::VARCHAR[])  AS active_topics,
-                           COALESCE(ARRAY_AGG(tp.topic_name) FILTER (WHERE tp.is_active = FALSE), []::VARCHAR[]) AS deactivated_topics
+                    SELECT COALESCE(ARRAY_AGG(tp.topic_name) FILTER (WHERE tp.is_active = TRUE), '{}')  AS activeTopics,
+                           COALESCE(ARRAY_AGG(tp.topic_name) FILTER (WHERE tp.is_active = FALSE), '{}') AS deactivatedTopics
                     FROM fb_topics tp
                     WHERE tp.is_active = TRUE
                        OR (tp.is_active = FALSE AND tp.deactivated_at >= deactivated_since);
