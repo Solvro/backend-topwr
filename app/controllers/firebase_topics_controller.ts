@@ -5,9 +5,13 @@ import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
-import { RouteConfigurationOptions } from "#controllers/base_controller";
+import {
+  CreateHookContext,
+  PartialModel,
+  RouteConfigurationOptions,
+} from "#controllers/base_controller";
 import { BadRequestException } from "#exceptions/http_exceptions";
-import FirebaseTopic from "#models/firebase_topic";
+import FirebaseTopic, { TOPIC_NAME_REGEX } from "#models/firebase_topic";
 import PushNotificationService from "#services/push_notification_service";
 
 const { default: BaseController } = await (() =>
@@ -55,6 +59,18 @@ export default class FirebaseTopicController extends BaseController<
         "broadcastPushNotification",
       ])
       .as("broadcast");
+  }
+
+  protected async storeHook(
+    ctx: CreateHookContext<typeof FirebaseTopic>,
+  ): Promise<PartialModel<typeof FirebaseTopic> | void | undefined> {
+    const name = ctx.model.name;
+    if (!TOPIC_NAME_REGEX.test(name)) {
+      throw new BadRequestException(
+        `Topic name '${name}' is invalid. Must match ${TOPIC_NAME_REGEX.toString()}`,
+      );
+    }
+    return undefined;
   }
 
   async toggleTopicState({ request, auth }: HttpContext) {

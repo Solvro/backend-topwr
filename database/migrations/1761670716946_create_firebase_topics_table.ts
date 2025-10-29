@@ -8,13 +8,15 @@ export default class extends BaseSchema {
       table.string("topic_name", 48).primary();
 
       table.boolean("is_active").notNullable().defaultTo(true);
-      table.timestamp("deactivated_at").nullable().defaultTo(null);
+      table.timestamp("deactivated_at").nullable();
       table.text("description").nullable();
       table.timestamp("created_at");
       table.timestamp("updated_at");
       // To make sure the topic state is always valid
       table.check(
         "(is_active = TRUE AND deactivated_at IS NULL) OR (is_active = FALSE AND deactivated_at IS NOT NULL)",
+        undefined,
+        "topic_state_check",
       );
     });
     // TODO: Remove 'OR REPLACE' once #235 is completed
