@@ -558,7 +558,6 @@ export default abstract class BaseController<
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
     const relations = await request.validateUsing(this.relationValidator);
-
     return {
       data: await this.model
         .query()

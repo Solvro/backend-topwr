@@ -6,7 +6,9 @@ import router from "@adonisjs/core/services/router";
 import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import { RouteConfigurationOptions } from "#controllers/base_controller";
+import { BadRequestException } from "#exceptions/http_exceptions";
 import FirebaseTopic from "#models/firebase_topic";
+import PushNotificationService from "#services/push_notification_service";
 
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
@@ -18,6 +20,17 @@ const topicToggleParamSchema = vine.object({
 const topicStateParamSchema = vine.object({
   deactivatedSince: vine.luxonDateTime().before(DateTime.now()),
 });
+
+const pushDataValidator = vine.compile(
+  vine.object({
+    notification: vine.object({
+      title: vine.string(),
+      body: vine.string(),
+      data: vine.record(vine.string()),
+    }),
+    topics: vine.array(vine.string()).notEmpty(),
+  }),
+);
 
 export default class FirebaseTopicController extends BaseController<
   typeof FirebaseTopic
@@ -32,8 +45,16 @@ export default class FirebaseTopicController extends BaseController<
         destroy: true,
       },
     });
-    router.put("/toggle/:id", [controller, "toggleTopicState"]).as("toggle");
-    router.get("/state", [controller, "indexTopicState"]).as("indexState");
+    router
+      .patch("/topic/toggle/:id", [controller, "toggleTopicState"])
+      .as("toggle");
+    router.get("/topic/state", [controller, "indexTopicState"]).as("state");
+    router
+      .post("/notification/broadcast", [
+        controller,
+        "broadcastPushNotification",
+      ])
+      .as("broadcast");
   }
 
   async toggleTopicState({ request, auth }: HttpContext) {
@@ -66,6 +87,33 @@ export default class FirebaseTopicController extends BaseController<
       },
     });
     return await FirebaseTopic.getTopicState(deactivatedSince);
+  }
+
+  async broadcastPushNotification({ request, auth }: HttpContext) {
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    const { notification, topics } =
+      await request.validateUsing(pushDataValidator);
+    const topicsWithoutDuplicates = new Set<string>(topics);
+    const invalidTopics = await FirebaseTopic.getInvalidTopics(
+      topicsWithoutDuplicates,
+    );
+    if (invalidTopics !== null) {
+      // Some of the topics requested are invalid
+      throw new BadRequestException(
+        invalidTopics
+          .entries()
+          .reduce(
+            (msg, [topic, _]) => `${msg} ${topic},`,
+            "The following topics are either missing or deactivated: ",
+          ),
+      );
+    }
+    await PushNotificationService.sendPushNotification(
+      notification,
+      topicsWithoutDuplicates,
+    );
   }
 
   protected readonly queryRelations = [];

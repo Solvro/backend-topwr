@@ -57,7 +57,7 @@ const configureBaseRoutes = await BaseController.configureByNames([
   "mobile_config",
   "banners",
   "sks_opening_hours",
-  "firebase_topic",
+  "firebase_topics",
 ]);
 
 router.get("/", async () => {

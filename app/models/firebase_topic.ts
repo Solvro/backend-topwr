@@ -71,6 +71,26 @@ export default class FirebaseTopic extends BaseModel {
     return result.rows[0];
   }
 
+  /**
+   * Returns a Set of invalid topics (missing or deactivated) or null if all topics are valid
+   * @param topics list of topics to check
+   */
+  public static async getInvalidTopics(
+    topics: Set<string>,
+  ): Promise<Set<string> | null> {
+    const databaseState = await FirebaseTopic.query()
+      .whereIn("topic_name", [...topics])
+      .andWhere("is_active", true);
+    const activeTopics = new Set<string>(
+      databaseState.map((fb) => fb.topicName),
+    );
+    if (activeTopics.size !== topics.size) {
+      // Some of the topics given are not active or do not exist
+      return topics.difference(activeTopics);
+    }
+    return null;
+  }
+
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
   static handleSortQuery = handleSortQuery();
