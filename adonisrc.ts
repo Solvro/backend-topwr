@@ -46,6 +46,7 @@ export default defineConfig({
     () => import("@adonisjs/mail/mail_provider"),
     () => import("@adonisjs/static/static_provider"),
     () => import("@adonisjs/limiter/limiter_provider"),
+    () => import("@holoyan/adonisjs-permissions/role_permission_provider"),
   ],
 
   /*

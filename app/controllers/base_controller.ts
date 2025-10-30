@@ -5,11 +5,8 @@ import assert from "node:assert";
 import { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
 import router from "@adonisjs/core/services/router";
-import {
-  Constructor,
-  LazyImport,
-  StoreRouteNode,
-} from "@adonisjs/core/types/http";
+import { LazyImport, StoreRouteNode } from "@adonisjs/core/types/http";
+import type { Constructor } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 import {
   ExtractScopes,
@@ -34,7 +31,10 @@ import {
   InternalControllerError,
   InternalControllerValidationError,
 } from "#exceptions/base_controller_errors";
-import { NotFoundException } from "#exceptions/http_exceptions";
+import {
+  ForbiddenException,
+  NotFoundException,
+} from "#exceptions/http_exceptions";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -106,6 +106,20 @@ export type DeleteHookContext<T extends LucidModel> = Omit<
   "request"
 >;
 
+// Action names supported by BaseController handlers
+type ControllerAction =
+  | "index"
+  | "show"
+  | "store"
+  | "update"
+  | "destroy"
+  | "relationIndex"
+  | "oneToManyRelationStore"
+  | "manyToManyRelationAttach"
+  | "manyToManyRelationDetach";
+
+// Use the same Constructor type as other controllers (e.g., mobile_config_controller)
+
 export default abstract class BaseController<
   T extends LucidModel & Scopes<LucidModel>,
 > {
@@ -130,6 +144,133 @@ export default abstract class BaseController<
    * the id as an url parameter, using this value to look up the instance instead.
    */
   protected readonly singletonId?: number | string;
+
+  /**
+   * Return the permission slug(s) required for the given action, or null/undefined if none is required.
+   * Override this in derived controllers to impose custom requirements per action.
+   *
+   * Can return:
+   *  - string: A single required permission
+   *  - string[]: Multiple alternative permissions (user needs ANY of them)
+   *  - null/undefined: Public endpoint
+   *
+   * Defaults:
+   *  - store -> "create"
+   *  - update -> "update"
+   *  - destroy -> "destroy"
+   *  - relationIndex -> none (public by default)
+   *  - oneToManyRelationStore -> "create"
+   *  - manyToManyRelationAttach -> "update"
+   *  - manyToManyRelationDetach -> "update"
+   *  - index/show -> none (public by default)
+   *
+   * @param action The controller action being performed
+   * @param relationName Optional relation name for relation-specific permissions
+   */
+  protected requiredPermissionFor(
+    action: ControllerAction,
+    relationName?: string,
+  ): string | string[] | null | undefined {
+    void relationName; // Available for derived controllers to use
+    switch (action) {
+      case "store":
+        return "create";
+      case "update":
+        return "update";
+      case "destroy":
+        return "destroy";
+      case "oneToManyRelationStore":
+        return "create";
+      case "manyToManyRelationAttach":
+      case "manyToManyRelationDetach":
+        return "update";
+      case "index":
+      case "show":
+      case "relationIndex":
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Authenticate and check permission for the given action.
+   * If no permission is required, this is a no-op and does not force authentication.
+   * Supports both single permissions and alternative permissions (array).
+   * Throws ForbiddenException on failure with minimal info.
+   *
+   * @param http The HTTP context
+   * @param action The controller action being performed
+   * @param relationName Optional relation name for relation-specific permissions
+   */
+  protected async authenticate(
+    http: HttpContext,
+    action: ControllerAction,
+    relationName?: string,
+  ): Promise<void> {
+    const slugs = this.requiredPermissionFor(action, relationName);
+    if (slugs === null || slugs === undefined) {
+      return; // public endpoint by default
+    }
+
+    if (!http.auth.isAuthenticated) {
+      await http.auth.authenticate();
+    }
+
+    // Superuser bypass: solvro_admin has access to everything
+    const isSolvroAdmin = await (
+      http.auth.user as unknown as {
+        hasRole?: (slug: string) => Promise<boolean>;
+      }
+    ).hasRole?.("solvro_admin");
+    if (isSolvroAdmin === true) {
+      return;
+    }
+
+    // Handle array of alternative permissions (user needs ANY of them)
+    const slugArray = Array.isArray(slugs) ? slugs : [slugs];
+
+    for (const slug of slugArray) {
+      const has = await (
+        http.auth.user as unknown as {
+          hasPermission?: (
+            action: string,
+            target?: unknown,
+          ) => Promise<boolean>;
+        }
+      ).hasPermission?.(slug);
+      if (has === true) {
+        return; // User has at least one of the required permissions
+      }
+    }
+
+    // User doesn't have any of the required permissions
+    throw new ForbiddenException();
+  }
+
+  /**
+   * Optional id-based authorization hook. Override to enforce row-level checks
+   * before interacting with the database to avoid leaking resource existence.
+   *
+   * @param http - The HTTP context
+   * @param action - The controller action being performed
+   * @param ids - Object containing optional localId, relatedId, and relationName for row-level authorization
+   * @param ids.localId - The local resource ID (optional)
+   * @param ids.relatedId - The related resource ID for many-to-many relations (optional)
+   * @param ids.relationName - The relation name being accessed (optional)
+   */
+  protected async authorizeById(
+    http: HttpContext,
+    action: ControllerAction,
+    ids: {
+      localId?: string | number;
+      relatedId?: string | number;
+      relationName?: string;
+    },
+  ): Promise<void> {
+    void http;
+    void action;
+    void ids;
+  }
 
   /**
    * Apply extra checks to create requests
@@ -489,8 +630,11 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async index({ request }: HttpContext): Promise<unknown> {
+  async index(httpCtx: HttpContext): Promise<unknown> {
+    const { request } = httpCtx;
     await this.selfValidate();
+    // Public by default; override requiredPermissionFor to restrict
+    await this.authenticate(httpCtx, "index");
     const { page, limit } = await request.validateUsing(paginationValidator);
     const relations = await request.validateUsing(this.relationValidator);
     const baseQuery = this.model
@@ -511,8 +655,10 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async show({ request }: HttpContext): Promise<unknown> {
+  async show(httpCtx: HttpContext): Promise<unknown> {
+    const { request } = httpCtx;
     await this.selfValidate();
+    await this.authenticate(httpCtx, "show");
 
     let id: string | number;
     if (this.singletonId !== undefined) {
@@ -527,21 +673,21 @@ export default abstract class BaseController<
     }
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "show", { localId: id });
     const relations = await request.validateUsing(this.relationValidator);
 
-    return {
-      data: await this.model
-        .query()
-        .withScopes((scopes: ExtractScopes<T> & ScopesWithoutFirstArg<T>) => {
-          scopes.preloadRelations(relations);
-        })
-        .where(primaryColumnName, id)
-        .firstOrFail()
-        .addErrorContext(
-          () =>
-            `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-        ),
-    };
+    const data = await this.model
+      .query()
+      .withScopes((scopes: ExtractScopes<T> & ScopesWithoutFirstArg<T>) => {
+        scopes.preloadRelations(relations);
+      })
+      .where(primaryColumnName, id)
+      .firstOrFail()
+      .addErrorContext(
+        () =>
+          `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
+      );
+    return { data };
   }
 
   /**
@@ -554,6 +700,7 @@ export default abstract class BaseController<
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
+    await this.authenticate(httpCtx, "store");
     await this.selfValidate();
 
     let toStore = (await request.validateUsing(
@@ -595,6 +742,7 @@ export default abstract class BaseController<
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
+    await this.authenticate(httpCtx, "update");
     await this.selfValidate();
 
     let id: string | number;
@@ -613,6 +761,7 @@ export default abstract class BaseController<
     )) as PartialModel<T>;
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "update", { localId: id });
     const row = await this.model
       .query()
       .where(primaryColumnName, id)
@@ -658,6 +807,7 @@ export default abstract class BaseController<
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
+    await this.authenticate(httpCtx, "destroy");
     await this.selfValidate();
 
     const {
@@ -675,44 +825,28 @@ export default abstract class BaseController<
     };
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "destroy", { localId: id });
 
-    // smol opt: we know the base destroyHook does nothing, so just don't fetch the model if noone overwrote it
-    if (this.destroyHook !== BaseController.prototype.destroyHook) {
-      const record = await this.model
-        .query()
-        .where(primaryColumnName, id)
-        .firstOrFail()
-        .addErrorContext(
-          () =>
-            `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-        );
-
-      await this.destroyHook({
-        http: httpCtx,
-        model: this.model,
-        record,
-      });
-
-      await record.delete().addErrorContext({
-        message: "Failed to delete object",
-        code: "E_DB_ERROR",
-        status: 500,
-      });
-    } else {
-      const result = await this.model
-        .query()
-        .where(primaryColumnName, id)
-        .delete()
-        .limit(1)
-        .returning(primaryColumnName);
-
-      if (result.length === 0) {
-        throw new NotFoundException(
+    const record = await this.model
+      .query()
+      .where(primaryColumnName, id)
+      .firstOrFail()
+      .addErrorContext(
+        () =>
           `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-          { code: "E_ROW_NOT_FOUND", cause: "Row not found" },
-        );
-      }
-    }
+      );
+
+    await this.destroyHook({
+      http: httpCtx,
+      model: this.model,
+      record,
+    });
+
+    await record.delete().addErrorContext({
+      message: "Failed to delete object",
+      code: "E_DB_ERROR",
+      status: 500,
+    });
 
     return {
       success: true,
@@ -724,9 +858,11 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async relationIndex({ request, route }: HttpContext): Promise<unknown> {
+  async relationIndex(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route } = httpCtx;
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "relationIndex", relationName);
 
     const {
       params: { id },
@@ -739,6 +875,10 @@ export default abstract class BaseController<
     const { page, limit } = await request.validateUsing(paginationValidator);
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+    await this.authorizeById(httpCtx, "relationIndex", {
+      localId: id,
+      relationName,
+    });
     const mainInstance = await this.model
       .query()
       .where(primaryColumnName, id)
@@ -784,22 +924,24 @@ export default abstract class BaseController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
-  async oneToManyRelationStore({
-    request,
-    route,
-    auth,
-  }: HttpContext): Promise<unknown> {
+  async oneToManyRelationStore(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "oneToManyRelationStore", relationName);
 
     const {
       params: { id },
     } = (await request.validateUsing(this.pathIdValidator)) as {
       params: { id: string | number };
     };
+    await this.authorizeById(httpCtx, "oneToManyRelationStore", {
+      localId: id,
+      relationName,
+    });
     const toStore = (await request.validateUsing(
       this.relatedStoreValidator(relationName),
     )) as Partial<ModelAttributes<LucidRow>>;
@@ -847,16 +989,14 @@ export default abstract class BaseController<
     };
   }
 
-  async manyToManyRelationAttach({
-    request,
-    route,
-    auth,
-  }: HttpContext): Promise<unknown> {
+  async manyToManyRelationAttach(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "manyToManyRelationAttach", relationName);
 
     const {
       params: { localId, relatedId },
@@ -866,6 +1006,12 @@ export default abstract class BaseController<
     const pivotProps = (await request.validateUsing(
       this.attachValidator(relationName),
     )) as Record<string, unknown>;
+
+    await this.authorizeById(httpCtx, "manyToManyRelationAttach", {
+      localId,
+      relatedId,
+      relationName,
+    });
 
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
     const mainInstance = await this.model
@@ -903,16 +1049,14 @@ export default abstract class BaseController<
     return { success: true };
   }
 
-  async manyToManyRelationDetach({
-    request,
-    route,
-    auth,
-  }: HttpContext): Promise<unknown> {
+  async manyToManyRelationDetach(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "manyToManyRelationDetach", relationName);
 
     const {
       params: { localId, relatedId },
@@ -922,6 +1066,12 @@ export default abstract class BaseController<
     const detachFilters = (await request.validateUsing(
       this.detachValidator(relationName),
     )) as Record<string, unknown>;
+
+    await this.authorizeById(httpCtx, "manyToManyRelationDetach", {
+      localId,
+      relatedId,
+      relationName,
+    });
 
     const relation = this.model.$relationsDefinitions.get(relationName);
     if (relation === undefined) {
@@ -938,6 +1088,8 @@ export default abstract class BaseController<
     if (!relation.booted) {
       relation.boot();
     }
+
+    // We can avoid fetching the main instance here since authorization was done pre-DB
 
     let result;
     try {
