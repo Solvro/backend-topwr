@@ -1,12 +1,17 @@
 import { BaseError } from "@solvro/error-handling/base";
 
+import { DriveType, MINIATURES_DRIVE } from "#config/drive";
+
 class FileServiceError extends BaseError {}
 
 class FileServiceFSError extends FileServiceError {
-  constructor(message: string, cause: unknown) {
-    super(message, {
+  constructor(message: string, cause: unknown, driveType: DriveType) {
+    super(`${driveType}: ${message}`, {
       code: "E_FILE_SYSTEM_ERROR",
       cause,
+      extraErrorFields: {
+        driveType,
+      },
     });
   }
 }
@@ -21,8 +26,18 @@ class FileServiceDBError extends FileServiceError {
 }
 
 export class FileServiceFileUploadError extends FileServiceFSError {
+  constructor(driveType: DriveType, cause: Error) {
+    super("Couldn't upload the file", cause, driveType);
+  }
+}
+
+export class FileServiceUploadMiniatureConversionError extends FileServiceFSError {
   constructor(cause: Error) {
-    super("Couldn't upload the file", cause);
+    super(
+      "Failed to compute a miniature for the file",
+      cause,
+      MINIATURES_DRIVE,
+    );
   }
 }
 
@@ -33,8 +48,8 @@ export class FileServiceFilePersistError extends FileServiceDBError {
 }
 
 export class FileServiceFileDiskDeleteError extends FileServiceFSError {
-  constructor(cause: Error) {
-    super("Couldn't delete the file from disk", cause);
+  constructor(driveType: DriveType, cause: Error) {
+    super("Couldn't delete the file from disk", cause, driveType);
   }
 }
 

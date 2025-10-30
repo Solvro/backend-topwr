@@ -11,7 +11,10 @@ import {
   computed,
 } from "@adonisjs/lucid/orm";
 
+import { MINIATURES_DRIVE } from "#config/drive";
 import { typedColumn } from "#decorators/typed_model";
+
+export const PHOTO_LIKE_EXT = ["png", "jpg", "jpeg", "webp"];
 
 export default class FileEntry extends BaseModel {
   public static selfAssignPrimaryKey = true;
@@ -31,12 +34,23 @@ export default class FileEntry extends BaseModel {
   @computed()
   url: string | undefined;
 
+  @computed()
+  miniaturesUrl: string | undefined;
+
+  @computed()
+  isPhoto() {
+    return PHOTO_LIKE_EXT.includes(this.fileExtension);
+  }
+
   get keyWithExtension() {
     return `${this.id}.${this.fileExtension}`;
   }
 
   async computeExtraProps() {
     this.url = await drive.use().getUrl(this.keyWithExtension);
+    this.miniaturesUrl = this.isPhoto()
+      ? await drive.use(MINIATURES_DRIVE).getUrl(this.keyWithExtension)
+      : undefined;
   }
 
   @afterFetch()
