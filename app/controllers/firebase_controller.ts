@@ -6,20 +6,16 @@ import router from "@adonisjs/core/services/router";
 import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import {
-  CreateHookContext,
+  HookContext,
   PartialModel,
   RouteConfigurationOptions,
 } from "#controllers/base_controller";
 import { BadRequestException } from "#exceptions/http_exceptions";
-import FirebaseTopic, { TOPIC_NAME_REGEX } from "#models/firebase_topic";
+import FirebaseTopic from "#models/firebase_topic";
 import PushNotificationService from "#services/push_notification_service";
 
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
-
-const topicToggleParamSchema = vine.object({
-  activate: vine.boolean(),
-});
 
 const topicStateParamSchema = vine.object({
   deactivatedSince: vine.luxonDateTime().before(DateTime.now()),
@@ -30,79 +26,50 @@ const pushDataValidator = vine.compile(
     notification: vine.object({
       title: vine.string(),
       body: vine.string(),
-      data: vine.record(vine.string()),
+      data: vine.record(vine.string()).optional(),
     }),
     topics: vine.array(vine.string()).notEmpty(),
   }),
 );
 
-export default class FirebaseTopicController extends BaseController<
+export default class FirebaseController extends BaseController<
   typeof FirebaseTopic
 > {
   $configureRoutes(
-    controller: LazyImport<Constructor<FirebaseTopicController>>,
+    controller: LazyImport<Constructor<FirebaseController>>,
     _?: RouteConfigurationOptions,
   ) {
-    super.$configureRoutes(controller, {
-      skipRoutes: {
-        index: true,
-        destroy: true,
-      },
-    });
     router
-      .patch("/topic/toggle/:id", [controller, "toggleTopicState"])
-      .as("toggle");
-    router.get("/topic/state", [controller, "indexTopicState"]).as("state");
+      .group(() => {
+        super.$configureRoutes(controller, {
+          skipRoutes: {
+            index: true,
+            destroy: true,
+          },
+        });
+        router.get("/", [controller, "getTopicOverview"]).as("index");
+      })
+      .prefix("/topic");
     router
-      .post("/notification/broadcast", [
-        controller,
-        "broadcastPushNotification",
-      ])
+      .post("/broadcast", [controller, "broadcastPushNotification"])
       .as("broadcast");
   }
 
-  protected async storeHook(
-    ctx: CreateHookContext<typeof FirebaseTopic>,
+  protected async updateHook(
+    ctx: HookContext<typeof FirebaseTopic>,
   ): Promise<PartialModel<typeof FirebaseTopic> | void | undefined> {
-    const name = ctx.model.name;
-    if (!TOPIC_NAME_REGEX.test(name)) {
-      throw new BadRequestException(
-        `Topic name '${name}' is invalid. Must match ${TOPIC_NAME_REGEX.toString()}`,
-      );
-    }
-    return undefined;
+    const changes = ctx.request;
+    FirebaseTopic.ensureStateValidity(changes);
   }
 
-  async toggleTopicState({ request, auth }: HttpContext) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    const {
-      params: { id },
-    } = (await request.validateUsing(this.pathIdValidator)) as {
-      params: { id: string };
-    };
-    const { activate } = await vine.validate({
-      schema: topicToggleParamSchema,
-      data: { activate: request.input("activate", "false") === "true" },
-    });
-    const fbTopic = await this.getFirstOrFail(id);
-    if (activate) {
-      fbTopic.activateTopic();
-    } else {
-      fbTopic.deactivateTopic();
-    }
-    await this.saveOrFail(fbTopic);
-  }
-
-  async indexTopicState({ request }: HttpContext) {
+  async getTopicOverview({ request }: HttpContext) {
     const { deactivatedSince } = await vine.validate({
       schema: topicStateParamSchema,
       data: {
         deactivatedSince: request.input("deactivatedSince", "") as string,
       },
     });
-    return await FirebaseTopic.getTopicState(deactivatedSince);
+    return await FirebaseTopic.getTopicOverview(deactivatedSince);
   }
 
   async broadcastPushNotification({ request, auth }: HttpContext) {
@@ -112,7 +79,7 @@ export default class FirebaseTopicController extends BaseController<
     const { notification, topics } =
       await request.validateUsing(pushDataValidator);
     const topicsWithoutDuplicates = new Set<string>(topics);
-    const invalidTopics = await FirebaseTopic.getInvalidTopics(
+    const invalidTopics = await FirebaseTopic.verifyTopics(
       topicsWithoutDuplicates,
     );
     if (invalidTopics !== null) {

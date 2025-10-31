@@ -34,7 +34,7 @@ export default class extends BaseSchema {
                 RETURN QUERY
                     SELECT COALESCE(ARRAY_AGG(tp.topic_name) FILTER (WHERE tp.is_active = TRUE), '{}')  AS activeTopics,
                            COALESCE(ARRAY_AGG(tp.topic_name) FILTER (WHERE tp.is_active = FALSE), '{}') AS deactivatedTopics
-                    FROM fb_topics tp
+                    FROM firebase_topics tp
                     WHERE tp.is_active = TRUE
                        OR (tp.is_active = FALSE AND tp.deactivated_at >= deactivated_since);
             END;

@@ -1,17 +1,28 @@
-import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
+import {
+  FirebaseAppError,
+  applicationDefault,
+  getApps,
+  initializeApp,
+} from "firebase-admin/app";
 import {
   BaseMessage,
   ConditionMessage,
+  FirebaseMessagingError,
   TopicMessage,
   getMessaging,
 } from "firebase-admin/messaging";
 
 import logger from "@adonisjs/core/services/logger";
 
+import {
+  FirebaseInitializationError,
+  PushNotificationError,
+} from "#exceptions/push_notification_service_errors";
+
 export interface PushNotificationData {
   title: string;
   body: string;
-  data: Record<string, string>;
+  data: Record<string, string> | undefined;
 }
 
 export default class PushNotificationService {
@@ -25,8 +36,7 @@ export default class PushNotificationService {
         logger.info("Firebase app initialized.");
       }
     } catch (error) {
-      logger.error("Failed to initialize Firebase app. Error: ", error);
-      throw error;
+      throw new FirebaseInitializationError(error as FirebaseAppError);
     }
   }
 
@@ -70,11 +80,7 @@ export default class PushNotificationService {
       await getMessaging().send(message);
       logger.info(`Sent push notification ${data.title}`);
     } catch (error) {
-      const fbError = error as { code: string; message: string };
-      logger.warn(
-        `Failed to send the notification. Code: ${fbError.code}. Error: ${fbError.message}`,
-      );
-      throw error;
+      throw new PushNotificationError(error as FirebaseMessagingError);
     }
   }
 }
