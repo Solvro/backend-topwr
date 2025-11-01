@@ -13,8 +13,6 @@ import env from "#start/env";
 import { middleware } from "./kernel.js";
 import { resetPasswordThrottle } from "./limiter.js";
 
-const AboutUsController = () => import("#controllers/about_us_controller");
-
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
@@ -23,6 +21,8 @@ const FilesController = () => import("#controllers/files_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
 const NewsfeedController = () => import("#controllers/newsfeed_controller");
 const configureBaseRoutes = await BaseController.configureByNames([
+  "about_us",
+  "about_us_links",
   "academic_calendars",
   "aeds",
   "bicycle_showers",
@@ -94,8 +94,6 @@ router
         router.post("/", [FilesController, "post"]).use(middleware.auth());
       })
       .prefix("/files");
-
-    router.get("/about_us", [AboutUsController, "index"]);
 
     router
       .group(() => {
