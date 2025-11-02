@@ -1,8 +1,7 @@
+import BaseController from "#controllers/base_controller";
 import { aboutUsLinkTypeOrder, compareLinkTypes } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";
-
-import BaseController from "./base_controller.js";
 
 export default class AboutUsController extends BaseController<
   typeof AboutUsGeneral

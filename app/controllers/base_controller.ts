@@ -1,6 +1,8 @@
 import adonisString from "@poppinss/utils/string";
 import { BaseError } from "@solvro/error-handling/base";
 import assert from "node:assert";
+import { Dirent } from "node:fs";
+import fs from "node:fs/promises";
 
 import { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
@@ -105,6 +107,9 @@ export type DeleteHookContext<T extends LucidModel> = Omit<
   HookContext<T>,
   "request"
 >;
+
+const API_VERSION_REGEX = /^v\d+$/;
+const LOADABLE_EXTENSIONS = [".js", ".ts"];
 
 export default abstract class BaseController<
   T extends LucidModel & Scopes<LucidModel>,
@@ -413,11 +418,14 @@ export default abstract class BaseController<
   /**
    * Generates a configuration callback that configures each of the named controllers
    */
-  static async configureByNames(names: string[]): Promise<() => void> {
+  static async configureByNames(
+    version: string,
+    names: string[],
+  ): Promise<() => void> {
     const toConfigure: [string, () => void][] = await Promise.all(
       names.map(async (name) => {
         const controller = (async () =>
-          await import(`#controllers/${name}_controller`)) as LazyImport<
+          await import(`#controllers/${version}/${name}`)) as LazyImport<
           Constructor<object>
         >;
         return [name, await BaseController.configureRoutes(controller)];
@@ -428,6 +436,54 @@ export default abstract class BaseController<
         router.group(config).prefix(`/${name}`).as(name);
       }
     };
+  }
+
+  /**
+   * Configures all controller routes automatically
+   */
+  static async configureAll(): Promise<void> {
+    // find all version directories
+    const dirReader = await fs.opendir("./app/controllers");
+    let dir = null;
+    while ((dir = await dirReader.read()) !== null) {
+      if (!dir.isDirectory() || !API_VERSION_REGEX.test(dir.name)) {
+        continue;
+      }
+
+      // list directory files for the version
+      const verDirReader = await fs.opendir(`./app/controllers/${dir.name}`);
+      const controllerList = [];
+      let controllerFile: Dirent | null = null;
+      while ((controllerFile = await verDirReader.read()) !== null) {
+        // skip non-files
+        if (!controllerFile.isFile()) {
+          continue;
+        }
+        for (const ext of LOADABLE_EXTENSIONS) {
+          // find the correct extension for the file
+          if (!controllerFile.name.endsWith(ext)) {
+            continue;
+          }
+          // add to list
+          controllerList.push(
+            controllerFile.name.substring(
+              0,
+              controllerFile.name.length - ext.length,
+            ),
+          );
+          break;
+        }
+      }
+      await verDirReader.close();
+
+      // configure
+      const configureVersion = await BaseController.configureByNames(
+        dir.name,
+        controllerList,
+      );
+      router.group(configureVersion).prefix(`/api/${dir.name}`).as(dir.name);
+    }
+    await dirReader.close();
   }
 
   /**

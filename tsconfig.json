@@ -5,6 +5,7 @@
     "rootDir": "./",
     "outDir": "./build",
     "paths": {
+      "#app/*": ["./app/*.js"],
       "#enums/*": ["./app/enums/*.js"],
       "#scopes/*": ["./app/scopes/*.js"],
       "#utils/*": ["./app/utils/*.js"],

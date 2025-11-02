@@ -10,54 +10,10 @@ import router from "@adonisjs/core/services/router";
 
 import env from "#start/env";
 
-import { middleware } from "./kernel.js";
-import { resetPasswordThrottle } from "./limiter.js";
-
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
-const AuthController = () => import("#controllers/auth_controller");
-const FilesController = () => import("#controllers/files_controller");
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
-const NewsfeedController = () => import("#controllers/newsfeed_controller");
-const configureBaseRoutes = await BaseController.configureByNames([
-  "about_us",
-  "about_us_links",
-  "academic_calendars",
-  "aeds",
-  "bicycle_showers",
-  "buildings",
-  "campuses",
-  "change_screenshots",
-  "changes",
-  "contributor_social_links",
-  "contributors",
-  "day_swaps",
-  "department_links",
-  "departments",
-  "fields_of_study",
-  "food_spots",
-  "guide_articles",
-  "guide_authors",
-  "guide_questions",
-  "holidays",
-  "libraries",
-  "milestones",
-  "pink_boxes",
-  "polinka_stations",
-  "regular_hours",
-  "roles",
-  "special_hours",
-  "student_organization_links",
-  "student_organization_tags",
-  "student_organizations",
-  "version_screenshots",
-  "versions",
-  "event_calendar",
-  "mobile_config",
-  "banners",
-  "sks_opening_hours",
-]);
 
 router.get("/", async () => {
   return { appName: env.get("APP_NAME"), version: env.get("APP_VERSION") };
@@ -65,42 +21,4 @@ router.get("/", async () => {
 
 router.get("/metrics", [MetricsMiddleware, "emitMetrics"]);
 
-router
-  .group(() => {
-    router
-      .group(() => {
-        router.post("/login", [AuthController, "login"]);
-        router.post("/refresh", [AuthController, "refreshAccessToken"]);
-        router
-          .post("/logout", [AuthController, "logout"])
-          .use(middleware.auth());
-        router.get("/me", [AuthController, "me"]).use(middleware.auth());
-        router
-          .group(() => {
-            router
-              .post("/", [AuthController, "forgotPassword"])
-              .use(resetPasswordThrottle);
-            router.put("/:token", [AuthController, "resetPassword"]);
-          })
-          .prefix("/reset_password");
-        router.post("/change_password", [AuthController, "changePassword"]);
-      })
-      .use(middleware.sensitive())
-      .prefix("/auth");
-
-    router
-      .group(() => {
-        router.get("/:key", [FilesController, "get"]);
-        router.post("/", [FilesController, "post"]).use(middleware.auth());
-      })
-      .prefix("/files");
-
-    router
-      .group(() => {
-        router.get("/latest", [NewsfeedController, "latest"]);
-        router.get("/stats", [NewsfeedController, "stats"]);
-      })
-      .prefix("/newsfeed");
-    configureBaseRoutes();
-  })
-  .prefix("/api/v1");
+await BaseController.configureAll();
