@@ -1,19 +1,15 @@
-import BaseController from "#controllers/base_controller";
+import router from "@adonisjs/core/services/router";
+import { Constructor, LazyImport } from "@adonisjs/core/types/http";
+
 import { aboutUsLinkTypeOrder, compareLinkTypes } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";
 
-export default class AboutUsController extends BaseController<
-  typeof AboutUsGeneral
-> {
-  protected queryRelations = [];
-  protected crudRelations = [];
-  protected model = AboutUsGeneral;
-  protected singletonId = 1;
+export default class AboutUsController {
+  $configureRoutes(controller: LazyImport<Constructor<AboutUsController>>) {
+    router.get("/", [controller, "show"]).as("show");
+  }
 
-  /**
-   * show method override kept to not break compatibility
-   */
   async show() {
     const aboutUs = await AboutUsGeneral.query()
       .where("id", 1)
