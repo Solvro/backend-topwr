@@ -379,18 +379,35 @@ export default abstract class BaseController<
   /**
    * Generates a configuration callback for a controller using its lazy import
    */
-  static async configureRoutes<T extends LucidModel & Scopes<LucidModel>>(
-    controller: LazyImport<Constructor<BaseController<T>>>,
+  static async configureRoutes(
+    controller: LazyImport<Constructor<object>>,
   ): Promise<() => void> {
     const imported = await controller();
     const Controller = imported.default;
     const instance = new Controller();
     if (!(instance instanceof BaseController)) {
-      throw new Error(
-        `Attempted to configure routes for a non-BaseController-based controller: ${Controller.name}`,
+      if (
+        !(
+          "$configureRoutes" in instance &&
+          typeof instance.$configureRoutes === "function" &&
+          instance.$configureRoutes.length === 1
+        )
+      ) {
+        throw new Error(
+          `Attempted to configure routes for a non-BaseController-based controller which does not implement $configureRoutes: ${Controller.name}`,
+        );
+      }
+      logger.warn(
+        `Configuring routes for a non-BaseController-based controller: ${Controller.name}`,
       );
+      return instance.$configureRoutes.bind(instance, controller);
     }
-    return instance.$configureRoutes.bind(instance, controller);
+    return instance.$configureRoutes.bind(
+      instance,
+      controller as LazyImport<
+        Constructor<BaseController<LucidModel & Scopes<LucidModel>>>
+      >,
+    );
   }
 
   /**
@@ -401,7 +418,7 @@ export default abstract class BaseController<
       names.map(async (name) => {
         const controller = (async () =>
           await import(`#controllers/${name}_controller`)) as LazyImport<
-          Constructor<BaseController<LucidModel & Scopes<LucidModel>>>
+          Constructor<object>
         >;
         return [name, await BaseController.configureRoutes(controller)];
       }),
