@@ -4,6 +4,9 @@ import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
 import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
 
 import FileEntry from "./file_entry.js";
 
@@ -30,4 +33,8 @@ export default class AboutUsGeneral extends BaseModel {
     foreignKey: "coverPhotoKey",
   })
   declare coverPhoto: BelongsTo<typeof FileEntry>;
+
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
 }

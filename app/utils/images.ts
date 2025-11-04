@@ -18,6 +18,7 @@ export async function resizeFromPathOrBytes(
   dataOrPath: string | Uint8Array,
 ): Promise<Uint8Array> {
   const buffer = await sharp(dataOrPath)
+    .autoOrient()
     .resize(resizeOptions)
     .timeout(timeoutOptions)
     .toBuffer();

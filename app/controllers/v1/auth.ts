@@ -2,7 +2,10 @@ import vine from "@vinejs/vine";
 
 import { inject } from "@adonisjs/core";
 import type { HttpContext } from "@adonisjs/core/http";
+import router from "@adonisjs/core/services/router";
+import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
+import { JWT_GUARD, JwtTokenResponse } from "#app/auth/guards/jwt";
 import {
   ForbiddenException,
   InternalServerException,
@@ -11,7 +14,8 @@ import {
 } from "#exceptions/http_exceptions";
 import User from "#models/user";
 import ResetPasswordService from "#services/reset_password_service";
-import { updatePasswordLimiter } from "#start/limiter";
+import { middleware } from "#start/kernel";
+import { resetPasswordThrottle, updatePasswordLimiter } from "#start/limiter";
 import {
   changePasswordValidator,
   loginValidator,
@@ -21,13 +25,40 @@ import { emailValidator } from "#validators/email";
 import { newPasswordValidator } from "#validators/password";
 import { resetPasswordTokenValidator } from "#validators/reset_password_token";
 
-import { JWT_GUARD, JwtTokenResponse } from "../auth/guards/jwt.js";
-
 const allAccountsParamSchema = vine.object({
   all: vine.boolean().optional(),
 });
 
 export default class AuthController {
+  $configureRoutes(controller: LazyImport<Constructor<AuthController>>) {
+    router
+      .group(() => {
+        router.post("/login", [controller, "login"]).as("login");
+        router
+          .post("/refresh", [controller, "refreshAccessToken"])
+          .as("refresh");
+        router
+          .post("/logout", [controller, "logout"])
+          .use(middleware.auth())
+          .as("logout");
+        router.get("/me", [controller, "me"]).use(middleware.auth()).as("me");
+        router
+          .group(() => {
+            router
+              .post("/", [controller, "forgotPassword"])
+              .as("request")
+              .use(resetPasswordThrottle);
+            router.put("/:token", [controller, "resetPassword"]).as("confirm");
+          })
+          .as("resetPassword")
+          .prefix("/reset_password");
+        router
+          .post("/change_password", [controller, "changePassword"])
+          .as("changePassword");
+      })
+      .use(middleware.sensitive());
+  }
+
   async login({ request, auth }: HttpContext): Promise<JwtTokenResponse> {
     const { email, password } = await request.validateUsing(loginValidator);
     const user = await User.verifyCredentials(email, password);

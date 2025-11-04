@@ -1,6 +1,8 @@
 import vine from "@vinejs/vine";
 
 import { HttpContext } from "@adonisjs/core/http";
+import router from "@adonisjs/core/services/router";
+import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import { ServiceUnavailableException } from "#exceptions/http_exceptions";
 import NewsfeedService, {
@@ -15,6 +17,11 @@ const validator = vine.compile(
 );
 
 export default class NewsfeedController {
+  $configureRoutes(controller: LazyImport<Constructor<NewsfeedController>>) {
+    router.get("/latest", [controller, "latest"]).as("latest");
+    router.get("/stats", [controller, "stats"]).as("stats");
+  }
+
   /**
    * Returns the latest available, first page, newsfeed articles from the PWr website
    * as an object with array of articles of {@link NewsfeedArticle} and update time (see {@link NewsfeedUpdate}).

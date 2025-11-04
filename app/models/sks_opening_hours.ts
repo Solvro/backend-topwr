@@ -9,6 +9,7 @@ import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
 export default class SksOpeningHours extends BaseModel {
+  public static selfAssignPrimaryKey = true;
   public static table = "sks_opening_hours";
 
   @typedColumn({

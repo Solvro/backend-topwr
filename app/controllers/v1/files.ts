@@ -1,11 +1,14 @@
 import vine from "@vinejs/vine";
 
 import type { HttpContext, Request } from "@adonisjs/core/http";
+import router from "@adonisjs/core/services/router";
+import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import drive from "@adonisjs/drive/services/main";
 
 import { BadRequestException } from "#exceptions/http_exceptions";
 import FileEntry from "#models/file_entry";
 import FilesService from "#services/files_service";
+import { middleware } from "#start/kernel";
 
 const getValidator = vine.compile(
   vine.object({
@@ -26,6 +29,11 @@ const directUploadValidator = vine.compile(
 );
 
 export default class FilesController {
+  $configureRoutes(controller: LazyImport<Constructor<FilesController>>) {
+    router.get("/:key", [controller, "get"]).as("show");
+    router.post("/", [controller, "post"]).as("upload").use(middleware.auth());
+  }
+
   async post({ request, response, auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
