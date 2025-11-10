@@ -313,8 +313,7 @@ export default class StudentOrganizationDraftsController extends BaseController<
     const draft = await StudentOrganizationDraft.findOrFail(
       draftId,
     ).addErrorContext(
-      () =>
-        `StudentOrganizationDraft with id ${draftId} not found or user lacks permission`,
+      () => `StudentOrganizationDraft with id ${draftId} not found`,
     );
 
     const draftData: PartialModel<typeof StudentOrganization> = {
@@ -343,26 +342,28 @@ export default class StudentOrganizationDraftsController extends BaseController<
           { client: trx },
         ).addErrorContext(
           () =>
-            `Original organization with id ${draft.originalOrganizationId} not found`,
+            `StudentOrganization with id ${draft.originalOrganizationId} not found`,
         );
         existingOrg.merge(draftData);
         await existingOrg
           .useTransaction(trx)
           .save()
-          .addErrorContext("Failed to update organization");
+          .addErrorContext("Failed to save updated StudentOrganization");
         organization = existingOrg;
       } else {
         // Create new organization
         organization = await StudentOrganization.create(draftData, {
           client: trx,
-        }).addErrorContext("Failed to create organization");
+        }).addErrorContext("Failed to create new StudentOrganization");
       }
 
       // Delete draft after successful organization creation/update
       await draft
         .useTransaction(trx)
         .delete()
-        .addErrorContext("Failed to delete draft after approval");
+        .addErrorContext(
+          "Failed to delete StudentOrganizationDraft after approval",
+        );
 
       await trx.commit();
       return { data: organization };

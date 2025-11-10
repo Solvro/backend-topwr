@@ -256,8 +256,7 @@ export default class GuideArticleDraftsController extends BaseController<
 
     // Use findOrFail with error context
     const draft = await GuideArticleDraft.findOrFail(draftId).addErrorContext(
-      () =>
-        `GuideArticleDraft with id ${draftId} not found or user lacks permission`,
+      () => `GuideArticleDraft with id ${draftId} not found`,
     );
 
     const draftData: PartialModel<typeof GuideArticle> = {
@@ -277,26 +276,26 @@ export default class GuideArticleDraftsController extends BaseController<
           draft.originalArticleId,
           { client: trx },
         ).addErrorContext(
-          () => `Original article with id ${draft.originalArticleId} not found`,
+          () => `GuideArticle with id ${draft.originalArticleId} not found`,
         );
         existingArticle.merge(draftData);
         await existingArticle
           .useTransaction(trx)
           .save()
-          .addErrorContext("Failed to update article");
+          .addErrorContext("Failed to save updated GuideArticle");
         article = existingArticle;
       } else {
         // Create new article
         article = await GuideArticle.create(draftData, {
           client: trx,
-        }).addErrorContext("Failed to create article");
+        }).addErrorContext("Failed to create new GuideArticle");
       }
 
       // Delete draft after successful article creation/update
       await draft
         .useTransaction(trx)
         .delete()
-        .addErrorContext("Failed to delete draft after approval");
+        .addErrorContext("Failed to delete GuideArticleDraft after approval");
 
       await trx.commit();
       return { data: article };
