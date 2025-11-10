@@ -256,6 +256,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       shortDesc: "Short",
       description: "Long description",
       imageKey: file.id,
+      createdByUserId: u1.id,
     });
 
     await Acl.model(u1).allow("read", draft);
@@ -559,6 +560,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       shortDesc: "Short",
       description: "Long",
       imageKey: file2.id,
+      createdByUserId: u1.id,
     });
 
     await Acl.model(u1).allow("destroy", draft);

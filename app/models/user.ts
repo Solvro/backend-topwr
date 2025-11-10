@@ -12,6 +12,7 @@ import hash from "@adonisjs/core/services/hash";
 import logger from "@adonisjs/core/services/logger";
 import { BaseModel, beforeSave, column, scope } from "@adonisjs/lucid/orm";
 
+import { typedColumn } from "#decorators/typed_model";
 import { sha256 } from "#utils/hash";
 
 const AuthFinder = withAuthFinder(() => hash.use("scrypt"), {
@@ -28,7 +29,7 @@ export default class User
     return this.id;
   }
 
-  @column({ isPrimary: true })
+  @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
   @column()

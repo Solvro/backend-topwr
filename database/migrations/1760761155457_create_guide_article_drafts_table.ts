@@ -22,9 +22,22 @@ export default class extends BaseSchema {
         .references("guide_articles.id")
         .onDelete("CASCADE");
 
+      table.integer("created_by_user_id").unsigned().notNullable();
+      table
+        .foreign("created_by_user_id")
+        .references("users.id")
+        .onDelete("CASCADE");
+
       table.timestamp("created_at").notNullable();
       table.timestamp("updated_at").notNullable();
     });
+
+    // Add unique constraint: only one draft per article (null original_article_id allowed for new articles)
+    this.schema.raw(`
+      CREATE UNIQUE INDEX guide_article_drafts_original_article_id_unique
+      ON guide_article_drafts (original_article_id)
+      WHERE original_article_id IS NOT NULL
+    `);
   }
 
   async down() {

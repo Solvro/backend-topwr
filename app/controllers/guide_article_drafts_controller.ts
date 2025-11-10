@@ -27,7 +27,7 @@ type Action =
 export default class GuideArticleDraftsController extends BaseController<
   typeof GuideArticleDraft
 > {
-  protected readonly queryRelations = ["image", "originalArticle"];
+  protected readonly queryRelations = ["image", "originalArticle", "createdBy"];
   protected readonly crudRelations: string[] = [];
   protected readonly model = GuideArticleDraft;
 
@@ -154,35 +154,48 @@ export default class GuideArticleDraftsController extends BaseController<
   /**
    * When linking to an existing article, require per-model permission on the original article.
    *
-   * Note: Multiple drafts can be created for the same article. This is intentional to allow:
-   * - Different users to propose different changes to the same article
-   * - A user to create multiple draft versions before deciding which to submit
-   * - Parallel editing workflows
+   * Note: Only ONE draft can exist per article at a time (enforced by unique constraint).
+   * This prevents conflicts from:
+   * - Multiple users proposing conflicting changes
+   * - Drafts becoming stale if the original article changes
+   * - Confusion about which draft should be approved
    *
-   * The solvro_admin can approve/reject drafts individually, choosing which changes to apply.
+   * If a user wants to create a new draft for an article that already has one, they must
+   * either approve/reject the existing draft first, or contact the draft creator.
    */
   protected async storeHook(ctx: {
     http: HttpContext;
     request: PartialModel<typeof GuideArticleDraft>;
   }) {
     const { http, request } = ctx;
-    const originalId = request.originalArticleId;
-    if (originalId === null || originalId === undefined) {
-      return;
-    }
 
-    const user = http.auth.user as unknown as
+    // Automatically track who created the draft
+    const authUser = http.auth.user as unknown as
       | {
+          id: number;
           hasRole?: (slug: string) => Promise<boolean>;
           hasPermission?: (
             action: string,
             target?: unknown,
           ) => Promise<boolean>;
         }
+      | null
       | undefined;
+    if (authUser === null || authUser === undefined) {
+      throw new ForbiddenException(
+        "User must be authenticated to create a draft",
+      );
+    }
+    request.createdByUserId = authUser.id;
+
+    const originalId = request.originalArticleId;
+    if (originalId === null || originalId === undefined) {
+      return;
+    }
+
     const isAdmin =
-      (await user?.hasRole?.("solvro_admin")) === true ||
-      (await user?.hasRole?.("admin")) === true;
+      (await authUser.hasRole?.("solvro_admin")) === true ||
+      (await authUser.hasRole?.("admin")) === true;
     if (isAdmin) {
       return;
     }
@@ -193,7 +206,7 @@ export default class GuideArticleDraftsController extends BaseController<
         `GuideArticle with id ${originalId} not found`,
       );
     }
-    const allowed = await user?.hasPermission?.("update", article);
+    const allowed = await authUser.hasPermission?.("update", article);
     if (allowed !== true) {
       throw new ForbiddenException();
     }
