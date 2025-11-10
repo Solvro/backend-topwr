@@ -221,55 +221,6 @@ export default class StudentOrganizationDraftsController extends BaseController<
     }
   }
 
-  async index(httpCtx: HttpContext): Promise<unknown> {
-    const { request } = httpCtx;
-    await this.selfValidate();
-    await this.authenticate(httpCtx, "index");
-
-    const { paginationValidator } = await import("#validators/pagination");
-    const { page, limit } = await request.validateUsing(paginationValidator);
-    const relationsValidated = (await request.validateUsing(
-      this.relationValidator,
-    )) as unknown;
-    const relations: string[] = Array.isArray(relationsValidated)
-      ? (relationsValidated as string[])
-      : Object.entries(
-          relationsValidated as Record<string, boolean | undefined>,
-        )
-          .filter(([, enabled]) => enabled === true)
-          .map(([name]) => name);
-
-    const baseQuery = this.model.query().withScopes((scopes) => {
-      try {
-        // handleSearchQuery may not exist on related scopes in some models
-        (
-          scopes as unknown as {
-            handleSearchQuery?: (q: Record<string, unknown>) => void;
-          }
-        ).handleSearchQuery?.(request.qs());
-      } catch {}
-      try {
-        (
-          scopes as unknown as { preloadRelations?: (rels: string[]) => void }
-        ).preloadRelations?.(relations);
-      } catch {}
-      try {
-        (
-          scopes as unknown as { handleSortQuery?: (sort: unknown) => void }
-        ).handleSortQuery?.(request.input("sort"));
-      } catch {}
-    });
-
-    // For non-admins, we cannot filter by pivot (no manual relation). Optional: keep unfiltered index,
-    // per-id endpoints are protected by authorizeById. If index must be filtered, add custom scope here
-    // using ACL tables. For now, leave index unrestricted after auth.
-
-    if (page === undefined && limit === undefined) {
-      return { data: await baseQuery };
-    }
-    return await baseQuery.paginate(page ?? 1, limit ?? 10);
-  }
-
   $configureRoutes(
     controller: LazyImport<
       Constructor<BaseController<typeof StudentOrganizationDraft>>
