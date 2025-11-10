@@ -188,11 +188,6 @@ export default class GuideArticleDraftsController extends BaseController<
     }
     request.createdByUserId = authUser.id;
 
-    const originalId = request.originalArticleId;
-    if (originalId === null || originalId === undefined) {
-      return;
-    }
-
     const isAdmin =
       (await authUser.hasRole?.("solvro_admin")) === true ||
       (await authUser.hasRole?.("admin")) === true;
@@ -200,6 +195,20 @@ export default class GuideArticleDraftsController extends BaseController<
       return;
     }
 
+    const originalId = request.originalArticleId;
+
+    // For completely new drafts (no original article), require create permission on GuideArticle
+    if (originalId === null || originalId === undefined) {
+      const allowed = await authUser.hasPermission?.("create", GuideArticle);
+      if (allowed !== true) {
+        throw new ForbiddenException(
+          "Requires create permission on GuideArticle to propose new articles",
+        );
+      }
+      return;
+    }
+
+    // For drafts editing existing articles, require update permission on the original article
     const article = await GuideArticle.find(originalId);
     if (article === null) {
       throw new NotFoundException(

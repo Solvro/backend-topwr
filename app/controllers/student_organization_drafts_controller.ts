@@ -175,10 +175,6 @@ export default class StudentOrganizationDraftsController extends BaseController<
     request: PartialModel<typeof StudentOrganizationDraft>;
   }) {
     const { http, request } = ctx;
-    const originalId = request.originalOrganizationId;
-    if (originalId === null || originalId === undefined) {
-      return;
-    }
 
     const user = http.auth.user as unknown as
       | {
@@ -196,6 +192,23 @@ export default class StudentOrganizationDraftsController extends BaseController<
       return;
     }
 
+    const originalId = request.originalOrganizationId;
+
+    // For completely new drafts (no original organization), require create permission on StudentOrganization
+    if (originalId === null || originalId === undefined) {
+      const allowed = await user?.hasPermission?.(
+        "create",
+        StudentOrganization,
+      );
+      if (allowed !== true) {
+        throw new ForbiddenException(
+          "Requires create permission on StudentOrganization to propose new organizations",
+        );
+      }
+      return;
+    }
+
+    // For drafts editing existing organizations, require update permission on the original organization
     const org = await StudentOrganization.find(originalId);
     if (org === null) {
       throw new NotFoundException(

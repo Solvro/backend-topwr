@@ -285,7 +285,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     updBad.assertStatus(403);
   });
 
-  test("student org draft: store requires class-level create or admin", async ({
+  test("student org draft: store requires class-level create on both StudentOrganizationDraft and StudentOrganization", async ({
     client,
   }) => {
     const user = await User.create({
@@ -310,13 +310,29 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       });
     noPerm.assertStatus(403);
 
-    // grant class-level create -> 200
+    // Only StudentOrganizationDraft create permission -> still 403 (need StudentOrganization create too)
     await Acl.model(user).allow("create", StudentOrganizationDraft);
-    const ok = await client
+    const stillNoPerm = await client
       .post(`/api/v1/student_organization_drafts`)
       .header("Authorization", `Bearer ${token}`)
       .json({
         name: "Draft Org New 2",
+        isStrategic: false,
+        coverPreview: false,
+        source: OrganizationSource.Manual,
+        organizationType: OrganizationType.StudentOrganization,
+        organizationStatus: OrganizationStatus.Active,
+        branch: Branch.Main,
+      });
+    stillNoPerm.assertStatus(403);
+
+    // Both StudentOrganizationDraft and StudentOrganization create permissions -> 200
+    await Acl.model(user).allow("create", StudentOrganization);
+    const ok = await client
+      .post(`/api/v1/student_organization_drafts`)
+      .header("Authorization", `Bearer ${token}`)
+      .json({
+        name: "Draft Org New 3",
         isStrategic: false,
         coverPreview: false,
         source: OrganizationSource.Manual,
@@ -495,7 +511,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     ok.assertStatus(200);
   });
 
-  test("guide article draft: store requires class-level create", async ({
+  test("guide article draft: store requires class-level create on both GuideArticleDraft and GuideArticle", async ({
     client,
   }) => {
     const user = await User.create({
@@ -506,11 +522,15 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     const token = await makeToken(user);
 
     const { default: FileEntry } = await import("#models/file_entry");
+    const { default: GuideArticle } = await import("#models/guide_article");
     const file3 = FileEntry.createNew("png");
     await file3.save();
     const file4 = FileEntry.createNew("png");
     await file4.save();
+    const file5 = FileEntry.createNew("png");
+    await file5.save();
 
+    // No permissions -> 403
     const noPerm = await client
       .post(`/api/v1/guide_article_drafts`)
       .header("Authorization", `Bearer ${token}`)
@@ -522,8 +542,9 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       });
     noPerm.assertStatus(403);
 
+    // Only GuideArticleDraft create permission -> still 403 (need GuideArticle create too)
     await Acl.model(user).allow("create", GuideArticleDraft);
-    const ok = await client
+    const stillNoPerm = await client
       .post(`/api/v1/guide_article_drafts`)
       .header("Authorization", `Bearer ${token}`)
       .json({
@@ -531,6 +552,19 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         shortDesc: "Short",
         description: "Long",
         imageKey: file4.id,
+      });
+    stillNoPerm.assertStatus(403);
+
+    // Both GuideArticleDraft and GuideArticle create permissions -> 200
+    await Acl.model(user).allow("create", GuideArticle);
+    const ok = await client
+      .post(`/api/v1/guide_article_drafts`)
+      .header("Authorization", `Bearer ${token}`)
+      .json({
+        title: "Guide Draft New 3",
+        shortDesc: "Short",
+        description: "Long",
+        imageKey: file5.id,
       });
     ok.assertStatus(200);
   });
