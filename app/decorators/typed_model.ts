@@ -52,7 +52,14 @@ export interface ValidatedColumnDef extends ColumnOptions {
   };
 }
 
-const types = new Set(["number", "string", "boolean", "DateTime", "enum"]);
+const types = new Set([
+  "number",
+  "string",
+  "boolean",
+  "DateTime",
+  "enum",
+  "json",
+]);
 
 export function validateColumnDef(
   col: ColumnOptions,

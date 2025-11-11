@@ -1,7 +1,7 @@
 import { BaseSchema } from "@adonisjs/lucid/schema";
 
 export default class extends BaseSchema {
-  protected tableName = "push_notifications";
+  protected tableName = "push_notification_entries";
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
