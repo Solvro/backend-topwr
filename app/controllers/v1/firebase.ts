@@ -6,6 +6,7 @@ import router from "@adonisjs/core/services/router";
 import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import {
+  CreateHookContext,
   HookContext,
   PartialModel,
   RouteConfigurationOptions,
@@ -43,16 +44,28 @@ export default class FirebaseController extends BaseController<
       .group(() => {
         super.$configureRoutes(controller, {
           skipRoutes: {
-            index: true,
             destroy: true,
           },
         });
-        router.get("/", [controller, "getTopicOverview"]).as("index");
       })
-      .prefix("/topic");
+      .prefix("/topics")
+      .as("topics");
+    router
+      .get("/topics_overview", [controller, "getTopicOverview"])
+      .as("topics.overview");
     router
       .post("/broadcast", [controller, "broadcastPushNotification"])
       .as("broadcast");
+  }
+
+  protected async storeHook(
+    ctx: CreateHookContext<typeof FirebaseTopic>,
+  ): Promise<PartialModel<typeof FirebaseTopic> | void | undefined> {
+    if (ctx.request.isActive === false) {
+      throw new BadRequestException(
+        "why would you want to create a deactivated topic???",
+      );
+    }
   }
 
   protected async updateHook(

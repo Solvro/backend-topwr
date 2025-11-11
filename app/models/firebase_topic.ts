@@ -17,8 +17,12 @@ export interface TopicOverview {
 
 /**
  * This is a Firebase limitation - less than 900 characters and the limited charset (a-zA-Z0-9-_.~%)
+ *
+ * length limited to 48 to match current database state in migrations
+ * was this intended? idk, probably not ¯\_(ツ)_/¯
+ * -- mini-bomba
  */
-export const TOPIC_NAME_REGEX = /^[a-zA-Z0-9-_.~%]{1,900}$/;
+export const TOPIC_NAME_REGEX = /^[a-zA-Z0-9-_.~%]{1,48}$/;
 
 export default class FirebaseTopic extends BaseModel {
   public static selfAssignPrimaryKey = true;
