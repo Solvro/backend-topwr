@@ -16,8 +16,6 @@ export interface PushNotificationData {
 }
 
 export default class PushNotificationEntry extends BaseModel {
-  public static table = "push_notification_entries";
-
   public static fromData(
     data: PushNotificationData,
     wasSent: boolean,
@@ -49,14 +47,34 @@ export default class PushNotificationEntry extends BaseModel {
   declare createdAt: DateTime;
 
   @typedManyToMany(() => FirebaseTopic, {
-    pivotTable: "push_notifications_topics",
+    pivotTable: "push_notification_entries_topics",
     localKey: "id",
-    pivotColumns: {},
-    pivotForeignKey: "push_notification_id",
-    pivotRelatedForeignKey: "topic_name",
+    relatedKey: "topicName",
+    pivotForeignKey: "push_notification_entry_id",
+    pivotRelatedForeignKey: "firebase_topic_topic_name",
     pivotTimestamps: false,
+    pivotColumns: {},
   })
   declare topics: ManyToMany<typeof FirebaseTopic>;
+
+  public static async getByTopic(
+    include?: string[],
+    exclude?: string[],
+  ): Promise<PushNotificationEntry[]> {
+    let query = PushNotificationEntry.query();
+    if (include !== undefined && include.length > 0) {
+      query = query.whereHas("topics", (topicsQuery) =>
+        topicsQuery.whereIn("topic_name", include),
+      );
+    }
+
+    if (exclude !== undefined && exclude.length > 0) {
+      query = query.whereDoesntHave("topics", (topicsQuery) =>
+        topicsQuery.whereIn("topic_name", exclude),
+      );
+    }
+    return query;
+  }
 
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
