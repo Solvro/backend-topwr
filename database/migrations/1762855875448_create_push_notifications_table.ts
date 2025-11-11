@@ -9,6 +9,7 @@ export default class extends BaseSchema {
       table.string("title").notNullable().index();
       table.text("body").notNullable();
       table.jsonb("data").nullable();
+      table.boolean("was_sent").notNullable();
       table.timestamp("created_at").notNullable();
     });
   }
