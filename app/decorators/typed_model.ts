@@ -13,9 +13,9 @@ import {
 import { AutogenCacheEntry } from "#utils/model_autogen";
 import "#validators/db";
 
-type SharedColumnTypes = "string" | "number" | "boolean";
+type SharedColumnTypes = "string" | "number" | "boolean" | "json";
 export type ColumnType = SharedColumnTypes | "enum" | "DateTime";
-type DecoratorTypes = SharedColumnTypes | "integer" | "uuid";
+type DecoratorTypes = SharedColumnTypes | "integer" | "uuid" | "json";
 
 interface ColumnDef extends ColumnOptions {
   meta?: {
@@ -205,53 +205,34 @@ function decoratorTypeToValidatorAndType(
   type: DecoratorTypes | Record<string, string>,
   optional: boolean | undefined,
 ): { validator: SchemaTypes; declaredType: ColumnType } {
+  let validator;
+  let declaredType: ColumnType;
   if (typeof type === "string") {
-    const declaredType =
+    declaredType =
       type === "integer" ? "number" : type === "uuid" ? "string" : type;
-    let validator;
     switch (type) {
       case "string": {
-        if (optional === true) {
-          validator = vine.string().trim().minLength(1).nullable().optional();
-        } else {
-          validator = vine.string().trim().minLength(1);
-        }
+        validator = vine.string().trim().minLength(1);
         break;
       }
       case "number": {
-        if (optional === true) {
-          validator = vine.number().nullable().optional();
-        } else {
-          validator = vine.number();
-        }
+        validator = vine.number();
         break;
       }
       case "boolean": {
-        if (optional === true) {
-          validator = vine.boolean().nullable().optional();
-        } else {
-          validator = vine.boolean();
-        }
+        validator = vine.boolean();
         break;
       }
       case "integer": {
-        if (optional === true) {
-          validator = vine.number().withoutDecimals().nullable().optional();
-        } else {
-          validator = vine.number().withoutDecimals();
-        }
+        validator = vine.number().withoutDecimals();
         break;
       }
       case "uuid": {
-        if (optional === true) {
-          validator = vine
-            .string()
-            .uuid({ version: [4] })
-            .nullable()
-            .optional();
-        } else {
-          validator = vine.string().uuid({ version: [4] });
-        }
+        validator = vine.string().uuid({ version: [4] });
+        break;
+      }
+      case "json": {
+        validator = vine.record(vine.any());
         break;
       }
     }
@@ -260,17 +241,16 @@ function decoratorTypeToValidatorAndType(
       validator,
     };
   } else {
-    let validator;
-    if (optional === true) {
-      validator = vine.enum(Object.values(type)).nullable().optional();
-    } else {
-      validator = vine.enum(Object.values(type));
-    }
-    return {
-      declaredType: "enum",
-      validator,
-    };
+    validator = vine.enum(Object.values(type));
+    declaredType = "enum";
   }
+  if (optional === true) {
+    validator = validator.nullable().optional();
+  }
+  return {
+    declaredType,
+    validator,
+  };
 }
 
 type LazyTyping =
