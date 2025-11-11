@@ -22,7 +22,7 @@ import {
 export interface PushNotificationData {
   title: string;
   body: string;
-  data: Record<string, string> | undefined;
+  data?: Record<string, string> | undefined;
 }
 
 export default class PushNotificationService {

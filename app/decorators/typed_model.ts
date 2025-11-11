@@ -173,7 +173,7 @@ type RelationColumnDef = {
 
 type TypedManyToManyOptions<Related extends LucidModel> = Omit<
   ManyToManyRelationOptions<ManyToMany<Related>>,
-  "pivotColumns"
+  "pivotColumns" | "meta"
 > & {
   pivotColumns: Record<
     string,
