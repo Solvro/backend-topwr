@@ -272,6 +272,7 @@ export default abstract class BaseController<
    * @param http - The HTTP context
    * @param action - The controller action being performed
    * @param ids - Object containing optional localId, relatedId, and relationName for row-level authorization
+   * @param ids.id - The primary resource ID (optional)
    * @param ids.localId - The local resource ID (optional)
    * @param ids.relatedId - The related resource ID for many-to-many relations (optional)
    * @param ids.relationName - The relation name being accessed (optional)
@@ -280,6 +281,7 @@ export default abstract class BaseController<
     http: HttpContext,
     action: ControllerAction,
     ids: {
+      id?: string | number;
       localId?: string | number;
       relatedId?: string | number;
       relationName?: string;
@@ -288,6 +290,24 @@ export default abstract class BaseController<
     void http;
     void action;
     void ids;
+  }
+
+  /**
+   * Optional per-record authorization hook. Override to enforce row-level checks
+   * after the record is fetched and before any data is returned or mutated.
+   *
+   * @param http - The HTTP context
+   * @param action - The controller action being performed
+   * @param record - The record being accessed or mutated
+   */
+  protected async authorizeRecord(
+    http: HttpContext,
+    action: ControllerAction,
+    record: InstanceType<T>,
+  ): Promise<void> {
+    void http;
+    void action;
+    void record;
   }
 
   /**
@@ -538,19 +558,25 @@ export default abstract class BaseController<
   /**
    * Generates a configuration callback for a controller using its lazy import
    */
-  static async configureRoutes<T extends LucidModel & Scopes<LucidModel>>(
-    controller: LazyImport<Constructor<BaseController<T>>>,
+  static async configureRoutes(
+    controller: LazyImport<Constructor<unknown>>,
     debugName: string,
   ): Promise<() => void> {
     const imported = await controller();
-    const Controller = imported.default;
-    const instance = new Controller();
+    const ControllerCtor = imported.default as new (
+      ...args: unknown[]
+    ) => unknown;
+    const instance: unknown = new ControllerCtor();
     if (!(instance instanceof BaseController)) {
+      const maybeRoutes = instance as {
+        $configureRoutes?: (
+          controller: LazyImport<Constructor<unknown>>,
+        ) => () => void;
+      };
       if (
         !(
-          "$configureRoutes" in instance &&
-          typeof instance.$configureRoutes === "function" &&
-          instance.$configureRoutes.length === 1
+          typeof maybeRoutes.$configureRoutes === "function" &&
+          maybeRoutes.$configureRoutes.length === 1
         )
       ) {
         throw new Error(
@@ -560,13 +586,16 @@ export default abstract class BaseController<
       logger.warn(
         `Configuring routes for a non-BaseController-based controller: ${debugName}`,
       );
-      return instance.$configureRoutes.bind(
-        instance,
+      return maybeRoutes.$configureRoutes.bind(
+        maybeRoutes,
         controller as LazyImport<Constructor<object>>,
       );
     }
-    return instance.$configureRoutes.bind(
-      instance,
+    const baseInstance = instance as BaseController<
+      LucidModel & Scopes<LucidModel>
+    >;
+    return baseInstance.$configureRoutes.bind(
+      baseInstance,
       controller as LazyImport<
         Constructor<BaseController<LucidModel & Scopes<LucidModel>>>
       >,
@@ -581,7 +610,7 @@ export default abstract class BaseController<
       paths.map(async (path) => {
         const controller = (async () =>
           await import(`#controllers/${path}`)) as LazyImport<
-          Constructor<BaseController<LucidModel & Scopes<LucidModel>>>
+          Constructor<unknown>
         >;
         return [path, await BaseController.configureRoutes(controller, path)];
       }),
@@ -804,7 +833,7 @@ export default abstract class BaseController<
         () =>
           `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
-    await this.authorizeRecord(httpCtx, "show", data as InstanceType<T>);
+    await this.authorizeRecord(httpCtx, "show", data);
     return { data };
   }
 
@@ -898,9 +927,9 @@ export default abstract class BaseController<
       this.updateValidator,
     )) as PartialModel<T>;
 
-    await this.authorizeById(httpCtx, "update", { id });
+    await this.authorizeById(httpCtx, "update", { id, localId: id });
     const row = await this.getFirstOrFail(id);
-    await this.authorizeRecord(httpCtx, "update", row as InstanceType<T>);
+    await this.authorizeRecord(httpCtx, "update", row);
     updates =
       (await this.updateHook({
         http: httpCtx,
@@ -950,10 +979,10 @@ export default abstract class BaseController<
       params: { id: string | number };
     };
 
-    await this.authorizeById(httpCtx, "destroy", { id });
+    await this.authorizeById(httpCtx, "destroy", { id, localId: id });
 
     const record = await this.getFirstOrFail(id);
-    await this.authorizeRecord(httpCtx, "destroy", record as InstanceType<T>);
+    await this.authorizeRecord(httpCtx, "destroy", record);
 
     await this.destroyHook({
       http: httpCtx,
@@ -993,13 +1022,13 @@ export default abstract class BaseController<
     );
     const { page, limit } = await request.validateUsing(paginationValidator);
 
-    await this.authorizeById(httpCtx, "relationIndex", { id, relationName });
+    await this.authorizeById(httpCtx, "relationIndex", {
+      id,
+      localId: id,
+      relationName,
+    });
     const mainInstance = await this.getFirstOrFail(id);
-    await this.authorizeRecord(
-      httpCtx,
-      "relationIndex",
-      mainInstance as InstanceType<T>,
-    );
+    await this.authorizeRecord(httpCtx, "relationIndex", mainInstance);
     const relatedQuery = mainInstance
       .related(relationName as ExtractModelRelations<InstanceType<T>>)
       .query()
@@ -1053,6 +1082,7 @@ export default abstract class BaseController<
       params: { id: string | number };
     };
     await this.authorizeById(httpCtx, "oneToManyRelationStore", {
+      id,
       localId: id,
       relationName,
     });
@@ -1064,7 +1094,7 @@ export default abstract class BaseController<
     await this.authorizeRecord(
       { request, route, auth } as unknown as HttpContext,
       "oneToManyRelationStore",
-      mainInstance as InstanceType<T>,
+      mainInstance,
     );
 
     const relationClient = mainInstance.related(
@@ -1129,7 +1159,7 @@ export default abstract class BaseController<
     await this.authorizeRecord(
       { request, route, auth } as unknown as HttpContext,
       "manyToManyRelationAttach",
-      mainInstance as InstanceType<T>,
+      mainInstance,
     );
     const relationClient = mainInstance.related(
       relationName as ExtractModelRelations<InstanceType<T>>,
@@ -1205,7 +1235,7 @@ export default abstract class BaseController<
       await this.authorizeRecord(
         { request, route, auth } as unknown as HttpContext,
         "manyToManyRelationDetach",
-        mainInstance as InstanceType<T>,
+        mainInstance,
       );
     }
 

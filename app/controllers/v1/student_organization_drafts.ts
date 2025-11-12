@@ -4,14 +4,18 @@ import { LazyImport } from "@adonisjs/core/types/http";
 import type { Constructor } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
-import BaseController from "#controllers/base_controller";
+import type BaseControllerType from "#controllers/base_controller";
 import type { PartialModel } from "#controllers/base_controller";
 import {
   ForbiddenException,
   NotFoundException,
 } from "#exceptions/http_exceptions";
-import GuideArticle from "#models/guide_article";
-import GuideArticleDraft from "#models/guide_article_draft";
+import StudentOrganization from "#models/student_organization";
+import StudentOrganizationDraft from "#models/student_organization_draft";
+
+const { default: BaseController } = (await import(
+  "#controllers/base_controller"
+)) as { default: typeof BaseControllerType };
 
 type Action =
   | "index"
@@ -24,12 +28,17 @@ type Action =
   | "manyToManyRelationAttach"
   | "manyToManyRelationDetach";
 
-export default class GuideArticleDraftsController extends BaseController<
-  typeof GuideArticleDraft
+export default class StudentOrganizationDraftsController extends BaseController<
+  typeof StudentOrganizationDraft
 > {
-  protected readonly queryRelations = ["image", "originalArticle", "createdBy"];
+  protected readonly queryRelations = [
+    "logo",
+    "cover",
+    "department",
+    "originalOrganization",
+  ];
   protected readonly crudRelations: string[] = [];
-  protected readonly model = GuideArticleDraft;
+  protected readonly model = StudentOrganizationDraft;
 
   /**
    * Override to require authentication for all actions.
@@ -100,6 +109,7 @@ export default class GuideArticleDraftsController extends BaseController<
     action: Action,
     ids: { localId?: number | string },
   ) {
+    // Admin roles bypass handled via hasRole checks
     const user = http.auth.user as unknown as
       | {
           hasRole?: (slug: string) => Promise<boolean>;
@@ -123,6 +133,7 @@ export default class GuideArticleDraftsController extends BaseController<
       return;
     }
 
+    // Map controller action to permission slug
     const slugMap: Record<string, string> = {
       index: "read",
       show: "read",
@@ -136,86 +147,79 @@ export default class GuideArticleDraftsController extends BaseController<
     };
     const slug = slugMap[action] ?? "read";
 
+    // Check resource-scoped permission using ACL on the model instance reference
     const allowed = await user?.hasPermission?.(slug, this.model);
-    if (allowed === true) {
-      return;
-    }
 
-    const instance = await this.model.find(draftId);
-    if (instance === null) {
-      throw new ForbiddenException();
-    }
-    const has = await user?.hasPermission?.(slug, instance);
-    if (has !== true) {
-      throw new ForbiddenException();
+    // If class-level permission is not granted, check model-level assignment
+    if (allowed !== true) {
+      const instance = await this.model.find(draftId);
+      if (instance === null) {
+        // let BaseController handle not found later; just deny for now
+        throw new ForbiddenException();
+      }
+      const has = await user?.hasPermission?.(slug, instance);
+      if (has !== true) {
+        throw new ForbiddenException();
+      }
     }
   }
 
   /**
-   * When linking to an existing article, require per-model permission on the original article.
+   * If linking to an existing organization, user must be assigned to that organization (per-model permission).
    *
-   * Note: Only ONE draft can exist per article at a time (enforced by unique constraint).
-   * This prevents conflicts from:
-   * - Multiple users proposing conflicting changes
-   * - Drafts becoming stale if the original article changes
-   * - Confusion about which draft should be approved
+   * Note: Multiple drafts can be created for the same organization. This is intentional to allow:
+   * - Different users to propose different changes to the same organization
+   * - A user to create multiple draft versions before deciding which to submit
+   * - Parallel editing workflows
    *
-   * If a user wants to create a new draft for an article that already has one, they must
-   * either approve/reject the existing draft first, or contact the draft creator.
+   * The solvro_admin can approve/reject drafts individually, choosing which changes to apply.
    */
   protected async storeHook(ctx: {
     http: HttpContext;
-    request: PartialModel<typeof GuideArticleDraft>;
+    request: PartialModel<typeof StudentOrganizationDraft>;
   }) {
     const { http, request } = ctx;
 
-    // Automatically track who created the draft
-    const authUser = http.auth.user as unknown as
+    const user = http.auth.user as unknown as
       | {
-          id: number;
           hasRole?: (slug: string) => Promise<boolean>;
           hasPermission?: (
             action: string,
             target?: unknown,
           ) => Promise<boolean>;
         }
-      | null
       | undefined;
-    if (authUser === null || authUser === undefined) {
-      throw new ForbiddenException(
-        "User must be authenticated to create a draft",
-      );
-    }
-    request.createdByUserId = authUser.id;
-
     const isAdmin =
-      (await authUser.hasRole?.("solvro_admin")) === true ||
-      (await authUser.hasRole?.("admin")) === true;
+      (await user?.hasRole?.("solvro_admin")) === true ||
+      (await user?.hasRole?.("admin")) === true;
     if (isAdmin) {
       return;
     }
 
-    const originalId = request.originalArticleId;
+    const originalId = request.originalOrganizationId;
 
-    // For completely new drafts (no original article), require create permission on GuideArticle
+    // For completely new drafts (no original organization), require create permission on StudentOrganization
     if (originalId === null || originalId === undefined) {
-      const allowed = await authUser.hasPermission?.("create", GuideArticle);
+      const allowed = await user?.hasPermission?.(
+        "create",
+        StudentOrganization,
+      );
       if (allowed !== true) {
         throw new ForbiddenException(
-          "Requires create permission on GuideArticle to propose new articles",
+          "Requires create permission on StudentOrganization to propose new organizations",
         );
       }
       return;
     }
 
-    // For drafts editing existing articles, require update permission on the original article
-    const article = await GuideArticle.find(originalId);
-    if (article === null) {
+    // For drafts editing existing organizations, require update permission on the original organization
+    const org = await StudentOrganization.find(originalId);
+    if (org === null) {
       throw new NotFoundException(
-        `GuideArticle with id ${originalId} not found`,
+        `StudentOrganization with id ${originalId} not found`,
       );
     }
-    const allowed = await authUser.hasPermission?.("update", article);
+    const allowed = await user?.hasPermission?.("update", org);
     if (allowed !== true) {
       throw new ForbiddenException();
     }
@@ -223,15 +227,21 @@ export default class GuideArticleDraftsController extends BaseController<
 
   $configureRoutes(
     controller: LazyImport<
-      Constructor<BaseController<typeof GuideArticleDraft>>
+      Constructor<BaseControllerType<typeof StudentOrganizationDraft>>
     >,
   ) {
     super.$configureRoutes(controller);
     router
-      .post("/:id/approve", [
-        controller as LazyImport<Constructor<GuideArticleDraftsController>>,
-        "approve",
-      ])
+      .post("/:id/approve", async (ctx) => {
+        const module = await controller();
+        const ControllerClass = module.default;
+        const instance = new ControllerClass();
+        return (
+          instance as unknown as {
+            approve: (c: HttpContext) => Promise<unknown>;
+          }
+        ).approve(ctx as unknown as HttpContext);
+      })
       .as("approve");
   }
 
@@ -255,50 +265,64 @@ export default class GuideArticleDraftsController extends BaseController<
     };
 
     // Use findOrFail with error context
-    const draft = await GuideArticleDraft.findOrFail(draftId).addErrorContext(
-      () => `GuideArticleDraft with id ${draftId} not found`,
+    const draft = await StudentOrganizationDraft.findOrFail(
+      draftId,
+    ).addErrorContext(
+      () => `StudentOrganizationDraft with id ${draftId} not found`,
     );
 
-    const draftData: PartialModel<typeof GuideArticle> = {
-      title: draft.title,
-      shortDesc: draft.shortDesc,
+    const draftData: PartialModel<typeof StudentOrganization> = {
+      name: draft.name,
+      isStrategic: draft.isStrategic,
+      branch: draft.branch,
+      departmentId: draft.departmentId,
+      logoKey: draft.logoKey,
+      coverKey: draft.coverKey,
       description: draft.description,
-      imageKey: draft.imageKey,
+      shortDescription: draft.shortDescription,
+      coverPreview: draft.coverPreview,
+      source: draft.source,
+      organizationType: draft.organizationType,
+      organizationStatus: draft.organizationStatus,
     };
 
     // Use database transaction to ensure atomicity
     const trx = await db.transaction();
     try {
-      let article: GuideArticle;
-      if (draft.originalArticleId !== null) {
-        // Update existing article
-        const existingArticle = await GuideArticle.findOrFail(
-          draft.originalArticleId,
+      let organization: StudentOrganization;
+      if (draft.originalOrganizationId !== null) {
+        // Update existing organization
+        const existingOrg = await StudentOrganization.findOrFail(
+          draft.originalOrganizationId,
           { client: trx },
         ).addErrorContext(
-          () => `GuideArticle with id ${draft.originalArticleId} not found`,
+          () =>
+            `StudentOrganization with id ${draft.originalOrganizationId} not found`,
         );
-        existingArticle.merge(draftData);
-        await existingArticle
+        existingOrg.merge(draftData);
+        await existingOrg
           .useTransaction(trx)
           .save()
-          .addErrorContext("Failed to save updated GuideArticle");
-        article = existingArticle;
+          .addErrorContext("Failed to save updated StudentOrganization");
+        organization = existingOrg;
       } else {
-        // Create new article
-        article = await GuideArticle.create(draftData, {
+        // Create new organization
+        organization = await StudentOrganization.create(draftData, {
           client: trx,
-        }).addErrorContext("Failed to create new GuideArticle");
+        }).addErrorContext("Failed to create new StudentOrganization");
       }
 
-      // Delete draft after successful article creation/update
+      // Delete draft after successful organization creation/update
       await draft
         .useTransaction(trx)
         .delete()
-        .addErrorContext("Failed to delete GuideArticleDraft after approval");
+        .addErrorContext(
+          "Failed to delete StudentOrganizationDraft after approval",
+        );
 
       await trx.commit();
-      return { data: article };
+
+      return { success: true, organizationId: organization.id };
     } catch (error) {
       await trx.rollback();
       throw error;
