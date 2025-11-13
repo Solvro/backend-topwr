@@ -4,8 +4,10 @@ import { DateTime } from "luxon";
 import { BaseModel } from "@adonisjs/lucid/orm";
 import db from "@adonisjs/lucid/services/db";
 import { ModelAttributes } from "@adonisjs/lucid/types/model";
+import type { ManyToMany } from "@adonisjs/lucid/types/relations";
 
-import { typedColumn } from "#decorators/typed_model";
+import { typedColumn, typedManyToMany } from "#decorators/typed_model";
+import PushNotificationEntry from "#models/push_notification_entry";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -47,6 +49,16 @@ export default class FirebaseTopic extends BaseModel {
 
   @typedColumn({ optional: true, type: "string" })
   declare description: string | null;
+
+  @typedManyToMany(() => PushNotificationEntry, {
+    pivotTable: "push_notification_entries_topics",
+    localKey: "topic_name",
+    pivotForeignKey: "firebase_topic_topic_name",
+    pivotRelatedForeignKey: "push_notification_entry_id",
+    pivotTimestamps: false,
+    pivotColumns: {},
+  })
+  declare notifications: ManyToMany<typeof PushNotificationEntry>;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

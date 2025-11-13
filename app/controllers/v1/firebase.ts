@@ -112,7 +112,7 @@ export default class FirebaseController extends BaseController<
     );
   }
 
-  protected readonly queryRelations = [];
+  protected readonly queryRelations = ["notifications"];
   protected readonly crudRelations = [];
   protected readonly model = FirebaseTopic;
 }
