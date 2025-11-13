@@ -11,12 +11,28 @@ import PushNotificationEntry from "#models/push_notification_entry";
 const { default: BaseController } = await (() =>
   import("#controllers/base_controller"))();
 
-const topicBelongingValidator = vine.compile(
-  vine.object({
-    include: vine.array(vine.string()).notEmpty().optional(),
-    exclude: vine.array(vine.string()).notEmpty().optional(),
-  }),
-);
+// I give up on using built-in vine functions. Optional and transform cannot be used on union types for some reason.
+const queryParamSchema = vine
+  .any()
+  .transform((value) => {
+    if (
+      Array.isArray(value) &&
+      value.every((item) => typeof item === "string")
+    ) {
+      // vine.array(vine.string()).notEmpty()
+      return value;
+    } else if (typeof value === "string") {
+      // vine.string().transform(value => [value])
+      return [value];
+    }
+    return undefined;
+  })
+  .optional();
+
+const topicBelongingValidator = vine.object({
+  include: queryParamSchema,
+  exclude: queryParamSchema,
+});
 
 export default class NotificationController extends BaseController<
   typeof PushNotificationEntry
@@ -34,14 +50,15 @@ export default class NotificationController extends BaseController<
           destroy: true,
         },
       });
-      router.post("/", [controller, "getByTopic"]).as("index");
+      router.get("/", [controller, "getByTopic"]).as("index");
     });
   }
 
   async getByTopic({ request }: HttpContext) {
-    const { include, exclude } = await request.validateUsing(
-      topicBelongingValidator,
-    );
+    const { include, exclude } = await vine.validate({
+      schema: topicBelongingValidator,
+      data: request.only(["include", "exclude"]),
+    });
     // Reject overlaps
     const includeSet = new Set(include ?? []);
     if (exclude !== undefined && includeSet.size > 0) {
