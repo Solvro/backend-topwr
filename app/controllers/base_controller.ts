@@ -108,7 +108,6 @@ export type DeleteHookContext<T extends LucidModel> = Omit<
   "request"
 >;
 
-const API_VERSION_REGEX = /^v\d+$/;
 const LOADABLE_EXTENSIONS = [".js", ".ts"];
 
 /**
@@ -400,6 +399,7 @@ export default abstract class BaseController<
    */
   static async configureRoutes(
     controller: LazyImport<Constructor<object>>,
+    debugName: string,
   ): Promise<() => void> {
     const imported = await controller();
     const Controller = imported.default;
@@ -413,11 +413,11 @@ export default abstract class BaseController<
         )
       ) {
         throw new Error(
-          `Attempted to configure routes for a non-BaseController-based controller which does not implement $configureRoutes: ${Controller.name}`,
+          `Attempted to configure routes for a non-BaseController-based controller which does not implement $configureRoutes: ${debugName}`,
         );
       }
       logger.warn(
-        `Configuring routes for a non-BaseController-based controller: ${Controller.name}`,
+        `Configuring routes for a non-BaseController-based controller: ${debugName}`,
       );
       return instance.$configureRoutes.bind(instance, controller);
     }
@@ -432,21 +432,19 @@ export default abstract class BaseController<
   /**
    * Generates a configuration callback that configures each of the named controllers
    */
-  static async configureByNames(
-    version: string,
-    names: string[],
-  ): Promise<() => void> {
+  static async configureByNames(paths: string[]): Promise<() => void> {
     const toConfigure: [string, () => void][] = await Promise.all(
-      names.map(async (name) => {
+      paths.map(async (path) => {
         const controller = (async () =>
-          await import(`#controllers/${version}/${name}`)) as LazyImport<
+          await import(`#controllers/${path}`)) as LazyImport<
           Constructor<object>
         >;
-        return [name, await BaseController.configureRoutes(controller)];
+        return [path, await BaseController.configureRoutes(controller, path)];
       }),
     );
     return () => {
-      for (const [name, config] of toConfigure) {
+      for (const [path, config] of toConfigure) {
+        const name = path.split("/").at(-1) ?? path;
         router.group(config).prefix(`/${name}`).as(name);
       }
     };
@@ -457,16 +455,25 @@ export default abstract class BaseController<
    */
   static async configureAll(): Promise<void> {
     // find all version directories
-    const dirReader = await fs.opendir("./app/controllers");
-    let dir = null;
-    while ((dir = await dirReader.read()) !== null) {
-      if (!dir.isDirectory() || !API_VERSION_REGEX.test(dir.name)) {
-        continue;
+    let version = 0;
+    // map endpoint names to version directories
+    // allows new API versions to inherit from earlier ones without symlinks or code duplication
+    const currentEndpoints = new Map<string, number>();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    while (true) {
+      // iterate while directories for each version exist
+      const dir = `./app/controllers/v${++version}`;
+      try {
+        const statResult = await fs.stat(dir);
+        if (!statResult.isDirectory()) {
+          break;
+        }
+      } catch {
+        break;
       }
 
       // list directory files for the version
-      const verDirReader = await fs.opendir(`./app/controllers/${dir.name}`);
-      const controllerList = [];
+      const verDirReader = await fs.opendir(dir);
       let controllerFile: Dirent | null = null;
       while ((controllerFile = await verDirReader.read()) !== null) {
         // skip non-files
@@ -479,11 +486,12 @@ export default abstract class BaseController<
             continue;
           }
           // add to list
-          controllerList.push(
+          currentEndpoints.set(
             controllerFile.name.substring(
               0,
               controllerFile.name.length - ext.length,
             ),
+            version,
           );
           break;
         }
@@ -492,12 +500,16 @@ export default abstract class BaseController<
 
       // configure
       const configureVersion = await BaseController.configureByNames(
-        dir.name,
-        controllerList,
+        currentEndpoints
+          .entries()
+          .map(([name, ver]) => `v${ver}/${name}`)
+          .toArray(),
       );
-      router.group(configureVersion).prefix(`/api/${dir.name}`).as(dir.name);
+      router
+        .group(configureVersion)
+        .prefix(`/api/v${version}`)
+        .as(`v${version}`);
     }
-    await dirReader.close();
   }
 
   /**

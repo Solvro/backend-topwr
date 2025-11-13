@@ -1,4 +1,4 @@
-import vine, { BaseLiteralType, Vine } from "@vinejs/vine";
+import vine, { BaseLiteralType, Vine, symbols } from "@vinejs/vine";
 import { FieldContext, FieldOptions, Validation } from "@vinejs/vine/types";
 import { DateTime } from "luxon";
 import type { DateTimeOptions } from "luxon";
@@ -133,6 +133,8 @@ export class VineLuxonDateTime extends BaseLiteralType<
   DateTime<true>,
   DateTime<true>
 > {
+  [symbols.SUBTYPE] = "luxonDateTime";
+
   constructor(
     options?: Partial<FieldOptions> & { dateOpts?: DateTimeOptions },
     validations?: Validation<unknown>[],
