@@ -17,6 +17,9 @@ export default class StudentOrganizationLink extends BaseModel {
   @typedColumn({ type: "string" })
   declare link: string;
 
+  @typedColumn({ type: "string", optional: true })
+  declare name: string | null;
+
   @typedColumn({ type: LinkType })
   declare linkType: LinkType;
 
