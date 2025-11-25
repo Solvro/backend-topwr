@@ -10,7 +10,7 @@ export default class extends BaseSchema {
         .references("id")
         .inTable("das")
         .primary()
-        .onDelete("CASCADE");
+        .onDelete("CASCADE"); // Id mapping
       table.text("name").notNullable();
       table.timestamp("created_at").notNullable();
       table.timestamp("updated_at").notNullable();

@@ -5,16 +5,17 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.integer("number").unsigned().notNullable();
+      table.increments("id").primary();
+      table.string("number", 7).notNullable();
       table
         .integer("das_id")
         .references("id")
         .inTable("das")
         .notNullable()
         .onDelete("CASCADE");
-      table.primary(["number", "das_id"]);
-      table.string("name", 127).notNullable().notNullable();
-      table.string("floor", 15).notNullable().nullable();
+      table.unique(["das_id", "number"]); // fake composite key
+      table.string("name", 127).notNullable();
+      table.string("floor", 7).nullable();
       table
         .integer("student_organization_id")
         .references("id")

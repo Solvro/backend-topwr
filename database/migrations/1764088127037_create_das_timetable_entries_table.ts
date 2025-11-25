@@ -5,14 +5,13 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments("id").notNullable();
+      table.increments("id").primary();
       table
         .integer("timetable_id")
         .references("id")
         .inTable("das_timetables")
         .notNullable()
         .onDelete("CASCADE");
-      table.primary(["timetable_id", "id"]);
       table.text("name").notNullable();
       table.timestamp("start_time").nullable();
       table.timestamp("end_time").nullable();
