@@ -1,0 +1,38 @@
+import { DateTime } from "luxon";
+
+import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
+import type { BelongsTo, HasMany } from "@adonisjs/lucid/types/relations";
+
+import { typedColumn } from "#decorators/typed_model";
+import Das from "#models/das";
+import DasTimetableEntry from "#models/das_timetable_entry";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
+
+export default class DasTimetable extends BaseModel {
+  @typedColumn({ isPrimary: true, foreignKeyOf: () => Das })
+  declare id: number; // Id Mapping
+
+  @belongsTo(() => Das, {
+    localKey: "id",
+    foreignKey: "id",
+  })
+  declare das: BelongsTo<typeof Das>;
+
+  @typedColumn({ type: "string" })
+  declare name: string;
+
+  @typedColumn.dateTime({ autoCreate: true })
+  declare createdAt: DateTime;
+
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime;
+
+  @hasMany(() => DasTimetableEntry)
+  declare entries: HasMany<typeof DasTimetableEntry>;
+
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
+}

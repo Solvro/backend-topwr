@@ -1,0 +1,48 @@
+import vine from "@vinejs/vine";
+import { DateTime } from "luxon";
+
+import { BaseModel, belongsTo } from "@adonisjs/lucid/orm";
+import type { BelongsTo } from "@adonisjs/lucid/types/relations";
+
+import { typedColumn } from "#decorators/typed_model";
+import Das from "#models/das";
+import FileEntry from "#models/file_entry";
+import { preloadRelations } from "#scopes/preload_helper";
+import { handleSearchQuery } from "#scopes/search_helper";
+import { handleSortQuery } from "#scopes/sort_helper";
+
+export default class DasMap extends BaseModel {
+  @typedColumn({ isPrimary: true, type: "integer" })
+  declare id: number;
+
+  @typedColumn({ isPrimary: true, foreignKeyOf: () => Das })
+  declare dasId: number;
+
+  @belongsTo(() => Das, {
+    localKey: "id",
+    foreignKey: "dasId",
+  })
+  declare das: BelongsTo<typeof Das>;
+
+  @typedColumn({ type: "string", validator: vine.string().maxLength(127) })
+  declare name: string;
+
+  @typedColumn.dateTime({ autoCreate: true })
+  declare createdAt: DateTime;
+
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime;
+
+  @typedColumn({ foreignKeyOf: () => FileEntry })
+  declare contentKey: string;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "contentKey",
+  })
+  declare content: BelongsTo<typeof FileEntry>;
+
+  static preloadRelations = preloadRelations();
+  static handleSearchQuery = handleSearchQuery();
+  static handleSortQuery = handleSortQuery();
+}
