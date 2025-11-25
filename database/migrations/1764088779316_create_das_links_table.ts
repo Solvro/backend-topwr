@@ -21,14 +21,13 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.createTable(this.tableName, (table) => {
-      table.increments("id").notNullable();
+      table.increments("id").primary();
       table
         .integer("das_id")
         .references("id")
         .inTable("das")
         .notNullable()
         .onDelete("CASCADE");
-      table.primary(["das_id", "id"]);
       table.text("link").notNullable();
       table
         .enum("type", this.linkTypes, {
