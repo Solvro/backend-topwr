@@ -24,6 +24,12 @@ export default class Das extends BaseModel {
   @hasMany(() => DasStand)
   declare stands: HasMany<typeof DasStand>;
 
+  @typedColumn.dateTime({ autoCreate: false })
+  declare startsAt: DateTime;
+
+  @typedColumn.dateTime({ autoCreate: false })
+  declare endsAt: DateTime;
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
