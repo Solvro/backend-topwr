@@ -70,7 +70,7 @@ export default class StudentOrganizationDraft
 
   // Link to original published organization (optional)
   @typedColumn({ foreignKeyOf: () => StudentOrganization, optional: true })
-  declare originalOrganizationId: number | null;
+  declare originalId: number | null;
 
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
@@ -83,9 +83,9 @@ export default class StudentOrganizationDraft
 
   @belongsTo(() => StudentOrganization, {
     localKey: "id",
-    foreignKey: "originalOrganizationId",
+    foreignKey: "originalId",
   })
-  declare originalOrganization: BelongsTo<typeof StudentOrganization>;
+  declare original: BelongsTo<typeof StudentOrganization>;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;

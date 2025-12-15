@@ -57,9 +57,9 @@ export default class extends BaseSchema {
         .notNullable()
         .defaultTo("active");
 
-      table.integer("original_organization_id").unsigned().nullable();
+      table.integer("original_id").unsigned().nullable();
       table
-        .foreign("original_organization_id")
+        .foreign("original_id")
         .references("student_organizations.id")
         .onDelete("CASCADE");
 

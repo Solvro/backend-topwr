@@ -230,9 +230,17 @@ For draft models (`student_organization_drafts`, `guide_article_drafts`), there 
 
 - **POST /api/v1/:model/:id/approve**
   - **Requires authentication and solvro_admin role**
-  - Approves the draft by updating the corresponding main model instance (if `original*Id` is set) or creating a new one
+  - Approves the draft by updating the corresponding main model instance (if `originalId` is set) or creating a new one
   - Deletes the draft after approval
   - Response: `{ "data": Model }`
+
+##### Unified drafts endpoint
+
+- **GET /api/v1/drafts**
+  - **Requires authentication**
+  - Returns drafts of both types (organization and article)
+  - Supports optional `resourceType` query parameter: `organization_draft` or `article_draft`
+  - Response: `{ "data": [{ "resourceType": "organization_draft" | "article_draft", "data": Model }] }`
 
 ##### What model properties can I send?
 

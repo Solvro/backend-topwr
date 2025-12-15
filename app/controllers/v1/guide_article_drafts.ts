@@ -31,7 +31,7 @@ type Action =
 export default class GuideArticleDraftsController extends BaseController<
   typeof GuideArticleDraft
 > {
-  protected readonly queryRelations = ["image", "originalArticle", "createdBy"];
+  protected readonly queryRelations = ["image", "original", "createdBy"];
   protected readonly crudRelations: string[] = [];
   protected readonly model = GuideArticleDraft;
 
@@ -188,7 +188,7 @@ export default class GuideArticleDraftsController extends BaseController<
       request.createdByUserId = Number(creatorId);
     }
 
-    const originalId = request.originalArticleId;
+    const originalId = request.originalId;
 
     // For completely new drafts (no original article), require create permission on GuideArticle
     if (originalId === null || originalId === undefined) {
@@ -268,12 +268,12 @@ export default class GuideArticleDraftsController extends BaseController<
     const trx = await db.transaction();
     try {
       let article: GuideArticle;
-      if (draft.originalArticleId !== null) {
+      if (draft.originalId !== null) {
         const existingArticle = await GuideArticle.findOrFail(
-          draft.originalArticleId,
+          draft.originalId,
           { client: trx },
         ).addErrorContext(
-          () => `GuideArticle with id ${draft.originalArticleId} not found`,
+          () => `GuideArticle with id ${draft.originalId} not found`,
         );
         existingArticle.merge(draftData);
         await existingArticle

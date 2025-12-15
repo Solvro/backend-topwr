@@ -16,9 +16,9 @@ export default class extends BaseSchema {
         .references("file_entries.id")
         .onDelete("RESTRICT");
 
-      table.integer("original_article_id").unsigned().nullable();
+      table.integer("original_id").unsigned().nullable();
       table
-        .foreign("original_article_id")
+        .foreign("original_id")
         .references("guide_articles.id")
         .onDelete("CASCADE");
 
@@ -32,11 +32,11 @@ export default class extends BaseSchema {
       table.timestamp("updated_at").notNullable();
     });
 
-    // Add unique constraint: only one draft per article (null original_article_id allowed for new articles)
+    // Add unique constraint: only one draft per article (null original_id allowed for new articles)
     this.schema.raw(`
-      CREATE UNIQUE INDEX guide_article_drafts_original_article_id_unique
-      ON guide_article_drafts (original_article_id)
-      WHERE original_article_id IS NOT NULL
+      CREATE UNIQUE INDEX guide_article_drafts_original_id_unique
+      ON guide_article_drafts (original_id)
+      WHERE original_id IS NOT NULL
     `);
   }
 

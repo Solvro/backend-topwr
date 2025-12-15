@@ -343,7 +343,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     ok.assertStatus(200);
   });
 
-  test("student org draft: store with originalOrganizationId requires per-model on original", async ({
+  test("student org draft: store with originalId requires per-model on original", async ({
     client,
   }) => {
     const owner = await User.create({
@@ -378,7 +378,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     // but only owner has per-model update on base org
     await Acl.model(owner).allow("update", base);
 
-    // other should be forbidden when referencing originalOrganizationId
+    // other should be forbidden when referencing originalId
     const fail = await client
       .post(`/api/v1/student_organization_drafts`)
       .header("Authorization", `Bearer ${tOther}`)
@@ -389,7 +389,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
         organizationStatus: OrganizationStatus.Active,
-        originalOrganizationId: base.id,
+        originalId: base.id,
         branch: Branch.Main,
       });
     fail.assertStatus(403);
@@ -404,13 +404,13 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         source: OrganizationSource.Manual,
         organizationType: OrganizationType.StudentOrganization,
         organizationStatus: OrganizationStatus.Active,
-        originalOrganizationId: base.id,
+        originalId: base.id,
         branch: Branch.Main,
       });
     ok.assertStatus(200);
   });
 
-  test("guide article draft: store with originalArticleId requires per-model on original", async ({
+  test("guide article draft: store with originalId requires per-model on original", async ({
     client,
   }) => {
     const owner = await User.create({
@@ -454,7 +454,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         shortDesc: "S",
         description: "D",
         imageKey: file2.id,
-        originalArticleId: article.id,
+        originalId: article.id,
       });
     fail.assertStatus(403);
 
@@ -466,7 +466,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
         imageKey: file3.id,
         shortDesc: "S",
         description: "D",
-        originalArticleId: article.id,
+        originalId: article.id,
       });
     ok.assertStatus(200);
   });
@@ -681,7 +681,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       source: OrganizationSource.Manual,
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
-      originalOrganizationId: existingOrg.id,
+      originalId: existingOrg.id,
       branch: Branch.Main,
     });
 

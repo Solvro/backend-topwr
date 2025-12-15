@@ -35,7 +35,7 @@ export default class StudentOrganizationDraftsController extends BaseController<
     "logo",
     "cover",
     "department",
-    "originalOrganization",
+    "original",
   ];
   protected readonly crudRelations: string[] = [];
   protected readonly model = StudentOrganizationDraft;
@@ -196,7 +196,7 @@ export default class StudentOrganizationDraftsController extends BaseController<
       return;
     }
 
-    const originalId = request.originalOrganizationId;
+    const originalId = request.originalId;
 
     // For completely new drafts (no original organization), require create permission on StudentOrganization
     if (originalId === null || originalId === undefined) {
@@ -290,14 +290,13 @@ export default class StudentOrganizationDraftsController extends BaseController<
     const trx = await db.transaction();
     try {
       let organization: StudentOrganization;
-      if (draft.originalOrganizationId !== null) {
+      if (draft.originalId !== null) {
         // Update existing organization
         const existingOrg = await StudentOrganization.findOrFail(
-          draft.originalOrganizationId,
+          draft.originalId,
           { client: trx },
         ).addErrorContext(
-          () =>
-            `StudentOrganization with id ${draft.originalOrganizationId} not found`,
+          () => `StudentOrganization with id ${draft.originalId} not found`,
         );
         existingOrg.merge(draftData);
         await existingOrg
