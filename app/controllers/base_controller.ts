@@ -1157,7 +1157,7 @@ export default abstract class BaseController<
 
     const mainInstance = await this.getFirstOrFail(localId);
     await this.authorizeRecord(
-      { request, route, auth } as unknown as HttpContext,
+      httpCtx,
       "manyToManyRelationAttach",
       mainInstance,
     );
@@ -1233,7 +1233,7 @@ export default abstract class BaseController<
     if (this.authorizeRecord !== BaseController.prototype.authorizeRecord) {
       const mainInstance = await this.getFirstOrFail(localId);
       await this.authorizeRecord(
-        { request, route, auth } as unknown as HttpContext,
+        httpCtx,
         "manyToManyRelationDetach",
         mainInstance,
       );
