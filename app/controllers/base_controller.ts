@@ -125,7 +125,7 @@ export interface RouteConfigurationOptions {
 }
 
 // Action names supported by BaseController handlers
-type ControllerAction =
+export type ControllerAction =
   | "index"
   | "show"
   | "store"

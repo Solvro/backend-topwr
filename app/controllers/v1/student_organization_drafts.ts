@@ -5,7 +5,10 @@ import type { Constructor } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
 import type BaseControllerType from "#controllers/base_controller";
-import type { PartialModel } from "#controllers/base_controller";
+import type {
+  ControllerAction,
+  PartialModel,
+} from "#controllers/base_controller";
 import {
   ForbiddenException,
   NotFoundException,
@@ -16,17 +19,6 @@ import StudentOrganizationDraft from "#models/student_organization_draft";
 const { default: BaseController } = (await import(
   "#controllers/base_controller"
 )) as { default: typeof BaseControllerType };
-
-type Action =
-  | "index"
-  | "show"
-  | "store"
-  | "update"
-  | "destroy"
-  | "relationIndex"
-  | "oneToManyRelationStore"
-  | "manyToManyRelationAttach"
-  | "manyToManyRelationDetach";
 
 export default class StudentOrganizationDraftsController extends BaseController<
   typeof StudentOrganizationDraft
@@ -47,7 +39,7 @@ export default class StudentOrganizationDraftsController extends BaseController<
    */
   protected async authenticate(
     http: HttpContext,
-    action: Action,
+    action: ControllerAction,
   ): Promise<void> {
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
@@ -71,14 +63,14 @@ export default class StudentOrganizationDraftsController extends BaseController<
 
     // For actions with IDs (show, update, destroy), allow class-level permission check to pass through
     // and rely on authorizeById for instance-level checks
-    const actionsWithIds: Action[] = ["show", "update", "destroy"];
+    const actionsWithIds: ControllerAction[] = ["show", "update", "destroy"];
     if (actionsWithIds.includes(action)) {
       // Don't enforce permission here, let authorizeById handle it
       return;
     }
 
     // For actions without IDs (index, store), check class-level permission
-    const slugMap: Record<Action, string> = {
+    const slugMap: Record<ControllerAction, string> = {
       index: "read",
       show: "read",
       store: "create",
@@ -100,13 +92,13 @@ export default class StudentOrganizationDraftsController extends BaseController<
   /**
    * Override to disable the base permission check since we handle it in authenticate()
    */
-  protected requiredPermissionFor(_action: Action) {
+  protected requiredPermissionFor(_action: ControllerAction) {
     return null;
   }
 
   protected async authorizeById(
     http: HttpContext,
-    action: Action,
+    action: ControllerAction,
     ids: { localId?: number | string },
   ) {
     // Admin roles bypass handled via hasRole checks
