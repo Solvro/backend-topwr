@@ -1,3 +1,4 @@
+import { assertExhaustive } from "@solvro/utils/misc";
 import vine from "@vinejs/vine";
 
 import type { HttpContext } from "@adonisjs/core/http";
@@ -8,10 +9,12 @@ import { ForbiddenException } from "#exceptions/http_exceptions";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 
+type ResourceType = "organization_draft" | "article_draft";
+
 const resourceTypeEnum = vine.enum([
   "organization_draft",
   "article_draft",
-] as const);
+] as ResourceType[]);
 
 const listDraftsValidator = vine.compile(
   vine.object({
@@ -30,7 +33,10 @@ export default class DraftsController {
     }
   }
 
-  private async hasReadAccess(auth: HttpContext["auth"]): Promise<boolean> {
+  private async hasReadAccess(
+    auth: HttpContext["auth"],
+    resourceType: ResourceType | undefined,
+  ): Promise<boolean> {
     const user = auth.user as unknown as
       | {
           hasRole?: (slug: string) => Promise<boolean>;
@@ -58,7 +64,16 @@ export default class DraftsController {
       GuideArticleDraft,
     );
 
-    return canReadOrgDrafts === true || canReadArticleDrafts === true;
+    switch (resourceType) {
+      case "organization_draft":
+        return canReadOrgDrafts === true;
+      case "article_draft":
+        return canReadArticleDrafts === true;
+      case undefined:
+        return canReadOrgDrafts === true || canReadArticleDrafts === true;
+      default:
+        assertExhaustive(resourceType);
+    }
   }
 
   /**
@@ -68,15 +83,15 @@ export default class DraftsController {
   async index({ request, auth }: HttpContext) {
     await this.ensureAuthenticated(auth);
 
-    const hasAccess = await this.hasReadAccess(auth);
+    const { resourceType } = await request.validateUsing(listDraftsValidator);
+
+    const hasAccess = await this.hasReadAccess(auth, resourceType);
     if (!hasAccess) {
       throw new ForbiddenException();
     }
 
-    const { resourceType } = await request.validateUsing(listDraftsValidator);
-
     const results: {
-      resourceType: "organization_draft" | "article_draft";
+      resourceType: ResourceType;
       data: unknown;
     }[] = [];
 
