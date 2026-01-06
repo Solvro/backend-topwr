@@ -255,9 +255,24 @@ export default abstract class BaseController<
       }
     }
 
+    // check if model supports permissions
+    if (
+      !(
+        "getModelId" in this.model.prototype &&
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- bro i checked it
+        typeof this.model.prototype.getModelId === "function"
+      )
+    ) {
+      // looks like we don't support perms, deny
+      throw new ForbiddenException();
+    }
+
     // Handle array of alternative permissions (user needs ANY of them)
     const slugArray = Array.isArray(slugs) ? slugs : [slugs];
-    const hasPermission = await http.auth.user.hasAnyPermission(slugArray);
+    const hasPermission = await http.auth.user.hasAnyPermission(
+      slugArray,
+      this.model,
+    );
 
     if (!hasPermission) {
       throw new ForbiddenException();

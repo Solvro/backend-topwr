@@ -135,6 +135,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       password: "Passw0rd!",
       fullName: "User 2",
     });
+    await u1.refresh();
+    await u2.refresh();
     const t1 = await makeToken(u1);
     const t2 = await makeToken(u2);
 
@@ -146,6 +148,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
+      createdByUserId: u1.id,
     });
 
     await Acl.model(u1).allow("read", draft);
@@ -169,6 +172,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       password: "Passw0rd!",
       fullName: "User 3",
     });
+    await u.refresh();
     const token = await makeToken(u);
 
     const d1 = await StudentOrganizationDraft.create({
@@ -179,6 +183,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
+      createdByUserId: u.id,
     });
     const d2 = await StudentOrganizationDraft.create({
       name: "Draft Org C",
@@ -188,6 +193,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
+      createdByUserId: u.id,
     });
 
     await Acl.model(u).allow("read", StudentOrganizationDraft);
@@ -216,6 +222,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       password: "Passw0rd!",
       fullName: "User 5",
     });
+    await u1.refresh();
+    await u2.refresh();
     const t1 = await makeToken(u1);
     const t2 = await makeToken(u2);
 
@@ -227,6 +235,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
+      createdByUserId: u1.id,
     });
 
     await Acl.model(u1).allow("update", draft);
@@ -255,6 +264,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       password: "Passw0rd!",
       fullName: "User 7",
     });
+    await u1.refresh();
+    await u2.refresh();
     const t1 = await makeToken(u1);
     const t2 = await makeToken(u2);
 
@@ -495,6 +506,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       password: "Passw0rd!",
       fullName: "User 10",
     });
+    await u1.refresh();
+    await u2.refresh();
     const t1 = await makeToken(u1);
     const t2 = await makeToken(u2);
 
@@ -506,6 +519,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
+      createdByUserId: u1.id,
     });
 
     // grant per-model destroy to u1
@@ -631,6 +645,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       fullName: "Approve Admin",
     });
     await assignSolvroAdmin(adminUser);
+    await adminUser.refresh();
     const adminToken = await makeToken(adminUser);
 
     const draft = await StudentOrganizationDraft.create({
@@ -641,21 +656,22 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
+      createdByUserId: adminUser.id,
     });
 
     const response = await client
       .post(`/api/v1/student_organization_drafts/${draft.id}/approve`)
       .header("Authorization", `Bearer ${adminToken}`);
     response.assertStatus(200);
+    const jsonResp = JSON.parse(response.text()) as {
+      success: boolean;
+      approvedId: number;
+    };
+    assert.ok(jsonResp.success);
 
     // Check that organization was created
-    const org = await StudentOrganization.findBy(
-      "name",
-      "Draft Org To Approve",
-    );
-    if (org === null) {
-      throw new Error("Organization not found after approve");
-    }
+    const org = await StudentOrganization.findOrFail(jsonResp.approvedId);
+    assert.equal(org.name, "Draft Org To Approve");
     assert.equal(org.isStrategic, true);
 
     // Check that draft was deleted
@@ -673,6 +689,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       fullName: "Approve Admin 2",
     });
     await assignSolvroAdmin(adminUser);
+    await adminUser.refresh();
     const adminToken = await makeToken(adminUser);
 
     const existingOrg = await StudentOrganization.create({
@@ -694,6 +711,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationStatus: OrganizationStatus.Active,
       originalId: existingOrg.id,
       branch: Branch.Main,
+      createdByUserId: adminUser.id,
     });
 
     const response = await client
@@ -719,6 +737,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       password: "Passw0rd!",
       fullName: "Regular User",
     });
+    await regularUser.refresh();
     const token = await makeToken(regularUser);
 
     const draft = await StudentOrganizationDraft.create({
@@ -729,6 +748,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
       organizationType: OrganizationType.StudentOrganization,
       organizationStatus: OrganizationStatus.Active,
       branch: Branch.Main,
+      createdByUserId: regularUser.id,
     });
 
     const response = await client
