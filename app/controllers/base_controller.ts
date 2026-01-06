@@ -50,7 +50,7 @@ import {
 } from "#utils/model_autogen";
 import { paginationValidator } from "#validators/pagination";
 
-interface Scopes<T extends LucidModel> {
+export interface Scopes<T extends LucidModel> {
   preloadRelations: ReturnType<typeof preloadRelations<T>>;
   handleSearchQuery: ReturnType<typeof handleSearchQuery<T>>;
   handleSortQuery: ReturnType<typeof handleSortQuery<T>>;
@@ -162,6 +162,10 @@ export default abstract class BaseController<
    * the id as an url parameter, using this value to look up the instance instead.
    */
   protected readonly singletonId?: number | string;
+  /**
+   * With the default implementation of `authenticate()`, if the user has any of the following roles, the permission checks are skipped.
+   */
+  protected superUserRoles: string[] = ["solvro_admin"];
 
   /**
    * Return the permission slug(s) required for the given action, or null/undefined if none is required.
@@ -171,6 +175,7 @@ export default abstract class BaseController<
    *  - string: A single required permission
    *  - string[]: Multiple alternative permissions (user needs ANY of them)
    *  - null/undefined: Public endpoint
+   *  - "authOnly": special permission slug - the user will be authenticated, but no permissions will be checked
    *
    * Defaults:
    *  - store -> "create"
@@ -233,36 +238,30 @@ export default abstract class BaseController<
     if (!http.auth.isAuthenticated) {
       await http.auth.authenticate();
     }
+    assert(http.auth.user !== undefined);
 
-    // Superuser bypass: solvro_admin has access to everything
-    const isSolvroAdmin = await (
-      http.auth.user as unknown as {
-        hasRole?: (slug: string) => Promise<boolean>;
-      }
-    ).hasRole?.("solvro_admin");
-    if (isSolvroAdmin === true) {
+    // special permission slug - authenticated users only, no permissions required
+    if (slugs === "authOnly") {
       return;
+    }
+
+    // Superuser bypass
+    if (this.superUserRoles.length > 0) {
+      const isSuperUser = await http.auth.user.hasAnyRole(
+        ...this.superUserRoles,
+      );
+      if (isSuperUser) {
+        return;
+      }
     }
 
     // Handle array of alternative permissions (user needs ANY of them)
     const slugArray = Array.isArray(slugs) ? slugs : [slugs];
+    const hasPermission = await http.auth.user.hasAnyPermission(slugArray);
 
-    for (const slug of slugArray) {
-      const has = await (
-        http.auth.user as unknown as {
-          hasPermission?: (
-            action: string,
-            target?: unknown,
-          ) => Promise<boolean>;
-        }
-      ).hasPermission?.(slug);
-      if (has === true) {
-        return; // User has at least one of the required permissions
-      }
+    if (!hasPermission) {
+      throw new ForbiddenException();
     }
-
-    // User doesn't have any of the required permissions
-    throw new ForbiddenException();
   }
 
   /**
@@ -272,7 +271,6 @@ export default abstract class BaseController<
    * @param http - The HTTP context
    * @param action - The controller action being performed
    * @param ids - Object containing optional localId, relatedId, and relationName for row-level authorization
-   * @param ids.id - The primary resource ID (optional)
    * @param ids.localId - The local resource ID (optional)
    * @param ids.relatedId - The related resource ID for many-to-many relations (optional)
    * @param ids.relationName - The relation name being accessed (optional)
@@ -281,8 +279,7 @@ export default abstract class BaseController<
     http: HttpContext,
     action: ControllerAction,
     ids: {
-      id?: string | number;
-      localId?: string | number;
+      localId: string | number;
       relatedId?: string | number;
       relationName?: string;
     },
@@ -927,7 +924,7 @@ export default abstract class BaseController<
       this.updateValidator,
     )) as PartialModel<T>;
 
-    await this.authorizeById(httpCtx, "update", { id, localId: id });
+    await this.authorizeById(httpCtx, "update", { localId: id });
     const row = await this.getFirstOrFail(id);
     await this.authorizeRecord(httpCtx, "update", row);
     updates =
@@ -979,7 +976,7 @@ export default abstract class BaseController<
       params: { id: string | number };
     };
 
-    await this.authorizeById(httpCtx, "destroy", { id, localId: id });
+    await this.authorizeById(httpCtx, "destroy", { localId: id });
 
     const record = await this.getFirstOrFail(id);
     await this.authorizeRecord(httpCtx, "destroy", record);
@@ -1023,7 +1020,6 @@ export default abstract class BaseController<
     const { page, limit } = await request.validateUsing(paginationValidator);
 
     await this.authorizeById(httpCtx, "relationIndex", {
-      id,
       localId: id,
       relationName,
     });
@@ -1082,7 +1078,6 @@ export default abstract class BaseController<
       params: { id: string | number };
     };
     await this.authorizeById(httpCtx, "oneToManyRelationStore", {
-      id,
       localId: id,
       relationName,
     });

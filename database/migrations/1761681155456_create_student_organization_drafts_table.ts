@@ -22,6 +22,10 @@ export default class extends BaseSchema {
       table.text("short_description").nullable();
       table.boolean("cover_preview").notNullable().defaultTo(false);
 
+      table.text("en_name").nullable();
+      table.text("en_short_description").nullable();
+      table.text("en_description").nullable();
+
       table
         .enum("source", ["student_department", "manual", "pwr_active"], {
           useNative: true,
@@ -61,6 +65,12 @@ export default class extends BaseSchema {
       table
         .foreign("original_id")
         .references("student_organizations.id")
+        .onDelete("CASCADE");
+
+      table.integer("created_by_user_id").unsigned().notNullable();
+      table
+        .foreign("created_by_user_id")
+        .references("users.id")
         .onDelete("CASCADE");
 
       table

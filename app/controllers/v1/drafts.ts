@@ -1,13 +1,22 @@
 import { assertExhaustive } from "@solvro/utils/misc";
 import vine from "@vinejs/vine";
+import assert from "node:assert";
 
 import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import { Constructor, LazyImport } from "@adonisjs/core/types/http";
+import db from "@adonisjs/lucid/services/db";
+import { LucidModel, ModelAttributes } from "@adonisjs/lucid/types/model";
 
+import { thinModel } from "#app/utils/permissions";
 import { ForbiddenException } from "#exceptions/http_exceptions";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganizationDraft from "#models/student_organization_draft";
+
+import BaseController, {
+  ControllerAction,
+  Scopes,
+} from "../base_controller.js";
 
 type ResourceType = "organization_draft" | "article_draft";
 
@@ -130,5 +139,224 @@ export default class DraftsController {
     }
 
     return { data: results };
+  }
+}
+
+// =========================
+// GENERIC DRAFTS CONTROLLER
+// =========================
+
+interface BaseDraft {
+  createdByUserId: number;
+  originalId: number | null;
+}
+interface BaseApproved {
+  id: number;
+}
+
+export abstract class GenericDraftController<
+  Approved extends LucidModel,
+  Draft extends LucidModel & Scopes<LucidModel>,
+  ApprovedInstance extends ModelAttributes<InstanceType<Approved>> &
+    BaseApproved,
+  DraftInstance extends ModelAttributes<InstanceType<Draft>> &
+    ApprovedInstance &
+    BaseDraft,
+> extends BaseController<Draft> {
+  // protected readonly queryRelations = ["image", "original", "createdBy"];
+  protected readonly crudRelations: string[] = [];
+  protected abstract readonly model: Draft;
+  protected abstract readonly approvedModel: Approved;
+  protected superUserRoles: string[] = ["solvro_admin", "admin"];
+
+  protected requiredPermissionFor(action: ControllerAction): string {
+    switch (action) {
+      // actions with instance-level checks - require authentication, don't check perms
+      case "show":
+      case "update":
+      case "destroy":
+      case "relationIndex":
+      case "oneToManyRelationStore":
+      case "manyToManyRelationAttach":
+      case "manyToManyRelationDetach":
+        return "authOnly";
+      // other actions
+      case "index":
+        return "read";
+      case "store":
+        return "create";
+      default:
+        assertExhaustive(action);
+    }
+  }
+
+  protected async authorizeById(
+    http: HttpContext,
+    action: ControllerAction,
+    ids: { localId: number },
+  ) {
+    // BaseController's authenticate() should've ensured the user is logged in
+    assert(http.auth.user !== undefined);
+    const user = http.auth.user;
+
+    const isAdmin = await user.hasAnyRole(...this.superUserRoles);
+    if (isAdmin) {
+      return;
+    }
+
+    // Map controller action to permission slug
+    const slugMap: Record<ControllerAction, string> = {
+      index: "read",
+      show: "read",
+      store: "create",
+      update: "update",
+      destroy: "destroy",
+      relationIndex: "read",
+      oneToManyRelationStore: "update",
+      manyToManyRelationAttach: "update",
+      manyToManyRelationDetach: "update",
+    };
+    const slug = slugMap[action];
+
+    // check resource- and instance-scoped permissions (yes, this checks both, i've checked the source code)
+    const allowed = await user.hasPermission(
+      slug,
+      thinModel(this.model, ids.localId),
+    );
+    if (!allowed) {
+      throw new ForbiddenException();
+    }
+  }
+
+  /**
+   * If linking to an existing article, user must be assigned to that article (per-model permission).
+   *
+   * typings here are a bit off, but i can't figure out a better way to type this - adonis moment
+   */
+  protected storeHook = async function (
+    this: GenericDraftController<
+      Approved,
+      Draft,
+      ApprovedInstance,
+      DraftInstance
+    >,
+    ctx: {
+      http: HttpContext;
+      request: Partial<DraftInstance>;
+    },
+  ) {
+    const { http, request } = ctx;
+
+    // authenticate() should've authenticated the user already
+    assert(http.auth.user !== undefined);
+    const user = http.auth.user;
+
+    const isAdmin = await user.hasAnyRole(...this.superUserRoles);
+    if (isAdmin) {
+      return;
+    }
+
+    request.createdByUserId = http.auth.user
+      .id as DraftInstance["createdByUserId"];
+    const originalId = request.originalId;
+
+    // For completely new drafts (no original article), require create permission on GuideArticle
+    if (originalId === null || originalId === undefined) {
+      const allowed = await user.hasPermission("create", this.approvedModel);
+      if (!allowed) {
+        throw new ForbiddenException(
+          `Requires create permission on ${this.approvedModel.name} to propose new articles`,
+        );
+      }
+      return;
+    }
+
+    // For drafts editing existing articles, require update permission on the original article
+    const allowed = await user.hasPermission(
+      "update",
+      thinModel(this.model, originalId),
+    );
+    if (!allowed) {
+      throw new ForbiddenException();
+    }
+  } as unknown as BaseController<Draft>["storeHook"];
+
+  $configureRoutes(
+    controller: LazyImport<
+      Constructor<
+        GenericDraftController<Approved, Draft, ApprovedInstance, DraftInstance>
+      >
+    >,
+  ) {
+    super.$configureRoutes(controller);
+    router.post("/:id/approve", [controller, "approve"]).as("approve");
+  }
+
+  async approve({ request, auth }: HttpContext) {
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    assert(auth.user !== undefined);
+    // Only solvro_admin can approve drafts
+    const isSolvroAdmin = await auth.user.hasRole("solvro_admin");
+    if (!isSolvroAdmin) {
+      throw new ForbiddenException();
+    }
+
+    // Use autogenerated validator for ID
+    const {
+      params: { id: draftId },
+    } = (await request.validateUsing(this.pathIdValidator)) as {
+      params: { id: number };
+    };
+
+    // Use findOrFail with error context
+    const draft = (await this.model
+      .findOrFail(draftId)
+      .addErrorContext(
+        () => `${this.model.name} with id ${draftId} not found`,
+      )) as DraftInstance & InstanceType<Draft>;
+
+    const trx = await db.transaction();
+    try {
+      let approved: ApprovedInstance & InstanceType<Approved>;
+
+      if (draft.originalId !== null) {
+        const existingEntry = await this.approvedModel
+          .findOrFail(draft.originalId, { client: trx })
+          .addErrorContext(
+            () =>
+              `${this.approvedModel.name} with id ${draft.originalId} not found`,
+          );
+        existingEntry.merge(draft);
+        await existingEntry
+          .useTransaction(trx)
+          .save()
+          .addErrorContext(
+            () => `Failed to save updated ${this.approvedModel.name}`,
+          );
+        approved = existingEntry as ApprovedInstance & InstanceType<Approved>;
+      } else {
+        approved = (await this.approvedModel
+          .create(draft, {
+            client: trx,
+          })
+          .addErrorContext(
+            () => `Failed to create new ${this.approvedModel.name}`,
+          )) as ApprovedInstance & InstanceType<Approved>;
+      }
+
+      await draft
+        .useTransaction(trx)
+        .delete()
+        .addErrorContext("Failed to delete GuideArticleDraft after approval");
+
+      await trx.commit();
+
+      return { success: true, approvedId: approved.id };
+    } catch (error) {
+      await trx.rollback();
+      throw error;
+    }
   }
 }
