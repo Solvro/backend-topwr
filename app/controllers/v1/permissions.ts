@@ -57,9 +57,7 @@ export default class PermissionsController {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    const isAdmin = await (
-      auth.user as unknown as { hasRole?: (slug: string) => Promise<boolean> }
-    ).hasRole?.("solvro_admin");
+    const isAdmin = await auth.user?.hasRole("solvro_admin");
     if (isAdmin !== true) {
       throw new ForbiddenException();
     }
