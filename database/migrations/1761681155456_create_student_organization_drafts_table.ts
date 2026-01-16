@@ -15,8 +15,17 @@ export default class extends BaseSchema {
         .references("departments.id")
         .onDelete("RESTRICT");
 
-      table.text("logo_key").nullable();
-      table.text("cover_key").nullable();
+      table.uuid("logo_key").nullable();
+      table
+        .foreign("logo_key")
+        .references("file_entries.id")
+        .onDelete("RESTRICT");
+
+      table.uuid("cover_key").nullable();
+      table
+        .foreign("cover_key")
+        .references("file_entries.id")
+        .onDelete("RESTRICT");
 
       table.text("description").nullable();
       table.text("short_description").nullable();
@@ -85,6 +94,13 @@ export default class extends BaseSchema {
       table.timestamp("created_at").notNullable();
       table.timestamp("updated_at").notNullable();
     });
+
+    // Add unique constraint: only one draft per organization (null original_id allowed for new articles)
+    this.schema.raw(`
+      CREATE UNIQUE INDEX student_organization_drafts_original_id_unique
+      ON student_organization_drafts (original_id)
+      WHERE original_id IS NOT NULL
+    `);
   }
 
   async down() {
