@@ -69,6 +69,15 @@ export default class StudentOrganizationDraft
   @typedColumn({ type: OrganizationStatus })
   declare organizationStatus: OrganizationStatus;
 
+  @typedColumn({ type: "string", optional: true })
+  declare enName: string;
+
+  @typedColumn({ type: "string", optional: true })
+  declare enDescription: string;
+
+  @typedColumn({ type: "string", optional: true })
+  declare enShortDescription: string;
+
   // Link to original published organization (optional)
   @typedColumn({ foreignKeyOf: () => StudentOrganization, optional: true })
   declare originalId: number | null;
@@ -85,15 +94,6 @@ export default class StudentOrganizationDraft
 
   @belongsTo(() => FileEntry, { localKey: "id", foreignKey: "coverKey" })
   declare cover: BelongsTo<typeof FileEntry>;
-
-  @typedColumn({ type: "string", optional: true })
-  declare enName: string;
-
-  @typedColumn({ type: "string", optional: true })
-  declare enDescription: string;
-
-  @typedColumn({ type: "string", optional: true })
-  declare enShortDescription: string;
 
   @belongsTo(() => StudentOrganization, {
     localKey: "id",
