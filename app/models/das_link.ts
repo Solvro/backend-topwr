@@ -18,12 +18,6 @@ export default class DasLink extends BaseModel {
   @typedColumn({ foreignKeyOf: () => Das })
   declare dasId: number;
 
-  @belongsTo(() => Das, {
-    localKey: "id",
-    foreignKey: "dasId",
-  })
-  declare das: BelongsTo<typeof Das>;
-
   @typedColumn({ type: "string" })
   declare link: string;
 
@@ -41,6 +35,12 @@ export default class DasLink extends BaseModel {
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => Das, {
+    localKey: "id",
+    foreignKey: "dasId",
+  })
+  declare das: BelongsTo<typeof Das>;
 
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();

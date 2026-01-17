@@ -13,8 +13,8 @@ export default class extends BaseSchema {
         .notNullable()
         .onDelete("CASCADE");
       table.text("name").notNullable();
-      table.timestamp("start_time").nullable();
-      table.timestamp("end_time").nullable();
+      table.timestamp("start_time").notNullable();
+      table.timestamp("end_time").notNullable();
       table.timestamp("created_at").notNullable();
       table.timestamp("updated_at").notNullable();
     });

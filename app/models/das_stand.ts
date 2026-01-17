@@ -29,20 +29,19 @@ export default class DasStand extends BaseModel {
   })
   declare das: BelongsTo<typeof Das>;
 
-  @typedColumn({ type: "string" })
+  @typedColumn({ type: "string", validator: vine.string().maxLength(127) })
   declare name: string;
 
   @typedColumn({
     type: "string",
     optional: true,
-    validator: vine.string().maxLength(7),
+    validator: vine.string().maxLength(7).optional().nullable(),
   })
   declare floor: string | null; // Also knowing PWr, floor number could also not be a number
 
   @typedColumn({
     type: "string",
     optional: true,
-    validator: vine.string().maxLength(15),
   })
   declare description: string | null;
 
@@ -53,26 +52,26 @@ export default class DasStand extends BaseModel {
   })
   declare studentOrganizationId: number | null;
 
-  @belongsTo(() => StudentOrganization, {
-    localKey: "id",
-    foreignKey: "studentOrganizationId",
-  })
-  declare studentOrganization: BelongsTo<typeof StudentOrganization>;
-
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare logoKey: string | null;
-
-  @belongsTo(() => FileEntry, {
-    localKey: "id",
-    foreignKey: "logoKey",
-  })
-  declare logo: BelongsTo<typeof FileEntry>;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => StudentOrganization, {
+    localKey: "id",
+    foreignKey: "studentOrganizationId",
+  })
+  declare studentOrganization: BelongsTo<typeof StudentOrganization>;
+
+  @belongsTo(() => FileEntry, {
+    localKey: "id",
+    foreignKey: "logoKey",
+  })
+  declare logo: BelongsTo<typeof FileEntry>;
 
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();

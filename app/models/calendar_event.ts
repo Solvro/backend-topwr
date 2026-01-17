@@ -23,7 +23,9 @@ export default class CalendarEvent extends BaseModel {
   @typedColumn.dateTime({})
   declare startTime: DateTime;
 
-  @typedColumn.dateTime({ validator: vine.date().after("startTime") })
+  @typedColumn.dateTime({
+    validator: vine.luxonDateTime().afterField("startTime"),
+  })
   declare endTime: DateTime;
 
   @typedColumn({ type: "string", optional: true })

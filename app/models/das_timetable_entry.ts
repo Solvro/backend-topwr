@@ -17,21 +17,14 @@ export default class DasTimetableEntry extends BaseModel {
   @typedColumn({ foreignKeyOf: () => DasTimetable })
   declare timetableId: number;
 
-  @belongsTo(() => DasTimetable, {
-    foreignKey: "timetableId",
-    localKey: "id",
-  })
-  declare timetable: BelongsTo<typeof DasTimetable>;
-
   @typedColumn({ type: "string" })
   declare name: string;
 
-  @typedColumn.dateTime({ optional: true })
+  @typedColumn.dateTime({})
   declare startTime: DateTime;
 
   @typedColumn.dateTime({
-    optional: true,
-    validator: vine.date().after("startTime").nullable(),
+    validator: vine.luxonDateTime().afterField("startsAt"),
   })
   declare endTime: DateTime;
 
@@ -40,6 +33,12 @@ export default class DasTimetableEntry extends BaseModel {
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => DasTimetable, {
+    foreignKey: "timetableId",
+    localKey: "id",
+  })
+  declare timetable: BelongsTo<typeof DasTimetable>;
 
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();

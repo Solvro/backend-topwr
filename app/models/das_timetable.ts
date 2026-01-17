@@ -18,12 +18,6 @@ export default class DasTimetable extends BaseModel {
   })
   declare id: number; // Id Mapping
 
-  @belongsTo(() => Das, {
-    localKey: "id",
-    foreignKey: "id",
-  })
-  declare das: BelongsTo<typeof Das>;
-
   @typedColumn({ type: "string" })
   declare name: string;
 
@@ -32,6 +26,12 @@ export default class DasTimetable extends BaseModel {
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
+
+  @belongsTo(() => Das, {
+    localKey: "id",
+    foreignKey: "id",
+  })
+  declare das: BelongsTo<typeof Das>;
 
   @hasMany(() => DasTimetableEntry)
   declare entries: HasMany<typeof DasTimetableEntry>;

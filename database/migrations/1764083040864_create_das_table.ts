@@ -8,6 +8,7 @@ export default class extends BaseSchema {
       table.increments("id").primary();
       table.timestamp("starts_at").notNullable();
       table.timestamp("ends_at").notNullable();
+      table.timestamp("updated_at").notNullable();
       table.timestamp("created_at").notNullable();
     });
   }

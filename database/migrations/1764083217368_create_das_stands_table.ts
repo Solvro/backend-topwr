@@ -28,7 +28,7 @@ export default class extends BaseSchema {
         .references("id")
         .inTable("file_entries")
         .nullable()
-        .onDelete("SET NULL");
+        .onDelete("RESTRICT");
       table.timestamp("created_at").notNullable();
       table.timestamp("updated_at").notNullable();
     });

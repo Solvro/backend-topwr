@@ -18,12 +18,6 @@ export default class DasMap extends BaseModel {
   @typedColumn({ foreignKeyOf: () => Das })
   declare dasId: number;
 
-  @belongsTo(() => Das, {
-    localKey: "id",
-    foreignKey: "dasId",
-  })
-  declare das: BelongsTo<typeof Das>;
-
   @typedColumn({ type: "string", validator: vine.string().maxLength(127) })
   declare name: string;
 
@@ -41,6 +35,12 @@ export default class DasMap extends BaseModel {
     foreignKey: "contentKey",
   })
   declare content: BelongsTo<typeof FileEntry>;
+
+  @belongsTo(() => Das, {
+    localKey: "id",
+    foreignKey: "dasId",
+  })
+  declare das: BelongsTo<typeof Das>;
 
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
