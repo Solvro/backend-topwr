@@ -41,17 +41,7 @@ export default class NotificationController extends BaseController<
     controller: LazyImport<Constructor<NotificationController>>,
     _?: RouteConfigurationOptions,
   ) {
-    router.group(() => {
-      super.$configureRoutes(controller, {
-        skipRoutes: {
-          index: true,
-          store: true,
-          update: true,
-          destroy: true,
-        },
-      });
-      router.get("/", [controller, "getByTopic"]).as("index");
-    });
+    router.get("/", [controller, "getByTopic"]).as("index");
   }
 
   async getByTopic({ request }: HttpContext) {
