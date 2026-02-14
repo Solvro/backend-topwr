@@ -1,7 +1,13 @@
 import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
-import { BaseModel } from "@adonisjs/lucid/orm";
+import {
+  BaseModel,
+  afterFetch,
+  afterFind,
+  computed,
+} from "@adonisjs/lucid/orm";
+import db from "@adonisjs/lucid/services/db";
 
 import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
@@ -19,6 +25,9 @@ export default class CalendarEvent extends BaseModel {
   get isGoogleEvent(): boolean {
     return this.googleCalId !== null;
   }
+
+  @computed()
+  hidden = false;
 
   @typedColumn.dateTime({})
   declare startTime: DateTime;
@@ -56,4 +65,39 @@ export default class CalendarEvent extends BaseModel {
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
   static handleSortQuery = handleSortQuery();
+
+  @afterFetch()
+  static async afterFetch(events: CalendarEvent[]) {
+    const googleEvents = events.filter((event) => event.googleCalId !== null);
+    if (googleEvents.length === 0) {
+      return;
+    }
+    const googleEventIds = googleEvents.map(
+      (event) => event.googleCalId,
+    ) as string[];
+
+    const hiddenRecords = (await db
+      .from("hidden_events")
+      .select("google_cal_id")
+      .whereIn("google_cal_id", googleEventIds)) as { google_cal_id: string }[];
+
+    const hiddenIdsSet = new Set(hiddenRecords.map((row) => row.google_cal_id));
+    googleEvents.forEach(
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      (event) => (event.hidden = hiddenIdsSet.has(event.googleCalId!)),
+    );
+  }
+
+  @afterFind()
+  static async afterFind(event: CalendarEvent) {
+    if (event.googleCalId === null) {
+      return;
+    }
+    const hiddenRecord = (await db
+      .from("hidden_events")
+      .select("google_cal_id")
+      .where("google_cal_id", event.googleCalId)
+      .first()) as unknown; // No need to type this
+    event.hidden = Boolean(hiddenRecord);
+  }
 }
