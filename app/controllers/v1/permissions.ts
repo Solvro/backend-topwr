@@ -31,7 +31,6 @@ const actionSchema = vine.enum([
   "destroy",
   "suggest_new",
   "suggest_edit",
-  "approve_draft",
 ]);
 
 const permissionChangeValidator = vine.compile(

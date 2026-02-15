@@ -12,7 +12,6 @@ export default class extends BaseSchema {
       await Acl.permission().create({ slug: "update" });
       await Acl.permission().create({ slug: "read" });
       await Acl.permission().create({ slug: "destroy" });
-      await Acl.permission().create({ slug: "approve_draft" });
       await Acl.permission().create({ slug: "suggest_new" });
       await Acl.permission().create({ slug: "suggest_edit" });
 
@@ -41,7 +40,6 @@ export default class extends BaseSchema {
       await Acl.role().delete("admin");
       await Acl.permission().delete("suggest_new");
       await Acl.permission().delete("suggest_edit");
-      await Acl.permission().delete("approve_draft");
       await Acl.permission().delete("destroy");
       await Acl.permission().delete("read");
       await Acl.permission().delete("update");
