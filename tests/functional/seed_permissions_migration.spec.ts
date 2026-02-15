@@ -8,7 +8,8 @@ const EXPECTED_PERMISSIONS = [
   "update",
   "read",
   "destroy",
-  "approve_draft",
+  "suggest_new",
+  "suggest_edit",
 ];
 
 const EXPECTED_ROLES = ["admin", "solvro_admin"];

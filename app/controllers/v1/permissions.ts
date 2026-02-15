@@ -24,7 +24,15 @@ const resourceRegistryKeys = Object.keys(
   resourceRegistry,
 ) as (keyof typeof resourceRegistry)[];
 
-const actionSchema = vine.enum(["read", "create", "update", "destroy"]);
+const actionSchema = vine.enum([
+  "read",
+  "create",
+  "update",
+  "destroy",
+  "suggest_new",
+  "suggest_edit",
+  "approve_draft",
+]);
 
 const permissionChangeValidator = vine.compile(
   vine.object({

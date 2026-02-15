@@ -307,7 +307,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     updBad.assertStatus(403);
   });
 
-  test("student org draft: store requires class-level create on both StudentOrganizationDraft and StudentOrganization", async ({
+  test("student org draft: store requires class-level create on StudentOrganizationDraft and suggest_new StudentOrganization", async ({
     client,
   }) => {
     const user = await User.create({
@@ -349,7 +349,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     stillNoPerm.assertStatus(403);
 
     // Both StudentOrganizationDraft and StudentOrganization create permissions -> 200
-    await Acl.model(user).allow("create", StudentOrganization);
+    await Acl.model(user).allow("suggest_new", StudentOrganization);
     const ok = await client
       .post(`/api/v1/student_organization_drafts`)
       .header("Authorization", `Bearer ${token}`)
@@ -365,7 +365,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     ok.assertStatus(200);
   });
 
-  test("student org draft: store with originalId requires per-model on original", async ({
+  test("student org draft: store with originalId requires per-model suggest_edit on original", async ({
     client,
   }) => {
     const owner = await User.create({
@@ -398,7 +398,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     await Acl.model(other).allow("create", StudentOrganizationDraft);
 
     // but only owner has per-model update on base org
-    await Acl.model(owner).allow("update", base);
+    await Acl.model(owner).allow("suggest_edit", base);
 
     // other should be forbidden when referencing originalId
     const fail = await client
@@ -432,7 +432,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     ok.assertStatus(200);
   });
 
-  test("guide article draft: store with originalId requires per-model on original", async ({
+  test("guide article draft: store with originalId requires per-model suggest_edit on original", async ({
     client,
   }) => {
     const owner = await User.create({
@@ -461,7 +461,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
 
     await Acl.model(owner).allow("create", GuideArticleDraft);
     await Acl.model(other).allow("create", GuideArticleDraft);
-    await Acl.model(owner).allow("update", article);
+    await Acl.model(owner).allow("suggest_edit", article);
 
     const file2 = FileEntry.createNew("png");
     await file2.save();
@@ -536,7 +536,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     ok.assertStatus(200);
   });
 
-  test("guide article draft: store requires class-level create on both GuideArticleDraft and GuideArticle", async ({
+  test("guide article draft: store requires class-level create on GuideArticleDraft and suggest_new GuideArticle", async ({
     client,
   }) => {
     const user = await User.create({
@@ -581,7 +581,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     stillNoPerm.assertStatus(403);
 
     // Both GuideArticleDraft and GuideArticle create permissions -> 200
-    await Acl.model(user).allow("create", GuideArticle);
+    await Acl.model(user).allow("suggest_new", GuideArticle);
     const ok = await client
       .post(`/api/v1/guide_article_drafts`)
       .header("Authorization", `Bearer ${token}`)

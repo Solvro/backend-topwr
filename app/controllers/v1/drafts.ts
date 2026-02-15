@@ -289,24 +289,29 @@ export abstract class GenericDraftController<
       .id as DraftInstance["createdByUserId"];
     const originalId = request.originalId;
 
-    // For completely new drafts (no original article), require create permission on GuideArticle
+    // For completely new drafts (no original article), require suggest_new permission on GuideArticle
     if (originalId === null || originalId === undefined) {
-      const allowed = await user.hasPermission("create", this.approvedModel);
+      const allowed = await user.hasPermission(
+        "suggest_new",
+        this.approvedModel,
+      );
       if (!allowed) {
         throw new ForbiddenException(
-          `Requires create permission on ${this.approvedModel.name} to propose new articles`,
+          `You are not allowed to suggest new ${this.approvedModel.name} items`,
         );
       }
       return;
     }
 
-    // For drafts editing existing articles, require update permission on the original article
+    // For drafts editing existing articles, require suggest_edit permission on the original article
     const allowed = await user.hasPermission(
-      "update",
+      "suggest_edit",
       thinModel(this.approvedModel, originalId),
     );
     if (!allowed) {
-      throw new ForbiddenException();
+      throw new ForbiddenException(
+        `You are not allowed to suggest edits to ${this.approvedModel.name} with id ${originalId}`,
+      );
     }
   } as unknown as BaseController<Draft>["storeHook"];
 
