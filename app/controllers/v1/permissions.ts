@@ -4,7 +4,6 @@ import vine from "@vinejs/vine";
 import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import { Constructor, LazyImport } from "@adonisjs/core/types/http";
-import db from "@adonisjs/lucid/services/db";
 
 import { ForbiddenException } from "#exceptions/http_exceptions";
 import GuideArticle from "#models/guide_article";
@@ -144,43 +143,27 @@ export default class PermissionsController {
     const targetUser = await User.findOrFail(userId).addErrorContext(
       () => `User with id ${userId} not found`,
     );
+    const manager = Acl.model(targetUser);
 
     // Query roles
-    const roles = db
-      .from("model_roles")
-      .join("access_roles", "model_roles.role_id", "access_roles.id")
-      .where("model_roles.model_type", "users")
-      .where("model_roles.model_id", targetUser.id)
-      .select("access_roles.slug", "access_roles.title")
+    const roleModels = await manager
+      .roles()
       .exec()
-      .addErrorContext({
-        message: "Failed to fetch user roles",
-        code: "E_DB_ERROR",
-        status: 500,
-      });
+      .addErrorContext("Failed to fetch user roles");
+    const roles = roleModels.map((r) => ({
+      title: r.title,
+      slug: r.slug,
+    }));
 
     // Query permissions
-    const permissions = await db
-      .from("model_permissions")
-      .join(
-        "access_permissions",
-        "model_permissions.permission_id",
-        "access_permissions.id",
-      )
-      .where("model_permissions.model_type", "users")
-      .where("model_permissions.model_id", targetUser.id)
-      .whereNull("model_permissions.entity_id")
-      .select(
-        "access_permissions.slug as action",
-        "model_permissions.entity_type as modelName",
-        "model_permissions.entity_id as instanceId",
-      )
-      .exec()
-      .addErrorContext({
-        message: "Failed to fetch user permissions",
-        code: "E_DB_ERROR",
-        status: 500,
-      });
+    const permissionModels = await manager
+      .permissions()
+      .addErrorContext("Failed to fetch user permissions");
+    const permissions = permissionModels.map((p) => ({
+      action: p.slug,
+      modelName: p.entityType,
+      instanceId: p.entityId,
+    }));
 
     return {
       userId: targetUser.id,
