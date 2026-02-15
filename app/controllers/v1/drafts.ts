@@ -1,3 +1,5 @@
+import { Acl } from "@holoyan/adonisjs-permissions";
+import { AclModel } from "@holoyan/adonisjs-permissions/types";
 import { assertExhaustive } from "@solvro/utils/misc";
 import vine from "@vinejs/vine";
 import assert from "node:assert";
@@ -19,6 +21,7 @@ import StudentOrganizationDraft from "#models/student_organization_draft";
 
 import BaseController, {
   ControllerAction,
+  HookContext,
   Scopes,
 } from "../base_controller.js";
 
@@ -314,6 +317,18 @@ export abstract class GenericDraftController<
       );
     }
   } as unknown as BaseController<Draft>["storeHook"];
+
+  protected async postStoreHook(ctx: HookContext<Draft>): Promise<void> {
+    // authenticate() should've authenticated the user already
+    assert(ctx.http.auth.user !== undefined);
+
+    // grant the current user full permissions on the new draft
+    await Acl.model(ctx.http.auth.user)
+      .allowAll(["read", "update", "destroy"], ctx.record as AclModel)
+      .addErrorContext(
+        "Failed to assign permissions on the new draft instance",
+      );
+  }
 
   $configureRoutes(
     controller: LazyImport<

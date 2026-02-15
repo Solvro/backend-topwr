@@ -366,6 +366,18 @@ export default abstract class BaseController<
     void ctx;
   }
 
+  /**
+   * Modify records after creation
+   *
+   * This function will be called after the new record is created.
+   * You may apply any extra modifications on the record here. (such as granting initial permissions)
+   * Throwing errors here is not advised.
+   * @param ctx the hook context - contains the request and the new model instance
+   */
+  protected async postStoreHook(ctx: HookContext<T>): Promise<void> {
+    void ctx;
+  }
+
   #modelCacheEntry?: AutogenCacheEntry;
 
   private get modelCacheEntry(): AutogenCacheEntry {
@@ -882,6 +894,17 @@ export default abstract class BaseController<
     await result.refresh().addErrorContext({
       message: "Failed to fetch updated object",
       code: "E_DB_ERROR",
+      status: 500,
+    });
+
+    await this.postStoreHook({
+      http: httpCtx,
+      model: this.model,
+      request: toStore,
+      record: result,
+    }).addErrorContext({
+      message: "Controller's postStoreHook threw an error",
+      code: "E_INTERNAL_CONTROLLER_ERROR",
       status: 500,
     });
 
