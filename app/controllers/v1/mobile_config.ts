@@ -1,6 +1,7 @@
 import { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
-import { Constructor, LazyImport } from "@adonisjs/core/types/http";
+import { LazyImport } from "@adonisjs/core/types/http";
+import type { Constructor } from "@adonisjs/core/types/http";
 
 import BaseController from "#controllers/base_controller";
 import MobileConfig from "#models/mobile_config";
