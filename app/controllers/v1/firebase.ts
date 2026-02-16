@@ -86,9 +86,8 @@ export default class FirebaseController extends BaseController<
   }
 
   async broadcastPushNotification({ request, auth }: HttpContext) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
+    await this.requireSuperUser(auth);
+
     const { notification, topics } =
       await request.validateUsing(pushDataValidator);
     const topicsWithoutDuplicates = new Set<string>(topics);
