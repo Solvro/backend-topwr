@@ -21,7 +21,6 @@ jobs:
         ports:
           - 5432:5432
     env:
-      ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
       DB_HOST: localhost
       DB_PORT: 5432
       DB_USER: postgres
