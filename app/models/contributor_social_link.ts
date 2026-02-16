@@ -24,6 +24,9 @@ export default class ContributorSocialLink extends BaseModel {
   @typedColumn({ type: "string" })
   declare link: string;
 
+  @typedColumn({ type: "string", optional: true })
+  declare name: string | null;
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
