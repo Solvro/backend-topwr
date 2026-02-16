@@ -53,29 +53,23 @@ export default class DraftsController {
     auth: HttpContext["auth"],
     resourceType: ResourceType | undefined,
   ): Promise<boolean> {
-    const user = auth.user as unknown as
-      | {
-          hasRole?: (slug: string) => Promise<boolean>;
-          hasPermission?: (
-            action: string,
-            target?: unknown,
-          ) => Promise<boolean>;
-        }
-      | undefined;
+    await this.ensureAuthenticated(auth);
+    const user = auth.user;
+    assert(user !== undefined);
 
     // Admin roles bypass
-    const hasSolvroAdminRole = (await user?.hasRole?.("solvro_admin")) === true;
-    const hasAdminRole = (await user?.hasRole?.("admin")) === true;
+    const hasSolvroAdminRole = (await user.hasRole("solvro_admin")) === true;
+    const hasAdminRole = (await user.hasRole("admin")) === true;
     if (hasSolvroAdminRole || hasAdminRole) {
       return true;
     }
 
     // Check class-level read on either draft type
-    const canReadOrgDrafts = await user?.hasPermission?.(
+    const canReadOrgDrafts = await user.hasPermission(
       "read",
       StudentOrganizationDraft,
     );
-    const canReadArticleDrafts = await user?.hasPermission?.(
+    const canReadArticleDrafts = await user.hasPermission(
       "read",
       GuideArticleDraft,
     );
