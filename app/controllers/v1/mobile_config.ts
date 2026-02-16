@@ -27,16 +27,12 @@ export default class MobileConfigController extends BaseController<
   }
 
   async bumpCms({ auth }: HttpContext) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
+    await this.requireSuperUser(auth);
     await MobileConfig.bumpCmsCache();
   }
 
   async bumpTranslator({ auth }: HttpContext) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
+    await this.requireSuperUser(auth);
     await MobileConfig.bumpTranslatorCache();
   }
 }
