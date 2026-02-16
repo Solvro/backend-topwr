@@ -243,10 +243,6 @@ function decoratorTypeToValidatorAndType(
         break;
       }
     }
-    return {
-      declaredType,
-      validator,
-    };
   } else {
     validator = vine.enum(Object.values(type));
     declaredType = "enum";
