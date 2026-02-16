@@ -216,6 +216,50 @@ export default abstract class BaseController<
   }
 
   /**
+   * Check whether the current user is a super user.
+   *
+   * Super user roles for a particular controller can be defined in its properties.
+   * This method does not force authentication - unauthenticated users are not considered super users. (obviously lol)
+   * Only one of the defined roles is requred for a user to be considered a super user.
+   *
+   * @param auth the authentication context
+   * @returns true if the user is a super user
+   */
+  protected async isSuperUser(auth: HttpContext["auth"]): Promise<boolean> {
+    // no roles defined - definitely not a superuser then
+    if (this.superUserRoles.length === 0) {
+      return false;
+    }
+    // not logged in - not a super user
+    if (!(await auth.check())) {
+      return false;
+    }
+    // it is known at this point that the user is authenticated
+    assert(auth.user !== undefined);
+    // check for superuser roles
+    return await auth.user.hasAnyRole(...this.superUserRoles);
+  }
+
+  /**
+   * Require that the currently logged in user is a super user
+   *
+   * Super user roles for a particular controller can be defined in its properties.
+   * This method does force authentication and will throw a ForbiddenException if the current user is not a super user.
+   * Only one of the defined roles is requred for a user to be considered a super user.
+   *
+   * @param auth the authentication context
+   * @throws ForbiddenException if the current user is not a super user
+   */
+  protected async requireSuperUser(auth: HttpContext["auth"]): Promise<void> {
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    if (!(await this.isSuperUser(auth))) {
+      throw new ForbiddenException();
+    }
+  }
+
+  /**
    * Authenticate and check permission for the given action.
    * If no permission is required, this is a no-op and does not force authentication.
    * Supports both single permissions and alternative permissions (array).
@@ -246,13 +290,8 @@ export default abstract class BaseController<
     }
 
     // Superuser bypass
-    if (this.superUserRoles.length > 0) {
-      const isSuperUser = await http.auth.user.hasAnyRole(
-        ...this.superUserRoles,
-      );
-      if (isSuperUser) {
-        return;
-      }
+    if (await this.isSuperUser(http.auth)) {
+      return;
     }
 
     // check if model supports permissions
