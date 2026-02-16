@@ -12,7 +12,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
 export interface PushNotificationData {
   title: string;
   body: string;
-  data: Record<string, string> | undefined;
+  data?: Record<string, string>;
 }
 
 export default class PushNotificationEntry extends BaseModel {
