@@ -44,6 +44,9 @@ export default class EventCalendarController extends BaseController<
     router
       .patch("/hide/:gCalId", [EventCalendarController, "toggleHideEvent"])
       .as("toggle_hide_event");
+    router
+      .get("/hide/show", [EventCalendarController, "showHiddenEvents"])
+      .as("show_hidden_events");
   }
 
   protected async storeHook(
@@ -83,9 +86,7 @@ export default class EventCalendarController extends BaseController<
   }
 
   async toggleHideEvent({ request, response, auth }: HttpContext) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
+    await this.requireSuperUser(auth);
     const {
       hide,
       params: { gCalId },
@@ -127,6 +128,17 @@ export default class EventCalendarController extends BaseController<
     }
     return {
       data: data.data.filter((event) => !event.hidden),
+    };
+  }
+
+  async showHiddenEvents({ auth }: HttpContext): Promise<unknown> {
+    await this.requireSuperUser(auth);
+    const data = (await db
+      .from("hidden_events")
+      .select("google_cal_id")
+      .exec()) as { google_cal_id: string }[];
+    return {
+      data: data.map((row) => row.google_cal_id),
     };
   }
 }
