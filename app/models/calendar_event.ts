@@ -93,11 +93,11 @@ export default class CalendarEvent extends BaseModel {
     if (event.googleCalId === null) {
       return;
     }
-    const hiddenRecord = (await db
-      .from("hidden_events")
-      .select("google_cal_id")
-      .where("google_cal_id", event.googleCalId)
-      .first()) as unknown; // No need to type this
-    event.hidden = Boolean(hiddenRecord);
+    event.hidden =
+      (await db
+        .from("hidden_events")
+        .select("google_cal_id")
+        .where("google_cal_id", event.googleCalId)
+        .first()) !== null;
   }
 }
