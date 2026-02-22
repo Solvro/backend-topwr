@@ -1,4 +1,6 @@
+import { Acl } from "@holoyan/adonisjs-permissions";
 import vine from "@vinejs/vine";
+import assert from "node:assert";
 
 import { inject } from "@adonisjs/core";
 import type { HttpContext } from "@adonisjs/core/http";
@@ -81,7 +83,37 @@ export default class AuthController {
   }
 
   async me({ auth }: HttpContext) {
-    return auth.getUserOrFail();
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    assert(auth.user !== undefined);
+
+    const manager = Acl.model(auth.user);
+    // Query roles
+    const roleModels = await manager
+      .roles()
+      .exec()
+      .addErrorContext("Failed to fetch user roles");
+    const roles = roleModels.map((r) => ({
+      title: r.title,
+      slug: r.slug,
+    }));
+
+    // Query permissions
+    const permissionModels = await manager
+      .permissions()
+      .addErrorContext("Failed to fetch user permissions");
+    const permissions = permissionModels.map((p) => ({
+      action: p.slug,
+      modelName: p.entityType,
+      instanceId: p.entityId,
+    }));
+
+    return {
+      ...auth.getUserOrFail().serialize(),
+      roles,
+      permissions,
+    };
   }
 
   async logout({ request, auth, response }: HttpContext) {
