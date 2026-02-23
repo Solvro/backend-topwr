@@ -225,8 +225,7 @@ export abstract class GenericDraftController<
     assert(http.auth.user !== undefined);
     const user = http.auth.user;
 
-    const isAdmin = await user.hasAnyRole(...this.superUserRoles);
-    if (isAdmin) {
+    if (await this.isSuperUser(http.auth)) {
       return;
     }
 
@@ -279,8 +278,7 @@ export abstract class GenericDraftController<
 
     request.createdByUserId = user.id as DraftInstance["createdByUserId"];
 
-    const isAdmin = await user.hasAnyRole(...this.superUserRoles);
-    if (isAdmin) {
+    if (await this.isSuperUser(http.auth)) {
       return;
     }
 
