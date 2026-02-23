@@ -277,13 +277,13 @@ export abstract class GenericDraftController<
     assert(http.auth.user !== undefined);
     const user = http.auth.user;
 
+    request.createdByUserId = user.id as DraftInstance["createdByUserId"];
+
     const isAdmin = await user.hasAnyRole(...this.superUserRoles);
     if (isAdmin) {
       return;
     }
 
-    request.createdByUserId = http.auth.user
-      .id as DraftInstance["createdByUserId"];
     const originalId = request.originalId;
 
     // For completely new drafts (no original article), require suggest_new permission on GuideArticle
