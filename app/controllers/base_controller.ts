@@ -48,6 +48,10 @@ import {
   RelationValidator,
   relationValidator,
 } from "#utils/model_autogen";
+import {
+  deletePermissionsForEntity,
+  getMorphMapAlias,
+} from "#utils/permissions";
 import { paginationValidator } from "#validators/pagination";
 
 export interface Scopes<T extends LucidModel> {
@@ -1069,6 +1073,12 @@ export default abstract class BaseController<
       code: "E_DB_ERROR",
       status: 500,
     });
+
+    // Clean up any permissions scoped to the deleted instance
+    const morphAlias = getMorphMapAlias(this.model);
+    if (morphAlias !== null) {
+      await deletePermissionsForEntity(morphAlias, id);
+    }
 
     return {
       success: true,
