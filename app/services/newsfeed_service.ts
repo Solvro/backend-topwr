@@ -1,6 +1,6 @@
 import { optionMap } from "@solvro/utils/option";
 import { DateTime } from "luxon";
-import { HTMLElement, NodeType, parse } from "node-html-parser";
+import { HTMLElement, parse } from "node-html-parser";
 
 import logger from "@adonisjs/core/services/logger";
 
@@ -62,29 +62,28 @@ export default class NewsfeedService {
     baseUrl: string,
   ): NewsfeedArticle => {
     const imageLink = newsfeedItem
-      .querySelector(".col-img")
+      .querySelector(".photo")
       ?.querySelector("img")
       ?.getAttribute("src");
-    const titleDiv = newsfeedItem
-      .querySelector(".col-text")
-      ?.querySelector(".title");
-    const pDivs = newsfeedItem.querySelectorAll("p");
+    const titleElement = newsfeedItem.querySelector("a.title");
+    const dateDiv = newsfeedItem.querySelector(".date");
     const makeUrlAbsolute = (link: string) => new URL(link, baseUrl).href;
+
+    const dateText =
+      dateDiv?.querySelector(".flex-shrink-0")?.text.trim() ?? "";
+    const categories =
+      dateDiv
+        ?.querySelectorAll("a")
+        .map((a) => a.textContent.trim())
+        .filter((cat) => cat.length > 0) ?? [];
 
     return {
       imageLink: optionMap(imageLink, makeUrlAbsolute),
-      title: titleDiv?.textContent,
-      url: optionMap(titleDiv?.getAttribute("href"), makeUrlAbsolute),
-      date: DATE_REGEX.exec(pDivs[0]?.text.trim() ?? "")?.[1] ?? undefined,
-      categories:
-        pDivs[0]?.textContent
-          .split(/(?:Kategoria|Category):/)[1]
-          .split(",")
-          .map((category) => category.trim())
-          .filter((category) => category.length > 0) ?? [],
-      previewText: pDivs[1]?.childNodes.find(
-        (node) => node.nodeType === NodeType.TEXT_NODE,
-      )?.textContent,
+      title: titleElement?.textContent.trim(),
+      url: optionMap(titleElement?.getAttribute("href"), makeUrlAbsolute),
+      date: DATE_REGEX.exec(dateText)?.[1] ?? undefined,
+      categories,
+      previewText: newsfeedItem.querySelector("p.desc")?.textContent.trim(),
     };
   };
 
@@ -93,7 +92,7 @@ export default class NewsfeedService {
     baseUrl: string,
   ): NewsfeedArticle[] {
     const root: HTMLElement = parse(html);
-    const newsfeedItems = root.querySelectorAll(".news-box");
+    const newsfeedItems = root.querySelectorAll(".news-item");
     return newsfeedItems.map((item) => this.parseNewsfeedItem(item, baseUrl));
   }
 
@@ -119,9 +118,9 @@ export default class NewsfeedService {
     // scrape multiple pages
     const pages = [];
     for (let i = 1; i <= NEWSFEED_PAGES; i++) {
-      const page = await this.scrapeNewsfeed(
-        `${PWR_URL[language]}/page${i}.html`,
-      );
+      const url =
+        i === 1 ? PWR_URL[language] : `${PWR_URL[language]}?i_page=${i}`;
+      const page = await this.scrapeNewsfeed(url);
       if (page === null) {
         // bail if we can't scrape page 1
         if (i === 1) {
