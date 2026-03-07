@@ -177,6 +177,7 @@ export abstract class GenericDraftController<
       case "update":
       case "destroy":
       case "relationIndex":
+      case "oneToOneRelationStore":
       case "oneToManyRelationStore":
       case "manyToManyRelationAttach":
       case "manyToManyRelationDetach":
@@ -238,6 +239,7 @@ export abstract class GenericDraftController<
       update: "update",
       destroy: "destroy",
       relationIndex: "read",
+      oneToOneRelationStore: "update",
       oneToManyRelationStore: "update",
       manyToManyRelationAttach: "update",
       manyToManyRelationDetach: "update",
