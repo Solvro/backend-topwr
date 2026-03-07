@@ -20,6 +20,9 @@ export default class Das extends BaseModel {
   @typedColumn.dateTime({ autoCreate: false })
   declare startsAt: DateTime;
 
+  @typedColumn({ type: "string" })
+  declare name: string;
+
   @typedColumn.dateTime({
     autoCreate: false,
     validator: vine.luxonDateTime().afterField("startsAt"),
