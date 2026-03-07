@@ -222,7 +222,7 @@ All names in paths are in `snake_case`.
   - Response: `{ "meta": <pagination data, if paginated>, "data": RelatedModel[] }`
 - **POST /api/v1/:model/:id/:crudRelation**
   - **Requires authentication**
-  - **Only applies to 1:n relations (hasMany)**
+  - **Only applies to relations of types 1:1 (hasOne) and 1:n (hasMany)**
   - Creates a new object (from json body) associated with the requested object (`id`) via the specified relation (`crudRelation`)
   - Requires a json request body with the object to create (full model, -fk)
   - Response: `{ "success": true, "data": RelatedModel }`

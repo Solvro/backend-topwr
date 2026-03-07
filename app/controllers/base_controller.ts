@@ -21,6 +21,7 @@ import {
   ExtractModelRelations,
   HasManyClientContract,
   HasManyRelationContract,
+  HasOneRelationContract,
   ManyToManyClientContract,
   ManyToManyRelationContract,
 } from "@adonisjs/lucid/types/relations";
@@ -34,6 +35,7 @@ import {
   InternalControllerValidationError,
 } from "#exceptions/base_controller_errors";
 import {
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from "#exceptions/http_exceptions";
@@ -132,6 +134,7 @@ export type ControllerAction =
   | "update"
   | "destroy"
   | "relationIndex"
+  | "oneToOneRelationStore"
   | "oneToManyRelationStore"
   | "manyToManyRelationAttach"
   | "manyToManyRelationDetach";
@@ -182,6 +185,7 @@ export default abstract class BaseController<
    *  - update -> "update"
    *  - destroy -> "destroy"
    *  - relationIndex -> none (public by default)
+   *  - oneToOneRelationStore -> "create"
    *  - oneToManyRelationStore -> "create"
    *  - manyToManyRelationAttach -> "update"
    *  - manyToManyRelationDetach -> "update"
@@ -203,6 +207,7 @@ export default abstract class BaseController<
       case "destroy":
         return "destroy";
       case "oneToManyRelationStore":
+      case "oneToOneRelationStore":
         return "create";
       case "manyToManyRelationAttach":
       case "manyToManyRelationDetach":
@@ -527,7 +532,11 @@ export default abstract class BaseController<
         issues.push(`Relation '${relationDef}' is not a valid relation`);
         continue;
       }
-      if (relation.type !== "hasMany" && relation.type !== "manyToMany") {
+      if (
+        relation.type !== "hasMany" &&
+        relation.type !== "manyToMany" &&
+        relation.type !== "hasOne"
+      ) {
         issues.push(
           `Unsupported '${relationDef}' CRUD relation: '${relation.type}' not supported`,
         );
@@ -785,6 +794,13 @@ export default abstract class BaseController<
             .post(`/:id/${snakeCaseName}`, [
               controller,
               "oneToManyRelationStore",
+            ])
+            .as(`relation.${relationName}.store`);
+        } else if (relation.type === "hasOne") {
+          router
+            .post(`/:id/${snakeCaseName}`, [
+              controller,
+              "oneToOneRelationStore",
             ])
             .as(`relation.${relationName}.store`);
         } else if (relation.type === "manyToMany") {
@@ -1133,6 +1149,95 @@ export default abstract class BaseController<
       return { data: await relatedQuery };
     }
     return await relatedQuery.paginate(page ?? 1, limit ?? 10);
+  }
+
+  /**
+   * Create a related object for 1:1 relations
+   *
+   * Return type set to Promise<unknown> to allow for method overrides
+   */
+  async oneToOneRelationStore(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
+    if (!auth.isAuthenticated) {
+      await auth.authenticate();
+    }
+    await this.selfValidate();
+    const relationName = this.relationNameFromRoute(route);
+    await this.authenticate(httpCtx, "oneToOneRelationStore", relationName);
+
+    const {
+      params: { id },
+    } = (await request.validateUsing(this.pathIdValidator)) as {
+      params: { id: string | number };
+    };
+    await this.authorizeById(httpCtx, "oneToOneRelationStore", {
+      localId: id,
+      relationName,
+    });
+    const toStore = (await request.validateUsing(
+      this.relatedStoreValidator(relationName),
+    )) as Partial<ModelAttributes<LucidRow>>;
+
+    const mainInstance = await this.getFirstOrFail(id);
+    await this.authorizeRecord(
+      { request, route, auth } as unknown as HttpContext,
+      "oneToManyRelationStore",
+      mainInstance,
+    );
+
+    const relationClient = mainInstance.related(
+      relationName as ExtractModelRelations<InstanceType<T>>,
+    );
+    if (relationClient.relation.type !== "hasOne") {
+      throw new InternalControllerError(
+        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'oneToOneRelationStore' method, ` +
+          `which only supports 'hasOne' relations, but this relation is of type '${relationClient.relation.type}'!`,
+      );
+    }
+
+    // verify that the object doesn't exist already
+    const relatedCount = (await relationClient
+      .query()
+      .count({ total: "*" })
+      .exec()
+      .addErrorContext({
+        message: "Failed to count existing related objects",
+        code: "E_DB_ERROR",
+        status: 500,
+      })) as unknown as [{ $extras: { total: string } }];
+
+    if (Number.parseInt(relatedCount[0].$extras.total) > 0) {
+      throw new ConflictException(
+        `Related object for 1:1 relation '${relationName}' already exists!`,
+        {
+          code: "E_EXISTS",
+        },
+      );
+    }
+
+    const res = await (
+      relationClient as HasManyClientContract<
+        HasOneRelationContract<T, LucidModel>,
+        LucidModel
+      >
+    )
+      .create(toStore)
+      .addErrorContext({
+        message: "Failed to store object",
+        code: "E_DB_ERROR",
+        status: 500,
+      });
+
+    await res.refresh().addErrorContext({
+      message: "Failed to fetch updated object",
+      code: "E_DB_ERROR",
+      status: 500,
+    });
+
+    return {
+      success: true,
+      data: res,
+    };
   }
 
   /**
