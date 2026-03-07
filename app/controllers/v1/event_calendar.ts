@@ -12,7 +12,12 @@ import BaseController, {
   HookContext,
   PartialModel,
 } from "#controllers/base_controller";
-import { BadRequestException } from "#exceptions/http_exceptions";
+import {
+  BadRequestException,
+  ConflictException,
+  InternalServerException,
+  NotFoundException,
+} from "#exceptions/http_exceptions";
 import CalendarEvent from "#models/calendar_event";
 
 const hideToggleValidator = vine.compile(
@@ -91,29 +96,46 @@ export default class EventCalendarController extends BaseController<
       hide,
       params: { gCalId },
     } = await request.validateUsing(hideToggleValidator);
-    const isAlreadyHidden =
-      (await db
-        .from("hidden_events")
-        .where("google_cal_id", gCalId)
-        .first()) !== null;
     if (hide) {
-      if (isAlreadyHidden) {
-        throw new BadRequestException(
-          "Event of this Google Calendar Id is already hidden",
-        );
+      try {
+        await db
+          .table("hidden_events")
+          .insert({ google_cal_id: gCalId })
+          .exec();
+      } catch (err) {
+        if (
+          typeof err === "object" &&
+          "code" in err &&
+          typeof (err as { code: unknown }).code === "string" &&
+          // 23505 = unique_violation; https://www.postgresql.org/docs/current/errcodes-appendix.html
+          (err as { code: string }).code === "23505"
+        ) {
+          throw new ConflictException(
+            `Event with id '${gCalId}' was already hidden`,
+            {
+              code: "E_EXISTS",
+            },
+          );
+        }
+        throw new InternalServerException("Failed to hide event", {
+          code: "E_DB_ERROR",
+          cause: err,
+        });
       }
-      await db.table("hidden_events").insert({ google_cal_id: gCalId }).exec();
     } else {
-      if (!isAlreadyHidden) {
-        throw new BadRequestException(
-          "Event of this Google Calendar Id is not hidden",
-        );
-      }
-      await db
+      const rowsAffected = await db
         .from("hidden_events")
         .where("google_cal_id", gCalId)
-        .delete()
-        .exec();
+        .delete("google_cal_id")
+        .exec()
+        .addErrorContext({
+          message: "Failed to unhide event",
+          status: 500,
+          code: "E_DB_ERROR",
+        });
+      if (rowsAffected.length < 1) {
+        throw new NotFoundException(`Event with id '${gCalId}' was not hidden`);
+      }
     }
     response.status(204);
   }
