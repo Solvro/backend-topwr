@@ -12,6 +12,6 @@ export default class DasController extends BaseController<typeof Das> {
     "stands.logo",
     "timetable",
   ];
-  protected readonly crudRelations = ["maps", "links", "stands"];
+  protected readonly crudRelations = ["maps", "links", "stands", "timetable"];
   protected readonly model = Das;
 }

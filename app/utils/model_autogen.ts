@@ -177,7 +177,9 @@ export class AutogenCacheEntry {
         relation.boot();
       }
       const foreignKey =
-        relation.type === "hasMany" ? relation.foreignKey : undefined;
+        relation.type === "hasMany" || relation.type === "hasOne"
+          ? relation.foreignKey
+          : undefined;
       return vine.compile(
         vine.object(
           Object.fromEntries(

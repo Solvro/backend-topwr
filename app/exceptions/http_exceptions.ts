@@ -10,6 +10,16 @@ export class BadRequestException extends BaseError {
   }
 }
 
+export class UnauthorizedException extends BaseError {
+  constructor(message?: string, options?: BaseErrorOptions) {
+    super(message ?? "Unathorized access", {
+      code: "E_UNAUTHORIZED",
+      ...options,
+      status: 401,
+    });
+  }
+}
+
 export class ForbiddenException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
     super(message ?? "Forbidden", {
@@ -30,12 +40,12 @@ export class NotFoundException extends BaseError {
   }
 }
 
-export class NotImplementedException extends BaseError {
+export class ConflictException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
-    super(message ?? "Not implemented", {
-      code: "E_NOT_IMPLEMENTED",
+    super(message ?? "Conflict", {
+      code: "E_CONFLICT",
       ...options,
-      status: 501,
+      status: 409,
     });
   }
 }
@@ -50,22 +60,22 @@ export class TooManyRequestsException extends BaseError {
   }
 }
 
-export class UnauthorizedException extends BaseError {
-  constructor(message?: string, options?: BaseErrorOptions) {
-    super(message ?? "Unathorized access", {
-      code: "E_UNAUTHORIZED",
-      ...options,
-      status: 401,
-    });
-  }
-}
-
 export class InternalServerException extends BaseError {
   constructor(message?: string, options?: BaseErrorOptions) {
     super(message ?? "Internal server error", {
       code: "E_INTERNAL_SERVER_ERROR",
       ...options,
       status: 500,
+    });
+  }
+}
+
+export class NotImplementedException extends BaseError {
+  constructor(message?: string, options?: BaseErrorOptions) {
+    super(message ?? "Not implemented", {
+      code: "E_NOT_IMPLEMENTED",
+      ...options,
+      status: 501,
     });
   }
 }
