@@ -23,9 +23,7 @@ import CalendarEvent from "#models/calendar_event";
 const hideToggleValidator = vine.compile(
   vine.object({
     hide: vine.boolean(),
-    params: vine.object({
-      gCalId: vine.string().maxLength(50),
-    }),
+    googleCalId: vine.string(),
   }),
 );
 
@@ -47,11 +45,11 @@ export default class EventCalendarController extends BaseController<
   ) {
     super.$configureRoutes(controller);
     router
-      .patch("/hide/:gCalId", [EventCalendarController, "toggleHideEvent"])
-      .as("toggle_hide_event");
+      .post("/hidden", [EventCalendarController, "toggleHideEvent"])
+      .as("hidden.toggle");
     router
-      .get("/hide/show", [EventCalendarController, "showHiddenEvents"])
-      .as("show_hidden_events");
+      .get("/hidden", [EventCalendarController, "showHiddenEvents"])
+      .as("hidden.index");
   }
 
   protected async storeHook(
@@ -92,15 +90,13 @@ export default class EventCalendarController extends BaseController<
 
   async toggleHideEvent({ request, response, auth }: HttpContext) {
     await this.requireSuperUser(auth);
-    const {
-      hide,
-      params: { gCalId },
-    } = await request.validateUsing(hideToggleValidator);
+    const { hide, googleCalId } =
+      await request.validateUsing(hideToggleValidator);
     if (hide) {
       try {
         await db
           .table("hidden_events")
-          .insert({ google_cal_id: gCalId })
+          .insert({ google_cal_id: googleCalId })
           .exec();
       } catch (err) {
         if (
@@ -111,7 +107,7 @@ export default class EventCalendarController extends BaseController<
           (err as { code: string }).code === "23505"
         ) {
           throw new ConflictException(
-            `Event with id '${gCalId}' was already hidden`,
+            `Event with id '${googleCalId}' was already hidden`,
             {
               code: "E_EXISTS",
             },
@@ -125,7 +121,7 @@ export default class EventCalendarController extends BaseController<
     } else {
       const rowsAffected = await db
         .from("hidden_events")
-        .where("google_cal_id", gCalId)
+        .where("google_cal_id", googleCalId)
         .delete("google_cal_id")
         .exec()
         .addErrorContext({
@@ -134,7 +130,9 @@ export default class EventCalendarController extends BaseController<
           code: "E_DB_ERROR",
         });
       if (rowsAffected.length < 1) {
-        throw new NotFoundException(`Event with id '${gCalId}' was not hidden`);
+        throw new NotFoundException(
+          `Event with id '${googleCalId}' was not hidden`,
+        );
       }
     }
     response.status(204);
