@@ -1,6 +1,6 @@
 import { BaseError } from "@solvro/error-handling/base";
-import { FirebaseAppError } from "firebase-admin/app";
-import { FirebaseMessagingError } from "firebase-admin/messaging";
+import type { FirebaseAppError } from "firebase-admin/app";
+import type { FirebaseMessagingError } from "firebase-admin/messaging";
 
 export class PushNotificationError extends BaseError {
   constructor(cause: FirebaseMessagingError) {

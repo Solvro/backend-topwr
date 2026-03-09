@@ -1,4 +1,4 @@
-import { ModelAttributes } from "@adonisjs/lucid/types/model";
+import type { ModelAttributes } from "@adonisjs/lucid/types/model";
 
 import GuideArticle from "#models/guide_article";
 import GuideArticleDraft from "#models/guide_article_draft";

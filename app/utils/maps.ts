@@ -1,4 +1,5 @@
-import { ExtendedMap, extendGlobally } from "@solvro/utils/map";
+import { extendGlobally } from "@solvro/utils/map";
+import type { ExtendedMap } from "@solvro/utils/map";
 
 declare global {
   interface Map<K, V> {

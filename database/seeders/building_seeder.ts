@@ -5,7 +5,7 @@ import { BaseSeeder } from "@adonisjs/lucid/seeders";
 import { Branch } from "#enums/branch";
 import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import { Weekday } from "#enums/weekday";
-import Building from "#models/building";
+import type Building from "#models/building";
 import Campus from "#models/campus";
 import Library from "#models/library";
 

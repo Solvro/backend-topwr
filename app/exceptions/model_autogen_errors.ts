@@ -1,4 +1,4 @@
-import { BaseErrorOptions } from "@solvro/error-handling/base";
+import type { BaseErrorOptions } from "@solvro/error-handling/base";
 
 import { InternalServerException } from "./http_exceptions.js";
 

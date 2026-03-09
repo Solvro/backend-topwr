@@ -1,5 +1,6 @@
-import vine, { BaseLiteralType, VineString } from "@vinejs/vine";
-import { FieldContext } from "@vinejs/vine/types";
+import vine, { VineString } from "@vinejs/vine";
+import type { BaseLiteralType } from "@vinejs/vine";
+import type { FieldContext } from "@vinejs/vine/types";
 
 import User from "#models/user";
 

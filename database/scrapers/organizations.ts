@@ -1,8 +1,5 @@
-import {
-  BaseScraperModule,
-  SourceResponse,
-  TaskHandle,
-} from "#commands/db_scrape";
+import { BaseScraperModule } from "#commands/db_scrape";
+import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
 import { Branch } from "#enums/branch";
 import { OrganizationSource } from "#enums/organization_source";
 import { OrganizationStatus } from "#enums/organization_status";

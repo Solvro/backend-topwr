@@ -1,9 +1,9 @@
 import nodePath from "node:path";
-import { Readable } from "node:stream";
+import type { Readable } from "node:stream";
 
 import logger from "@adonisjs/core/services/logger";
-import { MultipartFile } from "@adonisjs/core/types/bodyparser";
-import { Disk } from "@adonisjs/drive";
+import type { MultipartFile } from "@adonisjs/core/types/bodyparser";
+import type { Disk } from "@adonisjs/drive";
 import drive from "@adonisjs/drive/services/main";
 import db from "@adonisjs/lucid/services/db";
 

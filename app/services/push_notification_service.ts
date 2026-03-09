@@ -1,15 +1,11 @@
-import {
-  FirebaseAppError,
-  applicationDefault,
-  getApps,
-  initializeApp,
-} from "firebase-admin/app";
-import {
+import { applicationDefault, getApps, initializeApp } from "firebase-admin/app";
+import type { FirebaseAppError } from "firebase-admin/app";
+import { getMessaging } from "firebase-admin/messaging";
+import type {
   BaseMessage,
   ConditionMessage,
   FirebaseMessagingError,
   TopicMessage,
-  getMessaging,
 } from "firebase-admin/messaging";
 
 import logger from "@adonisjs/core/services/logger";
@@ -19,9 +15,8 @@ import {
   FirebaseInitializationError,
   PushNotificationError,
 } from "#exceptions/push_notification_service_errors";
-import PushNotificationEntry, {
-  PushNotificationData,
-} from "#models/push_notification_entry";
+import PushNotificationEntry from "#models/push_notification_entry";
+import type { PushNotificationData } from "#models/push_notification_entry";
 
 export default class PushNotificationService {
   private static initFbOrFail() {

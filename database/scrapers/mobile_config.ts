@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import { BaseScraperModule } from "#commands/db_scrape";
+import type { TaskHandle } from "#commands/db_scrape";
 import MobileConfig from "#models/mobile_config";
 
 interface CacheReferenceData {

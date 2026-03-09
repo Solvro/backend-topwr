@@ -1,7 +1,7 @@
 import type { HttpContext } from "@adonisjs/core/http";
 import type { NextFn } from "@adonisjs/core/types/http";
 
-import { ExceptionHandlerContextExtras } from "#exceptions/handler";
+import type { ExceptionHandlerContextExtras } from "#exceptions/handler";
 
 /**
  * Marks all exceptions as sensitive, preventing the full cause stack from being sent to the user

@@ -1,6 +1,7 @@
 import { optionMap } from "@solvro/utils/option";
 import { DateTime } from "luxon";
-import { HTMLElement, parse } from "node-html-parser";
+import { parse } from "node-html-parser";
+import type { HTMLElement } from "node-html-parser";
 
 import logger from "@adonisjs/core/services/logger";
 

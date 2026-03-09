@@ -1,6 +1,7 @@
 import { BaseError } from "@solvro/error-handling/base";
 
-import { DriveType, MINIATURES_DRIVE } from "#config/drive";
+import { MINIATURES_DRIVE } from "#config/drive";
+import type { DriveType } from "#config/drive";
 
 class FileServiceError extends BaseError {}
 

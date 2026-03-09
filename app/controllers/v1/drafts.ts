@@ -1,25 +1,24 @@
 import { Acl } from "@holoyan/adonisjs-permissions";
-import { AclModel } from "@holoyan/adonisjs-permissions/types";
+import type { AclModel } from "@holoyan/adonisjs-permissions/types";
 import { assertExhaustive } from "@solvro/utils/misc";
 import vine from "@vinejs/vine";
 import assert from "node:assert";
 
 import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
-import { Constructor, LazyImport } from "@adonisjs/core/types/http";
+import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
-import { LucidModel, ModelAttributes } from "@adonisjs/lucid/types/model";
+import type { LucidModel, ModelAttributes } from "@adonisjs/lucid/types/model";
 
-import {
-  ValidatedColumnDef,
-  validateColumnDef,
-} from "#app/decorators/typed_model";
+import { validateColumnDef } from "#app/decorators/typed_model";
+import type { ValidatedColumnDef } from "#app/decorators/typed_model";
 import { thinModel } from "#app/utils/permissions";
 import { ForbiddenException } from "#exceptions/http_exceptions";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 
-import BaseController, {
+import BaseController from "../base_controller.js";
+import type {
   ControllerAction,
   HookContext,
   Scopes,

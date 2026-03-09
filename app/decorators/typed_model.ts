@@ -1,10 +1,10 @@
 import vine from "@vinejs/vine";
-import { SchemaTypes } from "@vinejs/vine/types";
+import type { SchemaTypes } from "@vinejs/vine/types";
 import assert from "node:assert";
 
 import { column, manyToMany } from "@adonisjs/lucid/orm";
-import { ColumnOptions, LucidModel } from "@adonisjs/lucid/types/model";
-import {
+import type { ColumnOptions, LucidModel } from "@adonisjs/lucid/types/model";
+import type {
   ManyToMany,
   ManyToManyRelationContract,
   ManyToManyRelationOptions,

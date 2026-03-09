@@ -1,5 +1,9 @@
 import vine, { BaseLiteralType, Vine, symbols } from "@vinejs/vine";
-import { FieldContext, FieldOptions, Validation } from "@vinejs/vine/types";
+import type {
+  FieldContext,
+  FieldOptions,
+  Validation,
+} from "@vinejs/vine/types";
 import { DateTime } from "luxon";
 import type { DateTimeOptions } from "luxon";
 import assert from "node:assert";

@@ -1,8 +1,9 @@
-import vine, { BaseType, Vine } from "@vinejs/vine";
-import { FieldContext, SchemaTypes } from "@vinejs/vine/types";
+import vine, { Vine } from "@vinejs/vine";
+import type { BaseType } from "@vinejs/vine";
+import type { FieldContext, SchemaTypes } from "@vinejs/vine/types";
 
 import db from "@adonisjs/lucid/services/db";
-import { LucidModel } from "@adonisjs/lucid/types/model";
+import type { LucidModel } from "@adonisjs/lucid/types/model";
 
 import { InvalidModelDefinition } from "#exceptions/model_autogen_errors";
 import { AutogenCacheEntry } from "#utils/model_autogen";

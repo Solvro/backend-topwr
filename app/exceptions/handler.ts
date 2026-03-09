@@ -5,7 +5,8 @@ import {
   serializeErrorReport,
 } from "@solvro/error-handling/reporting";
 
-import { ExceptionHandler, HttpContext } from "@adonisjs/core/http";
+import { ExceptionHandler } from "@adonisjs/core/http";
+import type { HttpContext } from "@adonisjs/core/http";
 import app from "@adonisjs/core/services/app";
 import logger from "@adonisjs/core/services/logger";
 

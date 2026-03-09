@@ -1,5 +1,5 @@
 import router from "@adonisjs/core/services/router";
-import { Constructor, LazyImport } from "@adonisjs/core/types/http";
+import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import { aboutUsLinkTypeOrder, compareLinkTypes } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
