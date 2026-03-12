@@ -1,14 +1,18 @@
-import vine, { VineBoolean, VineObject, VineValidator } from "@vinejs/vine";
-import { OptionalModifier } from "@vinejs/vine/schema/base/literal";
-import { SchemaTypes } from "@vinejs/vine/types";
+import vine from "@vinejs/vine";
+import type { VineBoolean, VineObject, VineValidator } from "@vinejs/vine";
+import type { OptionalModifier } from "@vinejs/vine/schema/base/literal";
+import type { SchemaTypes } from "@vinejs/vine/types";
 
-import { LucidModel, ModelColumnOptions } from "@adonisjs/lucid/types/model";
+import type {
+  LucidModel,
+  ModelColumnOptions,
+} from "@adonisjs/lucid/types/model";
 
 import {
-  ValidatedColumnDef,
   validateColumnDef,
   validateTypedManyToManyRelation,
 } from "#decorators/typed_model";
+import type { ValidatedColumnDef } from "#decorators/typed_model";
 import { InvalidModelDefinition } from "#exceptions/model_autogen_errors";
 import "#utils/maps";
 

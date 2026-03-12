@@ -1,9 +1,10 @@
 import jwt from "jsonwebtoken";
 import { DateTime, Duration } from "luxon";
-import { UUID, createPublicKey, randomUUID } from "node:crypto";
+import { createPublicKey, randomUUID } from "node:crypto";
+import type { UUID } from "node:crypto";
 
 import { symbols } from "@adonisjs/auth";
-import { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
+import type { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
 import type { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
 

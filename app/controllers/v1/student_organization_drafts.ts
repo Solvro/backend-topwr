@@ -1,4 +1,4 @@
-import { ModelAttributes } from "@adonisjs/lucid/types/model";
+import type { ModelAttributes } from "@adonisjs/lucid/types/model";
 
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";

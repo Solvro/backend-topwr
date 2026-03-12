@@ -1,4 +1,4 @@
-import { Permissions } from "@holoyan/adonisjs-permissions/types";
+import type { Permissions } from "@holoyan/adonisjs-permissions/types";
 
 export const permissionsConfig: Permissions = {
   tables: {

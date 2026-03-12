@@ -1,4 +1,4 @@
-import { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
+import type { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
 
 /**
  * Creates a fake model instance for the purpose of efficient permission checking

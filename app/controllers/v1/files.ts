@@ -2,7 +2,7 @@ import vine from "@vinejs/vine";
 
 import type { HttpContext, Request } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
-import { Constructor, LazyImport } from "@adonisjs/core/types/http";
+import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import drive from "@adonisjs/drive/services/main";
 
 import { BadRequestException } from "#exceptions/http_exceptions";

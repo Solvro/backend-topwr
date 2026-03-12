@@ -2,14 +2,15 @@ import { DateTime } from "luxon";
 
 import logger from "@adonisjs/core/services/logger";
 import { scope } from "@adonisjs/lucid/orm";
-import {
+import type {
   LucidModel,
   ModelAttributes,
   ModelQueryBuilderContract,
   QueryScope,
 } from "@adonisjs/lucid/types/model";
 
-import { ValidatedColumnDef, validateColumnDef } from "#decorators/typed_model";
+import { validateColumnDef } from "#decorators/typed_model";
+import type { ValidatedColumnDef } from "#decorators/typed_model";
 import { BadRequestException } from "#exceptions/http_exceptions";
 import env from "#start/env";
 

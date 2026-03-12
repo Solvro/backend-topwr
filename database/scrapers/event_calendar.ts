@@ -1,7 +1,9 @@
-import { ICSObject, ICSRoot, ICSValue, parseICS } from "@solvro/utils/ics";
+import { parseICS } from "@solvro/utils/ics";
+import type { ICSObject, ICSRoot, ICSValue } from "@solvro/utils/ics";
 import { DateTime } from "luxon";
 
-import { BaseScraperModule, TaskHandle } from "#commands/db_scrape";
+import { BaseScraperModule } from "#commands/db_scrape";
+import type { TaskHandle } from "#commands/db_scrape";
 import CalendarEvent from "#models/calendar_event";
 
 const FETCH_LIMIT_DAYS = 30;

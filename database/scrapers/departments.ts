@@ -1,10 +1,7 @@
 import { DateTime } from "luxon";
 
-import {
-  BaseScraperModule,
-  SourceResponse,
-  TaskHandle,
-} from "#commands/db_scrape";
+import { BaseScraperModule } from "#commands/db_scrape";
+import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
 import { Branch } from "#enums/branch";
 import { mapToStudiesType } from "#enums/studies_type";
 import DepartmentModel from "#models/department";

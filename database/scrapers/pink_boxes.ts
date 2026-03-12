@@ -2,10 +2,9 @@ import * as fs from "node:fs/promises";
 
 import {
   BaseScraperModule,
-  SourceResponse,
-  TaskHandle,
   assertResponseStructure,
 } from "#commands/db_scrape";
+import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
 import Building from "#models/building";
 import PinkBox from "#models/pink_box";
 

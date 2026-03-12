@@ -2,11 +2,10 @@ import * as fs from "node:fs/promises";
 
 import {
   BaseScraperModule,
-  SourceResponse,
-  TaskHandle,
   assertResponseStructure,
 } from "#commands/db_scrape";
-import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
+import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
+import type { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Campus from "#models/campus";
 import PolinkaStation from "#models/polinka_station";
 

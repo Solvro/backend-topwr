@@ -8,7 +8,7 @@
 | throttle middleware as needed.
 |
 */
-import { Limiter } from "@adonisjs/limiter";
+import type { Limiter } from "@adonisjs/limiter";
 import limiter from "@adonisjs/limiter/services/main";
 
 /**

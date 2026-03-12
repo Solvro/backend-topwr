@@ -1,10 +1,7 @@
 import { DateTime } from "luxon";
 
-import {
-  BaseScraperModule,
-  SourceResponse,
-  TaskHandle,
-} from "#commands/db_scrape";
+import { BaseScraperModule } from "#commands/db_scrape";
+import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
 import GuideArticle from "#models/guide_article";
 import GuideQuestion from "#models/guide_question";
 import { fixSequence } from "#utils/db";

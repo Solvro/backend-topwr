@@ -1,7 +1,7 @@
-import { QueryResult } from "pg";
+import type { QueryResult } from "pg";
 
 import db from "@adonisjs/lucid/services/db";
-import { LucidModel } from "@adonisjs/lucid/types/model";
+import type { LucidModel } from "@adonisjs/lucid/types/model";
 
 /**
  * Advances the sequence for the given column to never conflict with existing rows.

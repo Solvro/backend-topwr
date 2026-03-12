@@ -2,12 +2,11 @@ import * as fs from "node:fs/promises";
 
 import {
   BaseScraperModule,
-  SourceResponse,
-  TaskHandle,
   assertResponseStructure,
 } from "#commands/db_scrape";
+import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
 import { Branch } from "#enums/branch";
-import { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
+import type { ExternalDigitalGuideMode } from "#enums/digital_guide_mode";
 import Building from "#models/building";
 import Campus from "#models/campus";
 import { convertDateOrFallbackToNow } from "#utils/date";

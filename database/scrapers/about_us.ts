@@ -2,9 +2,9 @@ import * as fs from "node:fs/promises";
 
 import {
   BaseScraperModule,
-  TaskHandle,
   assertResponseStructure,
 } from "#commands/db_scrape";
+import type { TaskHandle } from "#commands/db_scrape";
 import { stringToLinkType } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";

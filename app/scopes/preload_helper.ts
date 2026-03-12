@@ -1,11 +1,11 @@
 import logger from "@adonisjs/core/services/logger";
 import { scope } from "@adonisjs/lucid/orm";
-import {
+import type {
   LucidModel,
   ModelQueryBuilderContract,
   QueryScope,
 } from "@adonisjs/lucid/types/model";
-import { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
+import type { ExtractModelRelations } from "@adonisjs/lucid/types/relations";
 
 /**
  * Preloads specified relations on a Lucid model query.

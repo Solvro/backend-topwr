@@ -1,23 +1,26 @@
 import adonisString from "@poppinss/utils/string";
 import { BaseError } from "@solvro/error-handling/base";
 import assert from "node:assert";
-import { Dirent } from "node:fs";
+import type { Dirent } from "node:fs";
 import fs from "node:fs/promises";
 
-import { HttpContext } from "@adonisjs/core/http";
+import type { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
 import router from "@adonisjs/core/services/router";
-import { LazyImport, StoreRouteNode } from "@adonisjs/core/types/http";
-import type { Constructor } from "@adonisjs/core/types/http";
+import type {
+  Constructor,
+  LazyImport,
+  StoreRouteNode,
+} from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
-import {
+import type {
   ExtractScopes,
   LucidModel,
   LucidRow,
   ModelAttributes,
   ModelQueryBuilderContract,
 } from "@adonisjs/lucid/types/model";
-import {
+import type {
   ExtractModelRelations,
   HasManyClientContract,
   HasManyRelationContract,
@@ -39,16 +42,15 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "#exceptions/http_exceptions";
-import { preloadRelations } from "#scopes/preload_helper";
-import { handleSearchQuery } from "#scopes/search_helper";
-import { handleSortQuery } from "#scopes/sort_helper";
+import type { preloadRelations } from "#scopes/preload_helper";
+import type { handleSearchQuery } from "#scopes/search_helper";
+import type { handleSortQuery } from "#scopes/sort_helper";
 import "#utils/maps";
-import {
+import { AutogenCacheEntry, relationValidator } from "#utils/model_autogen";
+import type {
   AnyValidator,
-  AutogenCacheEntry,
   PrimaryKeyFieldDescriptor,
   RelationValidator,
-  relationValidator,
 } from "#utils/model_autogen";
 import { paginationValidator } from "#validators/pagination";
 

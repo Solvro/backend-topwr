@@ -2,11 +2,8 @@ import { zip } from "@solvro/utils/arrays";
 import { DateTime } from "luxon";
 import assert from "node:assert";
 
-import {
-  BaseScraperModule,
-  SourceResponse,
-  TaskHandle,
-} from "#commands/db_scrape";
+import { BaseScraperModule } from "#commands/db_scrape";
+import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
 import { ChangeType } from "#enums/change_type";
 import Change from "#models/change";
 import Contributor from "#models/contributor";

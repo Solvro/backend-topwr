@@ -1,5 +1,5 @@
 import { scope } from "@adonisjs/lucid/orm";
-import {
+import type {
   LucidModel,
   ModelQueryBuilderContract,
   QueryScope,

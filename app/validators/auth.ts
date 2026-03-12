@@ -1,7 +1,7 @@
 import vine from "@vinejs/vine";
-import { FieldContext } from "@vinejs/vine/types";
+import type { FieldContext } from "@vinejs/vine/types";
 
-import User from "#models/user";
+import type User from "#models/user";
 
 export const loginValidator = vine.compile(
   vine.object({
