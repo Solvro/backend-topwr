@@ -71,7 +71,7 @@ export default class NewsfeedService {
     const makeUrlAbsolute = (link: string) => new URL(link, baseUrl).href;
 
     const dateText =
-      dateDiv?.querySelector(".flex-shrink-0")?.text?.trim() ?? "";
+      dateDiv?.querySelector(".flex-shrink-0")?.text.trim() ?? "";
     const categories =
       dateDiv
         ?.querySelectorAll("a")
@@ -84,7 +84,7 @@ export default class NewsfeedService {
       url: optionMap(titleElement?.getAttribute("href"), makeUrlAbsolute),
       date: DATE_REGEX.exec(dateText)?.[1] ?? undefined,
       categories,
-      previewText: newsfeedItem.querySelector("p.desc")?.textContent?.trim(),
+      previewText: newsfeedItem.querySelector("p.desc")?.textContent.trim(),
     };
   };
 

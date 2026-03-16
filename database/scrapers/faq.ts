@@ -19,8 +19,8 @@ interface GuideArticleOld {
 interface GuideQuestionOld {
   id: number;
   status: string;
-  date_created: string;
-  date_updated: string;
+  date_created: string | null;
+  date_updated: string | null;
   question: string;
   answer: string;
   type: number;
@@ -31,6 +31,51 @@ interface PivotTable {
   FAQ_Types_id: number | null;
   FAQ_id: number;
   sort: number | null;
+}
+
+function parseDate(value: string | null): DateTime | undefined {
+  if (value === null) {
+    return undefined;
+  }
+  const parsed = DateTime.fromISO(value);
+  return parsed.isValid ? parsed : undefined;
+}
+
+function findQuestionDatesForArticle(
+  articleId: number,
+  pivots: PivotTable[],
+  questions: GuideQuestionOld[],
+): { createdAt?: DateTime; updatedAt?: DateTime } {
+  let createdAt: DateTime | undefined;
+  let updatedAt: DateTime | undefined;
+
+  for (const pivot of pivots) {
+    if (pivot.FAQ_Types_id !== articleId) {
+      continue;
+    }
+    const question = questions.find((q) => q.id === pivot.FAQ_id);
+    if (question === undefined) {
+      continue;
+    }
+
+    const qCreated = parseDate(question.date_created);
+    const qUpdated = parseDate(question.date_updated);
+
+    if (
+      qCreated !== undefined &&
+      (createdAt === undefined || qCreated < createdAt)
+    ) {
+      createdAt = qCreated;
+    }
+    if (
+      qUpdated !== undefined &&
+      (updatedAt === undefined || qUpdated > updatedAt)
+    ) {
+      updatedAt = qUpdated;
+    }
+  }
+
+  return { createdAt, updatedAt };
 }
 
 export default class FaqSectionScrapper extends BaseScraperModule {
@@ -67,35 +112,12 @@ export default class FaqSectionScrapper extends BaseScraperModule {
 
     task.update("Migrating images & saving data...");
     for (const article of articlesResult.data) {
-      let createdAt: DateTime = DateTime.now();
-      let updatedAt = DateTime.fromMillis(0);
+      const { createdAt, updatedAt } = findQuestionDatesForArticle(
+        article.id,
+        pivotTableResult.data,
+        questionsResult.data,
+      );
 
-      for (const pivot of pivotTableResult.data.filter(
-        (p) => p.FAQ_Types_id === article.id,
-      )) {
-        const question = questionsResult.data.find(
-          (q) => q.id === pivot.FAQ_id,
-        );
-
-        if (question === undefined) {
-          this.logger.warning(
-            `Pivot references missing question (ID=${pivot.FAQ_id}) for article ID=${article.id} ("${article.name}"). ` +
-              `This may be a data inconsistency in the source. Skipping this question...`,
-          );
-          continue;
-        }
-
-        const questionCreatedAt = DateTime.fromISO(question.date_created);
-        const questionUpdatedAt = DateTime.fromISO(question.date_updated);
-
-        if (questionCreatedAt < createdAt) {
-          createdAt = questionCreatedAt;
-        }
-
-        if (questionUpdatedAt > updatedAt) {
-          updatedAt = questionUpdatedAt;
-        }
-      }
       await GuideArticle.create({
         id: article.id,
         title: article.name,
@@ -129,6 +151,8 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         title: question.question,
         answer: question.answer,
         articleId: pivot.FAQ_Types_id,
+        createdAt: parseDate(question.date_created),
+        updatedAt: parseDate(question.date_updated),
       });
     }
 
