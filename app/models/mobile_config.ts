@@ -24,6 +24,22 @@ export default class MobileConfig extends BaseModel {
   })
   declare daySwapLookahead: number;
 
+  @typedColumn({
+    type: "string",
+    validator: vine
+      .string()
+      .url({ protocols: ["https"], require_protocol: true }),
+  })
+  declare sksMicroserviceUrl: string;
+
+  @typedColumn({
+    type: "string",
+    validator: vine
+      .string()
+      .url({ protocols: ["https"], require_protocol: true }),
+  })
+  declare parkingMicroserviceUrl: string;
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
