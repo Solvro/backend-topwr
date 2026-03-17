@@ -29,8 +29,8 @@ export default class Building extends BaseModel {
   @typedColumn({ type: "string", optional: true })
   declare specialName: string | null;
 
-  @typedColumn({ foreignKeyOf: () => Campus })
-  declare campusId: number;
+  @typedColumn({ foreignKeyOf: () => Campus, optional: true })
+  declare campusId: number | null;
 
   @typedColumn({ type: "string", columnName: "address_line1" })
   declare addressLine1: string;
