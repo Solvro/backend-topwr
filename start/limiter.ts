@@ -46,3 +46,17 @@ export const updatePasswordLimiter: LimiterWrapper = {
   errorMessage:
     "Too many password reset attempts. Please wait 1 hour before trying again",
 };
+
+/**
+ * Upload rate limiter for non-admin users.
+ * Admins (solvro_admin role) bypass this limit entirely.
+ * Regular authenticated users are limited to 60 uploads per hour.
+ */
+export const uploadLimiter: LimiterWrapper = {
+  limiter: limiter.use({
+    requests: 60,
+    duration: "1 hour",
+  }),
+  errorMessage:
+    "Upload limit reached. You can upload at most 60 files per hour. Please try again later.",
+};

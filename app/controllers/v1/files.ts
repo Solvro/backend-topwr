@@ -1,14 +1,20 @@
 import vine from "@vinejs/vine";
+import assert from "node:assert";
 
 import type { HttpContext, Request } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import drive from "@adonisjs/drive/services/main";
+import { errors as limiterErrors } from "@adonisjs/limiter";
 
-import { BadRequestException } from "#exceptions/http_exceptions";
+import {
+  BadRequestException,
+  TooManyRequestsException,
+} from "#exceptions/http_exceptions";
 import FileEntry from "#models/file_entry";
 import FilesService from "#services/files_service";
 import { middleware } from "#start/kernel";
+import { uploadLimiter } from "#start/limiter";
 
 const getValidator = vine.compile(
   vine.object({
@@ -37,6 +43,22 @@ export default class FilesController {
   async post({ request, response, auth }: HttpContext) {
     if (!auth.isAuthenticated) {
       await auth.authenticate();
+    }
+
+    const user = auth.user;
+    assert(user !== undefined);
+    const isAdmin = await user.hasRole("solvro_admin");
+    if (!isAdmin) {
+      try {
+        await uploadLimiter.limiter.consume(`upload_user_${user.id}`);
+      } catch (e) {
+        if (e instanceof limiterErrors.E_TOO_MANY_REQUESTS) {
+          throw new TooManyRequestsException(uploadLimiter.errorMessage, {
+            extraResponseFields: { retryAfter: e.response.availableIn },
+          });
+        }
+        throw e;
+      }
     }
 
     let entry: FileEntry;
