@@ -5,6 +5,27 @@ import db from "@adonisjs/lucid/services/db";
 import type { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
 
 /**
+ * Breakdown of deleted rows per ACL table after a cleanup operation.
+ */
+export interface AclCleanupResult {
+  permissions: number;
+  roles: number;
+  modelRoles: number;
+  modelPermissions: number;
+}
+
+export function aclTotal(r: AclCleanupResult): number {
+  return r.permissions + r.roles + r.modelRoles + r.modelPermissions;
+}
+
+const ZERO_RESULT: AclCleanupResult = {
+  permissions: 0,
+  roles: 0,
+  modelRoles: 0,
+  modelPermissions: 0,
+};
+
+/**
  * Creates a fake model instance for the purpose of efficient permission checking
  *
  * The returned object can be passed in as a target of permission check functions.
@@ -54,74 +75,110 @@ export function getMorphMapAlias(model: LucidModel): string | null {
 }
 
 /**
- * Delete all permission rows whose `entity_type` and `entity_id` point to a specific model instance.
+ * Delete all ACL rows that reference a specific model instance.
  *
- * This cascades to `model_permissions` (pivot) via the ON DELETE CASCADE foreign key.
- *
- * @param entityType the morph map alias of the model (e.g. "guide_articles")
- * @param entityId the id of the deleted instance
- * @returns the number of deleted permission rows
+ * Cleans four tables (no foreign keys exist on `entity_id`, so this is required):
+ * - `permissions`        — entity_type/entity_id scope (cascades to `model_permissions` via `permission_id` FK)
+ * - `access_roles`       — entity_type/entity_id scope (cascades to `model_roles` via `role_id` FK)
+ * - `model_roles`        — model_type/model_id  (role assignments *to* this entity)
+ * - `model_permissions`  — model_type/model_id  (direct permission assignments *to* this entity)
  */
 export async function deletePermissionsForEntity(
   entityType: string,
   entityId: number | string,
-): Promise<number> {
-  const result = await db
-    .from("permissions")
-    .where("entity_type", entityType)
-    .where("entity_id", entityId)
-    .delete();
+): Promise<AclCleanupResult> {
+  const permissions = Number(
+    await db
+      .from("permissions")
+      .where("entity_type", entityType)
+      .where("entity_id", entityId)
+      .delete(),
+  );
 
-  const deletedCount = Number(result);
+  const roles = Number(
+    await db
+      .from("access_roles")
+      .where("entity_type", entityType)
+      .where("entity_id", entityId)
+      .delete(),
+  );
 
-  if (deletedCount > 0) {
+  const modelRoles = Number(
+    await db
+      .from("model_roles")
+      .where("model_type", entityType)
+      .where("model_id", entityId)
+      .delete(),
+  );
+
+  const modelPermissions = Number(
+    await db
+      .from("model_permissions")
+      .where("model_type", entityType)
+      .where("model_id", entityId)
+      .delete(),
+  );
+
+  const result: AclCleanupResult = {
+    permissions,
+    roles,
+    modelRoles,
+    modelPermissions,
+  };
+  const total = aclTotal(result);
+
+  if (total > 0) {
     logger.info(
-      `Deleted ${deletedCount} orphaned permission(s) for ${entityType}#${entityId}`,
+      `Deleted ${total} orphaned ACL row(s) for ${entityType}#${entityId}: ` +
+        `${permissions} perm, ${roles} role, ` +
+        `${modelRoles} model_role, ${modelPermissions} model_perm`,
     );
   }
-  return deletedCount;
+  return result;
 }
 
 /**
- * Delete all permission rows whose `entity_type` matches, but whose `entity_id`
- * does not correspond to any existing row in the model's table.
+ * Delete all ACL rows whose `entity_type`/`model_type` matches the given model,
+ * but whose `entity_id`/`model_id` does not correspond to any existing row
+ * in the model's table.
  *
- * Useful for bulk cleanup of permissions that reference deleted objects.
- *
- * @param model the model class to clean up permissions for
- * @returns the number of deleted permission rows
+ * Useful for bulk cleanup of ACL data that references deleted objects.
  */
 export async function deleteOrphanedPermissionsForModel(
   model: LucidModel,
-): Promise<number> {
+): Promise<AclCleanupResult> {
   const entityType = getMorphMapAlias(model);
   if (entityType === null) {
-    return 0;
+    return { ...ZERO_RESULT };
   }
 
-  const table = model.table;
-  const primaryKey = model.primaryKey;
+  const existingIdSubquery = db.from(model.table).select(model.primaryKey);
 
-  // Fetch current IDs from the model table to avoid subquery type-casting issues
-  const existingRows = (await db.from(table).select(primaryKey)) as Record<
-    string,
-    unknown
-  >[];
-  const existingIds = existingRows.map((row) => row[primaryKey] as number);
+  // entity_type/entity_id tables (permissions, access_roles)
+  const deleteEntityOrphans = async (tableName: string): Promise<number> =>
+    Number(
+      await db
+        .from(tableName)
+        .where("entity_type", entityType)
+        .whereNotNull("entity_id")
+        .whereNotIn("entity_id", existingIdSubquery)
+        .delete(),
+    );
 
-  // Base query: permissions scoped to this entity type at instance level
-  let query = db
-    .from("permissions")
-    .where("entity_type", entityType)
-    .whereNotNull("entity_id");
+  // model_type/model_id tables (model_roles, model_permissions)
+  const deleteModelOrphans = async (tableName: string): Promise<number> =>
+    Number(
+      await db
+        .from(tableName)
+        .where("model_type", entityType)
+        .whereNotIn("model_id", existingIdSubquery)
+        .delete(),
+    );
 
-  // Exclude currently-existing IDs if any are present.
-  // If empty, all instance-scoped permissions are orphaned — delete all.
-  if (existingIds.length > 0) {
-    query = query.whereNotIn("entity_id", existingIds);
-  }
+  const permissions = await deleteEntityOrphans("permissions");
+  const roles = await deleteEntityOrphans("access_roles");
+  const modelRoles = await deleteModelOrphans("model_roles");
+  const modelPermissions = await deleteModelOrphans("model_permissions");
 
-  const result = await query.delete();
-
-  return Number(result);
+  return { permissions, roles, modelRoles, modelPermissions };
 }

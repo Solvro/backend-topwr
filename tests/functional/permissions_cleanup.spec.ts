@@ -15,6 +15,7 @@ import StudentOrganizationDraft from "#models/student_organization_draft";
 import User from "#models/user";
 import env from "#start/env";
 import {
+  aclTotal,
   deleteOrphanedPermissionsForModel,
   deletePermissionsForEntity,
 } from "#utils/permissions";
@@ -59,6 +60,32 @@ async function countPermissionsFor(
   return Number(result?.count ?? 0);
 }
 
+async function countRolesFor(
+  entityType: string,
+  entityId: number,
+): Promise<number> {
+  const result = (await db
+    .knexQuery()
+    .table("access_roles")
+    .where({ entity_type: entityType, entity_id: entityId })
+    .count("* as count")
+    .first()) as { count: number | string } | undefined;
+  return Number(result?.count ?? 0);
+}
+
+async function countModelRolesFor(
+  modelType: string,
+  modelId: number,
+): Promise<number> {
+  const result = (await db
+    .knexQuery()
+    .table("model_roles")
+    .where({ model_type: modelType, model_id: modelId })
+    .count("* as count")
+    .first()) as { count: number | string } | undefined;
+  return Number(result?.count ?? 0);
+}
+
 async function insertPermissionRow(
   entityType: string,
   entityId: number,
@@ -70,6 +97,45 @@ async function insertPermissionRow(
     entity_id: entityId,
     scope: "default",
     allowed: true,
+    created_at: new Date(),
+    updated_at: new Date(),
+  });
+}
+
+async function insertRoleRow(
+  entityType: string,
+  entityId: number,
+  slug = "editor",
+): Promise<number> {
+  const result = await db
+    .knexQuery()
+    .table("access_roles")
+    .insert({
+      slug,
+      entity_type: entityType,
+      entity_id: entityId,
+      scope: "default",
+      allowed: true,
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+    .returning("id");
+  const first = (result as unknown[])[0];
+  if (typeof first === "object" && first !== null && "id" in first) {
+    return Number((first as { id: number | string }).id);
+  }
+  return Number(first as number | string);
+}
+
+async function insertModelRoleRow(
+  modelType: string,
+  modelId: number,
+  roleId: number,
+): Promise<void> {
+  await db.knexQuery().table("model_roles").insert({
+    model_type: modelType,
+    model_id: modelId,
+    role_id: roleId,
     created_at: new Date(),
     updated_at: new Date(),
   });
@@ -158,16 +224,57 @@ test.group("deletePermissionsForEntity", (group) => {
     );
     assert.equal(before, 2);
 
-    const deleted = await deletePermissionsForEntity(
+    const result = await deletePermissionsForEntity(
       "student_organization_drafts",
       1001,
     );
-    assert.equal(deleted, 2);
+    assert.equal(result.permissions, 2);
 
     const after = await countPermissionsFor(
       "student_organization_drafts",
       1001,
     );
+    assert.equal(after, 0);
+  });
+
+  test("deletes access_roles rows matching entity_type and entity_id", async ({
+    assert,
+  }) => {
+    await insertRoleRow("student_organization_drafts", 4001, "editor");
+    await insertRoleRow("student_organization_drafts", 4001, "viewer");
+
+    const before = await countRolesFor("student_organization_drafts", 4001);
+    assert.equal(before, 2);
+
+    const result = await deletePermissionsForEntity(
+      "student_organization_drafts",
+      4001,
+    );
+    assert.equal(result.roles, 2);
+
+    const after = await countRolesFor("student_organization_drafts", 4001);
+    assert.equal(after, 0);
+  });
+
+  test("deletes model_roles where model_type/model_id matches", async ({
+    assert,
+  }) => {
+    const roleId = await insertRoleRow("*", 0, "test_role_mr");
+    await insertModelRoleRow("student_organization_drafts", 5001, roleId);
+
+    const before = await countModelRolesFor(
+      "student_organization_drafts",
+      5001,
+    );
+    assert.equal(before, 1);
+
+    const result = await deletePermissionsForEntity(
+      "student_organization_drafts",
+      5001,
+    );
+    assert.equal(result.modelRoles, 1);
+
+    const after = await countModelRolesFor("student_organization_drafts", 5001);
     assert.equal(after, 0);
   });
 
@@ -186,14 +293,14 @@ test.group("deletePermissionsForEntity", (group) => {
     assert.equal(remaining, 1);
   });
 
-  test("returns 0 and does not throw when no rows match", async ({
+  test("returns zeroed result and does not throw when no rows match", async ({
     assert,
   }) => {
-    const deleted = await deletePermissionsForEntity(
+    const result = await deletePermissionsForEntity(
       "student_organization_drafts",
       9999999,
     );
-    assert.equal(deleted, 0);
+    assert.equal(aclTotal(result), 0);
   });
 
   test("does not delete permissions for a different entity_type", async ({
@@ -252,7 +359,10 @@ test.group("deleteOrphanedPermissionsForModel", (group) => {
       "update",
     );
 
-    await deleteOrphanedPermissionsForModel(StudentOrganizationDraft);
+    const result = await deleteOrphanedPermissionsForModel(
+      StudentOrganizationDraft,
+    );
+    assert.isAbove(result.permissions, 0, "should delete orphaned permissions");
 
     // The permission for the existing draft must remain
     const validRemaining = await countPermissionsFor(
@@ -269,7 +379,74 @@ test.group("deleteOrphanedPermissionsForModel", (group) => {
     assert.equal(orphanRemaining, 0, "orphaned permission should be deleted");
   });
 
-  test("returns 0 when there are no orphaned permissions", async ({
+  test("also deletes orphaned access_roles for the model", async ({
+    assert,
+  }) => {
+    const user = await User.create({
+      email: uniqueEmail("orphan_role1"),
+      password: "Passw0rd!",
+      fullName: "Orphan Role User",
+    });
+
+    const draft = await createBaseDraft(user.id);
+    const orphanId = 888889;
+
+    await insertRoleRow("student_organization_drafts", draft.id, "editor");
+    await insertRoleRow("student_organization_drafts", orphanId, "editor");
+
+    const result = await deleteOrphanedPermissionsForModel(
+      StudentOrganizationDraft,
+    );
+    assert.isAbove(result.roles, 0, "should delete orphaned roles");
+
+    const validRemaining = await countRolesFor(
+      "student_organization_drafts",
+      draft.id,
+    );
+    assert.equal(validRemaining, 1, "valid role should not be deleted");
+
+    const orphanRemaining = await countRolesFor(
+      "student_organization_drafts",
+      orphanId,
+    );
+    assert.equal(orphanRemaining, 0, "orphaned role should be deleted");
+  });
+
+  test("also deletes orphaned model_roles for the model", async ({
+    assert,
+  }) => {
+    const user = await User.create({
+      email: uniqueEmail("orphan_mr1"),
+      password: "Passw0rd!",
+      fullName: "Orphan ModelRole User",
+    });
+
+    const draft = await createBaseDraft(user.id);
+    const orphanId = 888890;
+
+    const roleId = await insertRoleRow("*", 0, "test_orphan_model_role");
+    await insertModelRoleRow("student_organization_drafts", draft.id, roleId);
+    await insertModelRoleRow("student_organization_drafts", orphanId, roleId);
+
+    const result = await deleteOrphanedPermissionsForModel(
+      StudentOrganizationDraft,
+    );
+    assert.isAbove(result.modelRoles, 0, "should delete orphaned model_roles");
+
+    const validRemaining = await countModelRolesFor(
+      "student_organization_drafts",
+      draft.id,
+    );
+    assert.equal(validRemaining, 1, "valid model_role should not be deleted");
+
+    const orphanRemaining = await countModelRolesFor(
+      "student_organization_drafts",
+      orphanId,
+    );
+    assert.equal(orphanRemaining, 0, "orphaned model_role should be deleted");
+  });
+
+  test("returns zeroed result when there are no orphans", async ({
     assert,
   }) => {
     const user = await User.create({
@@ -291,18 +468,18 @@ test.group("deleteOrphanedPermissionsForModel", (group) => {
 
     await insertPermissionRow("student_organization_drafts", draft.id, "read");
 
-    const deleted = await deleteOrphanedPermissionsForModel(
+    const result = await deleteOrphanedPermissionsForModel(
       StudentOrganizationDraft,
     );
-    assert.equal(deleted, 0);
+    assert.equal(aclTotal(result), 0);
   });
 
-  test("returns 0 for a model without a MorphMap (no ACL)", async ({
+  test("returns zeroed result for a model without a MorphMap (no ACL)", async ({
     assert,
   }) => {
     const { default: Library } = await import("#models/library");
-    const deleted = await deleteOrphanedPermissionsForModel(Library);
-    assert.equal(deleted, 0);
+    const result = await deleteOrphanedPermissionsForModel(Library);
+    assert.equal(aclTotal(result), 0);
   });
 });
 

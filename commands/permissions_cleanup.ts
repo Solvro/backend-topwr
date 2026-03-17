@@ -7,17 +7,14 @@ import db from "@adonisjs/lucid/services/db";
 import { LucidModel } from "@adonisjs/lucid/types/model";
 
 import BaseCommandExtended from "#commands/base_command_extended";
-import {
-  deleteOrphanedPermissionsForModel,
-  getMorphMapAlias,
-} from "#utils/permissions";
+import { getMorphMapAlias } from "#utils/permissions";
 
 export default class PermissionsCleanup extends BaseCommandExtended {
   static commandName = "permissions:cleanup";
   static description =
-    "Removes orphaned permissions that reference deleted model instances. " +
-    "Scans all models with a morph map and deletes permission rows whose entity_id " +
-    "no longer corresponds to an existing record.";
+    "Removes orphaned ACL rows (permissions, access_roles, model_roles, model_permissions) " +
+    "that reference deleted model instances. Scans all models with a morph map and deletes " +
+    "rows whose entity_id/model_id no longer corresponds to an existing record.";
 
   static options: CommandOptions = {
     startApp: true,
@@ -68,119 +65,127 @@ export default class PermissionsCleanup extends BaseCommandExtended {
       `Found ${aclModels.length} ACL-enabled model(s): ${aclModels.map((m) => m.alias).join(", ")}`,
     );
 
-    // Stage 2: Count orphaned permissions per model
-    task.update("Stage 2 - Scanning for orphaned permissions");
-    const orphanReport: {
-      model: LucidModel;
-      alias: string;
-      orphanCount: number;
-    }[] = [];
+    // Stage 2: Collect primary-key IDs of orphaned ACL rows (snapshot)
+    //
+    // We snapshot the exact IDs *before* asking for confirmation so that
+    // stage 3 deletes only what the user agreed to — no TOCTOU surprises.
+    task.update("Stage 2 - Collecting orphaned ACL row IDs");
+
+    const ENTITY_TABLES = ["permissions", "access_roles"] as const;
+    const MODEL_TABLES = ["model_roles", "model_permissions"] as const;
+
+    // table → collected row IDs to delete
+    const pendingDeletes = new Map<string, number[]>();
+    // alias → count (for the user-facing report)
+    const orphanReport = new Map<string, number>();
     let totalOrphans = 0;
 
+    const appendIds = (table: string, alias: string, ids: number[]) => {
+      if (ids.length === 0) {
+        return;
+      }
+      const prev = pendingDeletes.get(table);
+      if (prev !== undefined) {
+        prev.push(...ids);
+      } else {
+        pendingDeletes.set(table, [...ids]);
+      }
+      orphanReport.set(alias, (orphanReport.get(alias) ?? 0) + ids.length);
+      totalOrphans += ids.length;
+    };
+
+    const rowIds = (rows: unknown[]): number[] =>
+      (rows as { id: number | string }[]).map((r) => Number(r.id));
+
+    // Known models
     for (const { model, alias } of aclModels) {
-      const table = model.table;
-      const primaryKey = model.primaryKey;
+      const existingIdSubquery = db.from(model.table).select(model.primaryKey);
 
-      const existingRows = (await db.from(table).select(primaryKey)) as Record<
-        string,
-        unknown
-      >[];
-      const existingIds = existingRows.map((row) => row[primaryKey] as number);
+      for (const tbl of ENTITY_TABLES) {
+        appendIds(
+          tbl,
+          alias,
+          rowIds(
+            await db
+              .from(tbl)
+              .where("entity_type", alias)
+              .whereNotNull("entity_id")
+              .whereNotIn("entity_id", existingIdSubquery)
+              .select("id"),
+          ),
+        );
+      }
+      for (const tbl of MODEL_TABLES) {
+        appendIds(
+          tbl,
+          alias,
+          rowIds(
+            await db
+              .from(tbl)
+              .where("model_type", alias)
+              .whereNotIn("model_id", existingIdSubquery)
+              .select("id"),
+          ),
+        );
+      }
+    }
 
-      let countQuery = db
-        .from("permissions")
-        .where("entity_type", alias)
+    // Unknown entity/model types (not registered in any morph map)
+    const knownArr = [...new Set(aclModels.map((m) => m.alias))];
+
+    for (const tbl of ENTITY_TABLES) {
+      let q = db
+        .from(tbl)
+        .whereNot("entity_type", "*")
         .whereNotNull("entity_id");
-      if (existingIds.length > 0) {
-        countQuery = countQuery.whereNotIn("entity_id", existingIds);
+      if (knownArr.length > 0) {
+        q = q.whereNotIn("entity_type", knownArr);
       }
-      const result = await countQuery.count("* as count");
-
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- knex aggregate result
-      const count = Number(result[0]?.count ?? 0);
-      if (count > 0) {
-        orphanReport.push({ model, alias, orphanCount: count });
-        totalOrphans += count;
-      }
+      appendIds(tbl, "<unknown>", rowIds(await q.select("id")));
     }
-
-    // Also check for permissions referencing entity_types that no longer exist in any morph map
-    const knownAliases = new Set(aclModels.map((m) => m.alias));
-    const allEntityTypes = await db
-      .from("permissions")
-      .whereNot("entity_type", "*")
-      .whereNotNull("entity_id")
-      .distinct("entity_type");
-
-    const unknownEntityTypes: string[] = [];
-    for (const row of allEntityTypes) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- knex raw result
-      const entityType = row.entity_type as string;
-      if (!knownAliases.has(entityType)) {
-        unknownEntityTypes.push(entityType);
+    for (const tbl of MODEL_TABLES) {
+      let q = db.from(tbl).whereNot("model_type", "*");
+      if (knownArr.length > 0) {
+        q = q.whereNotIn("model_type", knownArr);
       }
-    }
-
-    let unknownOrphanCount = 0;
-    if (unknownEntityTypes.length > 0) {
-      const result = await db
-        .from("permissions")
-        .whereIn("entity_type", unknownEntityTypes)
-        .whereNotNull("entity_id")
-        .count("* as count");
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access -- knex aggregate result
-      unknownOrphanCount = Number(result[0]?.count ?? 0);
-      totalOrphans += unknownOrphanCount;
+      appendIds(tbl, "<unknown>", rowIds(await q.select("id")));
     }
 
     if (totalOrphans === 0) {
-      return "No orphaned permissions found. Database is clean!";
+      return "No orphaned ACL rows found. Database is clean!";
     }
 
     // Report findings
-    task.update(`Found ${totalOrphans} orphaned permission(s) total`);
-    for (const { alias, orphanCount } of orphanReport) {
-      this.logger.info(`  ${alias}: ${orphanCount} orphaned permission(s)`);
-    }
-    if (unknownOrphanCount > 0) {
-      this.logger.info(
-        `  Unknown entity types (${unknownEntityTypes.join(", ")}): ${unknownOrphanCount} orphaned permission(s)`,
-      );
+    task.update(`Found ${totalOrphans} orphaned ACL row(s) total`);
+    for (const [alias, count] of orphanReport) {
+      this.logger.info(`  ${alias}: ${count} orphaned row(s)`);
     }
 
-    // Stage 3: Confirm and delete
+    // Stage 3: Confirm and delete by collected IDs
     const proceed = await this.prompt.confirm(
-      `Delete ${totalOrphans} orphaned permission(s)?`,
+      `Delete ${totalOrphans} orphaned ACL row(s)?`,
       { default: true },
     );
     if (!proceed) {
       return "Cleanup cancelled by user";
     }
 
-    task.update("Stage 3 - Deleting orphaned permissions");
+    task.update("Stage 3 - Deleting orphaned ACL rows");
     let deletedTotal = 0;
 
-    for (const { model, alias } of orphanReport) {
-      const deleted = await deleteOrphanedPermissionsForModel(model);
-      this.logger.info(`  Deleted ${deleted} permission(s) for ${alias}`);
+    for (const [table, ids] of pendingDeletes) {
+      const deleted = Number(await db.from(table).whereIn("id", ids).delete());
+      this.logger.info(`  ${table}: deleted ${deleted} row(s)`);
       deletedTotal += deleted;
     }
 
-    // Delete permissions for unknown entity types
-    if (unknownOrphanCount > 0) {
-      const result = await db
-        .from("permissions")
-        .whereIn("entity_type", unknownEntityTypes)
-        .whereNotNull("entity_id")
-        .delete();
-      const deleted = Number(result);
+    if (deletedTotal < totalOrphans) {
       this.logger.info(
-        `  Deleted ${deleted} permission(s) for unknown entity types`,
+        `  Note: ${totalOrphans - deletedTotal} row(s) were already removed by concurrent operations`,
       );
-      deletedTotal += deleted;
     }
 
-    return `Cleanup complete. Deleted ${deletedTotal} orphaned permission(s).`;
+    return `Cleanup complete. Deleted ${deletedTotal} orphaned ACL row(s).`;
   }
 
   private async importModels(): Promise<LucidModel[]> {
