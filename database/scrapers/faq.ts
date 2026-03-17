@@ -122,7 +122,7 @@ export default class FaqSectionScrapper extends BaseScraperModule {
         id: article.id,
         title: article.name,
         shortDesc: article.short_description,
-        description: article.description ?? "",
+        description: article.description ?? null,
         imageKey: await this.directusUploadFieldAndGetKey(
           article.cover,
         ).addErrorContext(
