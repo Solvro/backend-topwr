@@ -5,13 +5,13 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.integer("campus_id").unsigned().nullable().alter();
+      table.setNullable("campus_id");
     });
   }
 
   async down() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.integer("campus_id").unsigned().notNullable().alter();
+      table.dropNullable("campus_id");
     });
   }
 }
