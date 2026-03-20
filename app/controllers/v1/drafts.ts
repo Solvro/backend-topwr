@@ -12,7 +12,11 @@ import type { LucidModel, ModelAttributes } from "@adonisjs/lucid/types/model";
 
 import { validateColumnDef } from "#app/decorators/typed_model";
 import type { ValidatedColumnDef } from "#app/decorators/typed_model";
-import { thinModel } from "#app/utils/permissions";
+import {
+  deletePermissionsForEntity,
+  getMorphMapAlias,
+  thinModel,
+} from "#app/utils/permissions";
 import { ForbiddenException } from "#exceptions/http_exceptions";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganizationDraft from "#models/student_organization_draft";
@@ -394,6 +398,12 @@ export abstract class GenericDraftController<
         .useTransaction(trx)
         .delete()
         .addErrorContext("Failed to delete GuideArticleDraft after approval");
+
+      // Clean up any permissions scoped to the deleted instance
+      const morphAlias = getMorphMapAlias(this.model);
+      if (morphAlias !== null) {
+        await deletePermissionsForEntity(morphAlias, draftId, trx);
+      }
 
       return { success: true, approvedId: approved.id };
     });
