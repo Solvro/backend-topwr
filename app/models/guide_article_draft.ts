@@ -35,8 +35,8 @@ export default class GuideArticleDraft
   @typedColumn({ type: "string" })
   declare shortDesc: string;
 
-  @typedColumn({ type: "string" })
-  declare description: string;
+  @typedColumn({ type: "string", optional: true })
+  declare description: string | null;
 
   @typedColumn({ foreignKeyOf: () => FileEntry })
   declare imageKey: string;

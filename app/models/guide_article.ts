@@ -40,8 +40,8 @@ export default class GuideArticle
   @typedColumn({ type: "string" })
   declare shortDesc: string;
 
-  @typedColumn({ type: "string" })
-  declare description: string;
+  @typedColumn({ type: "string", optional: true })
+  declare description: string | null;
 
   @typedColumn({ type: "number", hasDefault: true })
   declare order: number;
