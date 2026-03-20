@@ -1,3 +1,4 @@
+import { ExtendedMap } from "@solvro/utils/map";
 import assert from "node:assert";
 import * as fs from "node:fs";
 
@@ -75,22 +76,17 @@ export default class PermissionsCleanup extends BaseCommandExtended {
     const MODEL_TABLES = ["model_roles", "model_permissions"] as const;
 
     // table → collected row IDs to delete
-    const pendingDeletes = new Map<string, number[]>();
+    const pendingDeletes = new ExtendedMap<string, number[]>();
     // alias → count (for the user-facing report)
-    const orphanReport = new Map<string, number>();
+    const orphanReport = new ExtendedMap<string, number>();
     let totalOrphans = 0;
 
     const appendIds = (table: string, alias: string, ids: number[]) => {
       if (ids.length === 0) {
         return;
       }
-      const prev = pendingDeletes.get(table);
-      if (prev !== undefined) {
-        prev.push(...ids);
-      } else {
-        pendingDeletes.set(table, [...ids]);
-      }
-      orphanReport.set(alias, (orphanReport.get(alias) ?? 0) + ids.length);
+      pendingDeletes.getOrInsert(table, []).push(...ids);
+      orphanReport.update(alias, (count) => (count ?? 0) + ids.length);
       totalOrphans += ids.length;
     };
 
@@ -179,9 +175,10 @@ export default class PermissionsCleanup extends BaseCommandExtended {
       deletedTotal += deleted;
     }
 
-    if (deletedTotal < totalOrphans) {
-      this.logger.info(
-        `  Note: ${totalOrphans - deletedTotal} row(s) were already removed by concurrent operations`,
+    if (deletedTotal !== totalOrphans) {
+      const diff = deletedTotal - totalOrphans;
+      this.logger.warning(
+        `  Deleted ${Math.abs(diff)} ${diff < 0 ? "less" : "more"} row(s) than expected!`,
       );
     }
 
