@@ -4,33 +4,33 @@ export default class extends BaseSchema {
   async up() {
     // Make columns nullable first, then convert empty strings to null
     this.schema.alterTable("guide_articles", (table) => {
-      table.text("description").nullable().alter();
+      table.setNullable("description");
     });
     this.schema.alterTable("guide_article_drafts", (table) => {
-      table.text("description").nullable().alter();
+      table.setNullable("description");
     });
 
-    await this.db.rawQuery(
+    this.schema.raw(
       `UPDATE guide_articles SET description = NULL WHERE description = ''`,
     );
-    await this.db.rawQuery(
+    this.schema.raw(
       `UPDATE guide_article_drafts SET description = NULL WHERE description = ''`,
     );
   }
 
   async down() {
-    await this.db.rawQuery(
+    this.schema.raw(
       `UPDATE guide_articles SET description = '' WHERE description IS NULL`,
     );
-    await this.db.rawQuery(
+    this.schema.raw(
       `UPDATE guide_article_drafts SET description = '' WHERE description IS NULL`,
     );
 
     this.schema.alterTable("guide_articles", (table) => {
-      table.text("description").notNullable().alter();
+      table.dropNullable("description");
     });
     this.schema.alterTable("guide_article_drafts", (table) => {
-      table.text("description").notNullable().alter();
+      table.dropNullable("description");
     });
   }
 }
