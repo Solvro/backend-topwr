@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import Role from "#models/role";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class RolesController extends BaseController<typeof Role> {
+export default class RolesController extends AutoCrudController<typeof Role> {
   protected readonly queryRelations = [
     "contributors",
     "contributors.socialLinks",

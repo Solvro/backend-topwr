@@ -6,13 +6,13 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 import type { ModelAttributes } from "@adonisjs/lucid/types/model";
 
-import BaseController from "#controllers/base_controller";
+import AutoCrudController from "#controllers/auto_crud_controller";
 import type {
   CreateHookContext,
   DeleteHookContext,
   HookContext,
   PartialModel,
-} from "#controllers/base_controller";
+} from "#controllers/auto_crud_controller";
 import {
   BadRequestException,
   ConflictException,
@@ -34,7 +34,7 @@ const showHiddenValidator = vine.compile(
   }),
 );
 
-export default class EventCalendarController extends BaseController<
+export default class EventCalendarController extends AutoCrudController<
   typeof CalendarEvent
 > {
   protected readonly queryRelations = [];
@@ -42,7 +42,9 @@ export default class EventCalendarController extends BaseController<
   protected readonly model = CalendarEvent;
 
   $configureRoutes(
-    controller: LazyImport<Constructor<BaseController<typeof CalendarEvent>>>,
+    controller: LazyImport<
+      Constructor<AutoCrudController<typeof CalendarEvent>>
+    >,
   ) {
     super.$configureRoutes(controller);
     router

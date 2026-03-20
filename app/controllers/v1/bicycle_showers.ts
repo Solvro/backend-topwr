@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import BicycleShower from "#models/bicycle_shower";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class BicycleShowersController extends BaseController<
+export default class BicycleShowersController extends AutoCrudController<
   typeof BicycleShower
 > {
   protected readonly queryRelations = ["building", "photo"];

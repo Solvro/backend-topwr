@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import FoodSpot from "#models/food_spot";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class FoodSpotsController extends BaseController<
+export default class FoodSpotsController extends AutoCrudController<
   typeof FoodSpot
 > {
   protected readonly queryRelations = ["building", "photo"];

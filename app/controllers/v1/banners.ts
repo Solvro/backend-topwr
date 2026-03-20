@@ -4,14 +4,14 @@ import type {
   CreateHookContext,
   HookContext,
   PartialModel,
-} from "#controllers/base_controller";
+} from "#controllers/auto_crud_controller";
+import AutoCrudController from "#controllers/auto_crud_controller";
 import { BadRequestException } from "#exceptions/http_exceptions";
 import Banner from "#models/banner";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class BannerController extends BaseController<typeof Banner> {
+export default class BannerController extends AutoCrudController<
+  typeof Banner
+> {
   protected readonly queryRelations = [];
   protected readonly crudRelations = [];
   protected readonly model = Banner;

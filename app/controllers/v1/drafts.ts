@@ -17,16 +17,15 @@ import {
   getMorphMapAlias,
   thinModel,
 } from "#app/utils/permissions";
-import { ForbiddenException } from "#exceptions/http_exceptions";
-import GuideArticleDraft from "#models/guide_article_draft";
-import StudentOrganizationDraft from "#models/student_organization_draft";
-
-import BaseController from "../base_controller.js";
+import AutoCrudController from "#controllers/auto_crud_controller";
 import type {
   ControllerAction,
   HookContext,
   Scopes,
-} from "../base_controller.js";
+} from "#controllers/auto_crud_controller";
+import { ForbiddenException } from "#exceptions/http_exceptions";
+import GuideArticleDraft from "#models/guide_article_draft";
+import StudentOrganizationDraft from "#models/student_organization_draft";
 
 type ResourceType = "organization_draft" | "article_draft";
 
@@ -166,7 +165,7 @@ export abstract class GenericDraftController<
   DraftInstance extends ModelAttributes<InstanceType<Draft>> &
     ApprovedInstance &
     BaseDraft,
-> extends BaseController<Draft> {
+> extends AutoCrudController<Draft> {
   // protected readonly queryRelations = ["image", "original", "createdBy"];
   protected readonly crudRelations: string[] = [];
   protected abstract readonly model: Draft;
@@ -225,7 +224,7 @@ export abstract class GenericDraftController<
     action: ControllerAction,
     ids: { localId: number },
   ) {
-    // BaseController's authenticate() should've ensured the user is logged in
+    // AutoCrudController's authenticate() should've ensured the user is logged in
     assert(http.auth.user !== undefined);
     const user = http.auth.user;
 
@@ -313,7 +312,7 @@ export abstract class GenericDraftController<
         `You are not allowed to suggest edits to ${this.approvedModel.name} with id ${originalId}`,
       );
     }
-  } as unknown as BaseController<Draft>["storeHook"];
+  } as unknown as AutoCrudController<Draft>["storeHook"];
 
   protected async postStoreHook(ctx: HookContext<Draft>): Promise<void> {
     // authenticate() should've authenticated the user already

@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import DasTimetable from "#models/das_timetable";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class DasTimetableController extends BaseController<
+export default class DasTimetableController extends AutoCrudController<
   typeof DasTimetable
 > {
   protected readonly queryRelations = ["das", "entries"];

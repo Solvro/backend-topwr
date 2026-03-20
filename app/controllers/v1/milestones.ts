@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import Milestone from "#models/milestone";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class MilestonesController extends BaseController<
+export default class MilestonesController extends AutoCrudController<
   typeof Milestone
 > {
   protected readonly queryRelations = [

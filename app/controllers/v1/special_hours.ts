@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import SpecialHour from "#models/special_hour";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class SpecialHoursController extends BaseController<
+export default class SpecialHoursController extends AutoCrudController<
   typeof SpecialHour
 > {
   protected readonly queryRelations = ["library"];

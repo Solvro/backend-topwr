@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import DasStand from "#models/das_stand";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class DasStandsController extends BaseController<
+export default class DasStandsController extends AutoCrudController<
   typeof DasStand
 > {
   protected readonly queryRelations = ["das", "logo"];

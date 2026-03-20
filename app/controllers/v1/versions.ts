@@ -1,9 +1,9 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import Version from "#models/version";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class VersionsController extends BaseController<typeof Version> {
+export default class VersionsController extends AutoCrudController<
+  typeof Version
+> {
   protected readonly queryRelations = [
     "screenshots",
     "screenshots.image",

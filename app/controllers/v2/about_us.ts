@@ -1,7 +1,7 @@
-import BaseController from "#controllers/base_controller";
+import AutoCrudController from "#controllers/auto_crud_controller";
 import AboutUsGeneral from "#models/about_us_general";
 
-export default class AboutUsController extends BaseController<
+export default class AboutUsController extends AutoCrudController<
   typeof AboutUsGeneral
 > {
   protected queryRelations = ["coverPhoto"];

@@ -10,13 +10,13 @@ import type {
   HookContext,
   PartialModel,
   RouteConfigurationOptions,
-} from "#controllers/base_controller";
+} from "#controllers/auto_crud_controller";
 import { BadRequestException } from "#exceptions/http_exceptions";
 import FirebaseTopic from "#models/firebase_topic";
 import PushNotificationService from "#services/push_notification_service";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
+const { default: AutoCrudController } = await (() =>
+  import("#controllers/auto_crud_controller"))();
 
 const topicStateParamSchema = vine.object({
   deactivatedSince: vine.luxonDateTime().before(DateTime.now()),
@@ -33,7 +33,7 @@ const pushDataValidator = vine.compile(
   }),
 );
 
-export default class FirebaseController extends BaseController<
+export default class FirebaseController extends AutoCrudController<
   typeof FirebaseTopic
 > {
   $configureRoutes(

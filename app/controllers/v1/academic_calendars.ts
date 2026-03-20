@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import AcademicCalendar from "#models/academic_calendar";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class AcademicCalendarsController extends BaseController<
+export default class AcademicCalendarsController extends AutoCrudController<
   typeof AcademicCalendar
 > {
   protected readonly queryRelations = ["holidays", "daySwaps"];

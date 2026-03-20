@@ -1,9 +1,9 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import DaySwap from "#models/day_swap";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class DaySwapsController extends BaseController<typeof DaySwap> {
+export default class DaySwapsController extends AutoCrudController<
+  typeof DaySwap
+> {
   protected readonly queryRelations = ["academicCalendar"];
   protected readonly crudRelations = [];
   protected readonly model = DaySwap;

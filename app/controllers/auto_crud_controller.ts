@@ -147,7 +147,7 @@ export type ControllerAction =
 
 // Use the same Constructor type as other controllers (e.g., mobile_config_controller)
 
-export default abstract class BaseController<
+export default abstract class AutoCrudController<
   T extends LucidModel & Scopes<LucidModel>,
 > {
   /**
@@ -645,7 +645,7 @@ export default abstract class BaseController<
       ...args: unknown[]
     ) => unknown;
     const instance: unknown = new ControllerCtor();
-    if (!(instance instanceof BaseController)) {
+    if (!(instance instanceof AutoCrudController)) {
       const maybeRoutes = instance as {
         $configureRoutes?: (
           controller: LazyImport<Constructor<unknown>>,
@@ -669,13 +669,13 @@ export default abstract class BaseController<
         controller as LazyImport<Constructor<object>>,
       );
     }
-    const baseInstance = instance as BaseController<
+    const baseInstance = instance as AutoCrudController<
       LucidModel & Scopes<LucidModel>
     >;
     return baseInstance.$configureRoutes.bind(
       baseInstance,
       controller as LazyImport<
-        Constructor<BaseController<LucidModel & Scopes<LucidModel>>>
+        Constructor<AutoCrudController<LucidModel & Scopes<LucidModel>>>
       >,
     );
   }
@@ -690,7 +690,10 @@ export default abstract class BaseController<
           await import(`#controllers/${path}`)) as LazyImport<
           Constructor<unknown>
         >;
-        return [path, await BaseController.configureRoutes(controller, path)];
+        return [
+          path,
+          await AutoCrudController.configureRoutes(controller, path),
+        ];
       }),
     );
     return () => {
@@ -750,7 +753,7 @@ export default abstract class BaseController<
       await verDirReader.close();
 
       // configure
-      const configureVersion = await BaseController.configureByNames(
+      const configureVersion = await AutoCrudController.configureByNames(
         currentEndpoints
           .entries()
           .map(([name, ver]) => `v${ver}/${name}`)
@@ -767,7 +770,7 @@ export default abstract class BaseController<
    * Configures routes for this controller when passed as the group callback
    */
   $configureRoutes(
-    controller: LazyImport<Constructor<BaseController<T>>>,
+    controller: LazyImport<Constructor<AutoCrudController<T>>>,
     configurationOptions?: RouteConfigurationOptions,
   ) {
     if (this.singletonId === undefined) {
@@ -1419,7 +1422,7 @@ export default abstract class BaseController<
 
     // We can avoid fetching the main instance here since authorization was done pre-DB,
     // but still support row-level authorization hooks when overridden.
-    if (this.authorizeRecord !== BaseController.prototype.authorizeRecord) {
+    if (this.authorizeRecord !== AutoCrudController.prototype.authorizeRecord) {
       const mainInstance = await this.getFirstOrFail(localId);
       await this.authorizeRecord(
         httpCtx,
