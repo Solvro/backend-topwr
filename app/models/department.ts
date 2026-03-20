@@ -1,3 +1,4 @@
+import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel, belongsTo, hasMany } from "@adonisjs/lucid/orm";
@@ -30,10 +31,16 @@ export default class Department extends BaseModel {
   @typedColumn({ type: Branch })
   declare branch: Branch;
 
-  @typedColumn({ type: "string" })
+  @typedColumn({
+    type: "string",
+    validator: vine.string().trim().minLength(1).maxLength(30),
+  })
   declare code: string;
 
-  @typedColumn({ type: "string" })
+  @typedColumn({
+    type: "string",
+    validator: vine.string().trim().minLength(1).maxLength(30),
+  })
   declare betterCode: string;
 
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
