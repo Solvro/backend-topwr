@@ -3,6 +3,7 @@ name: Migrations(PR)
 on:
   pull_request:
     branches: ["*"]
+  merge_group:
 
 jobs:
   upgrade-then-seed:
@@ -34,7 +35,7 @@ jobs:
       - name: Check out the base branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.base_ref || github.event.merge_group.base_sha || github.event.merge_group.base_ref }}
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -102,7 +103,7 @@ jobs:
       - name: Check out the base branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -154,7 +155,7 @@ jobs:
       - name: Fetch the base commit
         run: git fetch origin $REF_TO_FETCH:base-branch
         env:
-          REF_TO_FETCH: ${{ github.base_ref }}
+          REF_TO_FETCH: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
       - name: Verify new migration order
         run: |
@@ -211,7 +212,7 @@ jobs:
       - name: Check out the base branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -240,7 +241,7 @@ jobs:
       - name: Fetch the base commit
         run: git fetch origin $REF_TO_FETCH:base-branch
         env:
-          REF_TO_FETCH: ${{ github.base_ref }}
+          REF_TO_FETCH: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
       - name: Delete new migrations
         run: |
@@ -316,7 +317,7 @@ jobs:
       - name: Check out the base branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.base_ref }}
+          ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
       - name: Setup node
         uses: actions/setup-node@v4
