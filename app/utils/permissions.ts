@@ -2,6 +2,7 @@ import { getClassPath } from "@holoyan/adonisjs-permissions";
 
 import logger from "@adonisjs/core/services/logger";
 import db from "@adonisjs/lucid/services/db";
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 import type { LucidModel, LucidRow } from "@adonisjs/lucid/types/model";
 
 /**
@@ -86,34 +87,33 @@ export function getMorphMapAlias(model: LucidModel): string | null {
 export async function deletePermissionsForEntity(
   entityType: string,
   entityId: number | string,
+  transaction?: TransactionClientContract,
 ): Promise<AclCleanupResult> {
+  const from = transaction?.from.bind(transaction) ?? db.from.bind(db);
+
   const permissions = Number(
-    await db
-      .from("permissions")
+    await from("permissions")
       .where("entity_type", entityType)
       .where("entity_id", entityId)
       .delete(),
   );
 
   const roles = Number(
-    await db
-      .from("access_roles")
+    await from("access_roles")
       .where("entity_type", entityType)
       .where("entity_id", entityId)
       .delete(),
   );
 
   const modelRoles = Number(
-    await db
-      .from("model_roles")
+    await from("model_roles")
       .where("model_type", entityType)
       .where("model_id", entityId)
       .delete(),
   );
 
   const modelPermissions = Number(
-    await db
-      .from("model_permissions")
+    await from("model_permissions")
       .where("model_type", entityType)
       .where("model_id", entityId)
       .delete(),
