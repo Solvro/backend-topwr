@@ -51,8 +51,8 @@ jobs:
         run: node ace migration:run
 
       - name: Check commit name
-        if: github.event_name == 'pull_request'
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha  }} --to ${{ github.sha }} --verbose
 
       - name: Run prettier
         run: npm run format:check
