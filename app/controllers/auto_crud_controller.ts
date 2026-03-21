@@ -1009,7 +1009,7 @@ export default abstract class AutoCrudController<
     const mainInstance = await this.getFirstOrFail(id);
     await this.authorizeRecord(
       { request, route, auth } as unknown as HttpContext,
-      "oneToManyRelationStore",
+      "oneToOneRelationStore",
       mainInstance,
     );
 
