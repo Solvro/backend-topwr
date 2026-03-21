@@ -437,7 +437,7 @@ export default abstract class AutoCrudController<
   /**
    * The actual self-validation function, does not cache!
    */
-  protected async doSelfValidate(): Promise<InternalControllerValidationError | null> {
+  public async doSelfValidate(): Promise<InternalControllerValidationError | null> {
     const issues = [];
 
     // Verify scopes
