@@ -4,12 +4,10 @@ import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
-import type { RouteConfigurationOptions } from "#controllers/base_controller";
+import type { RouteConfigurationOptions } from "#controllers/auto_crud_controller";
+import AutoCrudController from "#controllers/auto_crud_controller";
 import { BadRequestException } from "#exceptions/http_exceptions";
 import PushNotificationEntry from "#models/push_notification_entry";
-
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
 
 // I give up on using built-in vine functions. Optional and transform cannot be used on union types for some reason.
 const queryParamSchema = vine
@@ -34,7 +32,7 @@ const topicBelongingValidator = vine.object({
   exclude: queryParamSchema,
 });
 
-export default class NotificationController extends BaseController<
+export default class NotificationController extends AutoCrudController<
   typeof PushNotificationEntry
 > {
   $configureRoutes(

@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import StudentOrganization from "#models/student_organization";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class StudentOrganizationsController extends BaseController<
+export default class StudentOrganizationsController extends AutoCrudController<
   typeof StudentOrganization
 > {
   protected readonly queryRelations = [

@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import ContributorSocialLink from "#models/contributor_social_link";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class ContributorSocialLinksController extends BaseController<
+export default class ContributorSocialLinksController extends AutoCrudController<
   typeof ContributorSocialLink
 > {
   protected readonly queryRelations = ["contributor"];

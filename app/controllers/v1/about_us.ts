@@ -1,11 +1,12 @@
 import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
+import BaseController from "#controllers/base_controller";
 import { aboutUsLinkTypeOrder, compareLinkTypes } from "#enums/link_type";
 import AboutUsGeneral from "#models/about_us_general";
 import AboutUsGeneralLink from "#models/about_us_general_link";
 
-export default class AboutUsController {
+export default class AboutUsController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<AboutUsController>>) {
     router.get("/", [controller, "show"]).as("show");
   }

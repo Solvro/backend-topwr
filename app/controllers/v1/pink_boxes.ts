@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import PinkBox from "#models/pink_box";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class PinkBoxesController extends BaseController<
+export default class PinkBoxesController extends AutoCrudController<
   typeof PinkBox
 > {
   protected readonly queryRelations = ["building", "photo"];

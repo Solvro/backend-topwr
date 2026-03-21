@@ -2,10 +2,10 @@ import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
-import BaseController from "#controllers/base_controller";
+import AutoCrudController from "#controllers/auto_crud_controller";
 import MobileConfig from "#models/mobile_config";
 
-export default class MobileConfigController extends BaseController<
+export default class MobileConfigController extends AutoCrudController<
   typeof MobileConfig
 > {
   protected queryRelations: string[] = [];
@@ -14,7 +14,9 @@ export default class MobileConfigController extends BaseController<
   protected singletonId = 1;
 
   $configureRoutes(
-    controller: LazyImport<Constructor<BaseController<typeof MobileConfig>>>,
+    controller: LazyImport<
+      Constructor<AutoCrudController<typeof MobileConfig>>
+    >,
   ) {
     super.$configureRoutes(controller);
     router

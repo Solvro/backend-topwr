@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import Polinka from "#models/polinka_station";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class PolinkaStationsController extends BaseController<
+export default class PolinkaStationsController extends AutoCrudController<
   typeof Polinka
 > {
   protected readonly queryRelations = ["photo", "campus"];

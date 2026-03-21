@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import Library from "#models/library";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class LibrariesController extends BaseController<
+export default class LibrariesController extends AutoCrudController<
   typeof Library
 > {
   protected readonly queryRelations = [

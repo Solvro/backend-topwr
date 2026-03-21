@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import SksOpeningHours from "#models/sks_opening_hours";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class SksOpeningHoursController extends BaseController<
+export default class SksOpeningHoursController extends AutoCrudController<
   typeof SksOpeningHours
 > {
   protected readonly queryRelations = [];

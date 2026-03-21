@@ -8,10 +8,8 @@
 */
 import router from "@adonisjs/core/services/router";
 
+import { configureAllRoutes } from "#app/utils/controllers";
 import env from "#start/env";
-
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
 
 const MetricsMiddleware = () => import("@solvro/solvronis-metrics");
 
@@ -21,4 +19,4 @@ router.get("/", async () => {
 
 router.get("/metrics", [MetricsMiddleware, "emitMetrics"]);
 
-await BaseController.configureAll();
+await configureAllRoutes();

@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import Contributor from "#models/contributor";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class ContributorsController extends BaseController<
+export default class ContributorsController extends AutoCrudController<
   typeof Contributor
 > {
   protected readonly queryRelations = [

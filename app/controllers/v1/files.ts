@@ -7,6 +7,7 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import drive from "@adonisjs/drive/services/main";
 import { errors as limiterErrors } from "@adonisjs/limiter";
 
+import BaseController from "#controllers/base_controller";
 import {
   BadRequestException,
   TooManyRequestsException,
@@ -34,7 +35,7 @@ const directUploadValidator = vine.compile(
   }),
 );
 
-export default class FilesController {
+export default class FilesController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<FilesController>>) {
     router.get("/:key", [controller, "get"]).as("show");
     router.post("/", [controller, "post"]).as("upload").use(middleware.auth());
@@ -47,8 +48,7 @@ export default class FilesController {
 
     const user = auth.user;
     assert(user !== undefined);
-    const isAdmin = await user.hasRole("solvro_admin");
-    if (!isAdmin) {
+    if (!(await this.isSuperUser(auth))) {
       try {
         await uploadLimiter.limiter.consume(`upload_user_${user.id}`);
       } catch (e) {

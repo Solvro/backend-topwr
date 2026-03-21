@@ -1,9 +1,7 @@
+import AutoCrudController from "#controllers/auto_crud_controller";
 import Building from "#models/building";
 
-const { default: BaseController } = await (() =>
-  import("#controllers/base_controller"))();
-
-export default class BuildingsController extends BaseController<
+export default class BuildingsController extends AutoCrudController<
   typeof Building
 > {
   protected readonly queryRelations = [

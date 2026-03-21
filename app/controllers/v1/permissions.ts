@@ -5,7 +5,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
-import { ForbiddenException } from "#exceptions/http_exceptions";
+import BaseController from "#controllers/base_controller";
 import GuideArticle from "#models/guide_article";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganization from "#models/student_organization";
@@ -52,25 +52,15 @@ const listPermissionsValidator = vine.compile(
   }),
 );
 
-export default class PermissionsController {
+export default class PermissionsController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<PermissionsController>>) {
     router.post("/allow", [controller, "allow"]).as("allow");
     router.post("/revoke", [controller, "revoke"]).as("revoke");
     router.get("/list", [controller, "listUserPermissions"]).as("list");
   }
 
-  private async ensureSolvroAdmin(auth: HttpContext["auth"]) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    const isAdmin = await auth.user?.hasRole("solvro_admin");
-    if (isAdmin !== true) {
-      throw new ForbiddenException();
-    }
-  }
-
   async allow({ request, auth }: HttpContext) {
-    await this.ensureSolvroAdmin(auth);
+    await this.requireSuperUser(auth);
 
     // Use vine validator
     const { userId, action, modelName, instanceId } =
@@ -101,7 +91,7 @@ export default class PermissionsController {
   }
 
   async revoke({ request, auth }: HttpContext) {
-    await this.ensureSolvroAdmin(auth);
+    await this.requireSuperUser(auth);
 
     // Use vine validator
     const { userId, action, modelName, instanceId } =
@@ -136,7 +126,7 @@ export default class PermissionsController {
    * List all permissions for a specific user
    */
   async listUserPermissions({ request, auth }: HttpContext) {
-    await this.ensureSolvroAdmin(auth);
+    await this.requireSuperUser(auth);
 
     const { userId } = await request.validateUsing(listPermissionsValidator);
 
