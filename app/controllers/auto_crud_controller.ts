@@ -1,8 +1,6 @@
 import adonisString from "@poppinss/utils/string";
 import { BaseError } from "@solvro/error-handling/base";
 import assert from "node:assert";
-import type { Dirent } from "node:fs";
-import fs from "node:fs/promises";
 
 import type { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
@@ -29,6 +27,7 @@ import type {
   ManyToManyRelationContract,
 } from "@adonisjs/lucid/types/relations";
 
+import BaseController from "#controllers/base_controller";
 import {
   validateColumnDef,
   validateTypedManyToManyRelation,
@@ -116,8 +115,6 @@ export type DeleteHookContext<T extends LucidModel> = Omit<
   "request"
 >;
 
-const LOADABLE_EXTENSIONS = [".js", ".ts"];
-
 /**
  * Additional configuration options for the BaseController.$configureRoutes.
  * `skipRoutes` property: if a route should be skipped, set it to true. Defaults to false
@@ -149,7 +146,7 @@ export type ControllerAction =
 
 export default abstract class AutoCrudController<
   T extends LucidModel & Scopes<LucidModel>,
-> {
+> extends BaseController {
   /**
    * Relations which should be supported in queries
    * Supports nested relations
@@ -171,10 +168,6 @@ export default abstract class AutoCrudController<
    * the id as an url parameter, using this value to look up the instance instead.
    */
   protected readonly singletonId?: number | string;
-  /**
-   * With the default implementation of `authenticate()`, if the user has any of the following roles, the permission checks are skipped.
-   */
-  protected superUserRoles: string[] = ["solvro_admin"];
 
   /**
    * Return the permission slug(s) required for the given action, or null/undefined if none is required.
@@ -223,50 +216,6 @@ export default abstract class AutoCrudController<
       case "relationIndex":
       default:
         return null;
-    }
-  }
-
-  /**
-   * Check whether the current user is a super user.
-   *
-   * Super user roles for a particular controller can be defined in its properties.
-   * This method does not force authentication - unauthenticated users are not considered super users. (obviously lol)
-   * Only one of the defined roles is requred for a user to be considered a super user.
-   *
-   * @param auth the authentication context
-   * @returns true if the user is a super user
-   */
-  protected async isSuperUser(auth: HttpContext["auth"]): Promise<boolean> {
-    // no roles defined - definitely not a superuser then
-    if (this.superUserRoles.length === 0) {
-      return false;
-    }
-    // not logged in - not a super user
-    if (!(await auth.check())) {
-      return false;
-    }
-    // it is known at this point that the user is authenticated
-    assert(auth.user !== undefined);
-    // check for superuser roles
-    return await auth.user.hasAnyRole(...this.superUserRoles);
-  }
-
-  /**
-   * Require that the currently logged in user is a super user
-   *
-   * Super user roles for a particular controller can be defined in its properties.
-   * This method does force authentication and will throw a ForbiddenException if the current user is not a super user.
-   * Only one of the defined roles is requred for a user to be considered a super user.
-   *
-   * @param auth the authentication context
-   * @throws ForbiddenException if the current user is not a super user
-   */
-  protected async requireSuperUser(auth: HttpContext["auth"]): Promise<void> {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    if (!(await this.isSuperUser(auth))) {
-      throw new ForbiddenException();
     }
   }
 
@@ -633,142 +582,6 @@ export default abstract class AutoCrudController<
     throw selfValidationResult;
   }
 
-  /**
-   * Generates a configuration callback for a controller using its lazy import
-   */
-  static async configureRoutes(
-    controller: LazyImport<Constructor<unknown>>,
-    debugName: string,
-  ): Promise<() => void> {
-    const imported = await controller();
-    const ControllerCtor = imported.default as new (
-      ...args: unknown[]
-    ) => unknown;
-    const instance: unknown = new ControllerCtor();
-    if (!(instance instanceof AutoCrudController)) {
-      const maybeRoutes = instance as {
-        $configureRoutes?: (
-          controller: LazyImport<Constructor<unknown>>,
-        ) => () => void;
-      };
-      if (
-        !(
-          typeof maybeRoutes.$configureRoutes === "function" &&
-          maybeRoutes.$configureRoutes.length === 1
-        )
-      ) {
-        throw new Error(
-          `Attempted to configure routes for a non-BaseController-based controller which does not implement $configureRoutes: ${debugName}`,
-        );
-      }
-      logger.warn(
-        `Configuring routes for a non-BaseController-based controller: ${debugName}`,
-      );
-      return maybeRoutes.$configureRoutes.bind(
-        maybeRoutes,
-        controller as LazyImport<Constructor<object>>,
-      );
-    }
-    const baseInstance = instance as AutoCrudController<
-      LucidModel & Scopes<LucidModel>
-    >;
-    return baseInstance.$configureRoutes.bind(
-      baseInstance,
-      controller as LazyImport<
-        Constructor<AutoCrudController<LucidModel & Scopes<LucidModel>>>
-      >,
-    );
-  }
-
-  /**
-   * Generates a configuration callback that configures each of the named controllers
-   */
-  static async configureByNames(paths: string[]): Promise<() => void> {
-    const toConfigure: [string, () => void][] = await Promise.all(
-      paths.map(async (path) => {
-        const controller = (async () =>
-          await import(`#controllers/${path}`)) as LazyImport<
-          Constructor<unknown>
-        >;
-        return [
-          path,
-          await AutoCrudController.configureRoutes(controller, path),
-        ];
-      }),
-    );
-    return () => {
-      for (const [path, config] of toConfigure) {
-        const name = path.split("/").at(-1) ?? path;
-        router.group(config).prefix(`/${name}`).as(name);
-      }
-    };
-  }
-
-  /**
-   * Configures all controller routes automatically
-   */
-  static async configureAll(): Promise<void> {
-    // find all version directories
-    let version = 0;
-    // map endpoint names to version directories
-    // allows new API versions to inherit from earlier ones without symlinks or code duplication
-    const currentEndpoints = new Map<string, number>();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-    while (true) {
-      // iterate while directories for each version exist
-      const dir = `./app/controllers/v${++version}`;
-      try {
-        const statResult = await fs.stat(dir);
-        if (!statResult.isDirectory()) {
-          break;
-        }
-      } catch {
-        break;
-      }
-
-      // list directory files for the version
-      const verDirReader = await fs.opendir(dir);
-      let controllerFile: Dirent | null = null;
-      while ((controllerFile = await verDirReader.read()) !== null) {
-        // skip non-files
-        if (!controllerFile.isFile()) {
-          continue;
-        }
-        for (const ext of LOADABLE_EXTENSIONS) {
-          // find the correct extension for the file
-          if (!controllerFile.name.endsWith(ext)) {
-            continue;
-          }
-          // add to list
-          currentEndpoints.set(
-            controllerFile.name.substring(
-              0,
-              controllerFile.name.length - ext.length,
-            ),
-            version,
-          );
-          break;
-        }
-      }
-      await verDirReader.close();
-
-      // configure
-      const configureVersion = await AutoCrudController.configureByNames(
-        currentEndpoints
-          .entries()
-          .map(([name, ver]) => `v${ver}/${name}`)
-          .toArray(),
-      );
-      router
-        .group(configureVersion)
-        .prefix(`/api/v${version}`)
-        .as(`v${version}`);
-    }
-  }
-
-  /**
-   * Configures routes for this controller when passed as the group callback
-   */
   $configureRoutes(
     controller: LazyImport<Constructor<AutoCrudController<T>>>,
     configurationOptions?: RouteConfigurationOptions,

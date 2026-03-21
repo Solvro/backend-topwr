@@ -23,6 +23,7 @@ import type {
   HookContext,
   Scopes,
 } from "#controllers/auto_crud_controller";
+import BaseController from "#controllers/base_controller";
 import { ForbiddenException } from "#exceptions/http_exceptions";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganizationDraft from "#models/student_organization_draft";
@@ -40,7 +41,7 @@ const listDraftsValidator = vine.compile(
   }),
 );
 
-export default class DraftsController {
+export default class DraftsController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<DraftsController>>) {
     router.get("/", [controller, "index"]).as("index");
   }

@@ -8,6 +8,7 @@ import router from "@adonisjs/core/services/router";
 import { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import { JWT_GUARD, JwtTokenResponse } from "#app/auth/guards/jwt";
+import BaseController from "#controllers/base_controller";
 import {
   ForbiddenException,
   InternalServerException,
@@ -31,7 +32,7 @@ const allAccountsParamSchema = vine.object({
   all: vine.boolean().optional(),
 });
 
-export default class AuthController {
+export default class AuthController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<AuthController>>) {
     router
       .group(() => {

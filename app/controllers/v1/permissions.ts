@@ -5,7 +5,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
-import { ForbiddenException } from "#exceptions/http_exceptions";
+import BaseController from "#controllers/base_controller";
 import GuideArticle from "#models/guide_article";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganization from "#models/student_organization";
@@ -52,7 +52,7 @@ const listPermissionsValidator = vine.compile(
   }),
 );
 
-export default class PermissionsController {
+export default class PermissionsController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<PermissionsController>>) {
     router.post("/allow", [controller, "allow"]).as("allow");
     router.post("/revoke", [controller, "revoke"]).as("revoke");

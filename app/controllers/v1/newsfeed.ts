@@ -4,6 +4,7 @@ import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
+import BaseController from "#controllers/base_controller";
 import { ServiceUnavailableException } from "#exceptions/http_exceptions";
 import NewsfeedService, {
   NEWSFEED_LANGAUGES,
@@ -16,7 +17,7 @@ const validator = vine.compile(
   }),
 );
 
-export default class NewsfeedController {
+export default class NewsfeedController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<NewsfeedController>>) {
     router.get("/latest", [controller, "latest"]).as("latest");
     router.get("/stats", [controller, "stats"]).as("stats");
