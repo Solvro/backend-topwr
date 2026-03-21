@@ -61,9 +61,7 @@ export default class DraftsController extends BaseController {
     assert(user !== undefined);
 
     // Admin roles bypass
-    const hasSolvroAdminRole = (await user.hasRole("solvro_admin")) === true;
-    const hasAdminRole = (await user.hasRole("admin")) === true;
-    if (hasSolvroAdminRole || hasAdminRole) {
+    if (await this.isSuperUser(auth)) {
       return true;
     }
 

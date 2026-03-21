@@ -48,8 +48,7 @@ export default class FilesController extends BaseController {
 
     const user = auth.user;
     assert(user !== undefined);
-    const isAdmin = await user.hasRole("solvro_admin");
-    if (!isAdmin) {
+    if (!(await this.isSuperUser(auth))) {
       try {
         await uploadLimiter.limiter.consume(`upload_user_${user.id}`);
       } catch (e) {

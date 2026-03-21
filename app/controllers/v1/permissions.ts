@@ -59,18 +59,8 @@ export default class PermissionsController extends BaseController {
     router.get("/list", [controller, "listUserPermissions"]).as("list");
   }
 
-  private async ensureSolvroAdmin(auth: HttpContext["auth"]) {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    const isAdmin = await auth.user?.hasRole("solvro_admin");
-    if (isAdmin !== true) {
-      throw new ForbiddenException();
-    }
-  }
-
   async allow({ request, auth }: HttpContext) {
-    await this.ensureSolvroAdmin(auth);
+    await this.requireSuperUser(auth);
 
     // Use vine validator
     const { userId, action, modelName, instanceId } =
@@ -101,7 +91,7 @@ export default class PermissionsController extends BaseController {
   }
 
   async revoke({ request, auth }: HttpContext) {
-    await this.ensureSolvroAdmin(auth);
+    await this.requireSuperUser(auth);
 
     // Use vine validator
     const { userId, action, modelName, instanceId } =
@@ -136,7 +126,7 @@ export default class PermissionsController extends BaseController {
    * List all permissions for a specific user
    */
   async listUserPermissions({ request, auth }: HttpContext) {
-    await this.ensureSolvroAdmin(auth);
+    await this.requireSuperUser(auth);
 
     const { userId } = await request.validateUsing(listPermissionsValidator);
 
