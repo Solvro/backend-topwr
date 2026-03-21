@@ -20,7 +20,7 @@ export default class DasStand extends BaseModel {
   @typedColumn({ type: "string", validator: vine.string().maxLength(7) })
   declare number: string; // Knowing PWr, stand number could not be a number
 
-  @typedColumn({ isPrimary: true, foreignKeyOf: () => Das })
+  @typedColumn({ foreignKeyOf: () => Das })
   declare dasId: number;
 
   @belongsTo(() => Das, {
@@ -46,7 +46,6 @@ export default class DasStand extends BaseModel {
   declare description: string | null;
 
   @typedColumn({
-    isPrimary: true,
     foreignKeyOf: () => StudentOrganization,
     optional: true,
   })
