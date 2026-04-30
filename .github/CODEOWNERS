@@ -1,6 +1,2 @@
 # default: ToPWR backend TechLeads
 * @mini-bomba @czaja307
-
-# scopes & decorators: adonisjs scope expert + TLs
-/app/decorators/ @mini-bomba @czaja307 @karolwolek
-/app/scopes/     @mini-bomba @czaja307 @karolwolek
