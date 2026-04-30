@@ -24,9 +24,9 @@ export default class DasTimetableEntry extends BaseModel {
   declare startTime: DateTime;
 
   @typedColumn.dateTime({
-    validator: vine.luxonDateTime().afterField("startsAt"),
+    validator: vine.luxonDateTime().afterField("startTime").optional(),
   })
-  declare endTime: DateTime;
+  declare endTime: DateTime | null;
 
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
