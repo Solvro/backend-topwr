@@ -5,13 +5,13 @@ export default class extends BaseSchema {
 
   async up() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.timestamp("end_time").nullable().alter();
+      table.setNullable("end_time");
     });
   }
 
   async down() {
     this.schema.alterTable(this.tableName, (table) => {
-      table.timestamp("end_time").notNullable().alter();
+      table.dropNullable("end_time");
     });
   }
 }
