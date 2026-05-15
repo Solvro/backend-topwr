@@ -1,8 +1,8 @@
 import vine from "@vinejs/vine";
 
-import { HttpContext } from "@adonisjs/core/http";
+import type { HttpContext } from "@adonisjs/core/http";
 import router from "@adonisjs/core/services/router";
-import { Constructor, LazyImport } from "@adonisjs/core/types/http";
+import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
 import { ForbiddenException } from "#app/exceptions/http_exceptions";
@@ -51,8 +51,8 @@ export default class UsersController extends BaseController {
   async findAll({ request, auth }: HttpContext) {
     await this.requireSuperUser(auth);
 
-    const page = request.input("page", 1);
-    const limit = request.input("limit", 10);
+    const page = request.input("page", 1) as number;
+    const limit = request.input("limit", 10) as number;
 
     const users = await User.query()
       .select("id", "fullName", "email")
