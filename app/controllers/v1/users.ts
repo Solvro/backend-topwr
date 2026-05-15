@@ -62,9 +62,9 @@ export default class UsersController extends BaseController {
   }
 
   async findOne({ request, auth }: HttpContext) {
-    await this.requireSuperUserOrSelf(auth, parseInt(request.param("id")));
+    const userId = request.param("id") as string;
 
-    const userId = request.param("id");
+    await this.requireSuperUserOrSelf(auth, Number.parseInt(userId));
 
     const targetUser = await User.query()
       .select("id", "fullName", "email")
@@ -76,9 +76,12 @@ export default class UsersController extends BaseController {
   }
 
   async delete({ request, auth }: HttpContext) {
-    await this.requireSuperUserOrSelf(auth, parseInt(request.param("id")));
+    await this.requireSuperUserOrSelf(
+      auth,
+      Number.parseInt(request.param("id") as string),
+    );
 
-    const userId = request.param("id");
+    const userId = request.param("id") as string;
 
     const targetUser = await User.findOrFail(userId).addErrorContext(
       () => `User with id ${userId} not found`,
@@ -90,9 +93,9 @@ export default class UsersController extends BaseController {
   }
 
   async update({ request, auth }: HttpContext) {
-    await this.requireSuperUserOrSelf(auth, parseInt(request.param("id")));
+    const userId = request.param("id") as string;
 
-    const userId = request.param("id");
+    await this.requireSuperUserOrSelf(auth, Number.parseInt(userId));
 
     const payload = await request.validateUsing(updateUserValidator);
 
