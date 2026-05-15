@@ -46,6 +46,13 @@ const permissionChangeValidator = vine.compile(
   }),
 );
 
+const roleChangeValidator = vine.compile(
+  vine.object({
+    userId: vine.number(),
+    roles: vine.array(vine.string()),
+  }),
+);
+
 const listPermissionsValidator = vine.compile(
   vine.object({
     userId: vine.number(),
@@ -57,6 +64,8 @@ export default class PermissionsController extends BaseController {
     router.post("/allow", [controller, "allow"]).as("allow");
     router.post("/revoke", [controller, "revoke"]).as("revoke");
     router.get("/list", [controller, "listUserPermissions"]).as("list");
+    router.post("roles/assign", [controller, "assignRoles"]).as("assignRoles");
+    router.post("roles/revoke", [controller, "revokeRoles"]).as("revokeRoles");
   }
 
   async allow({ request, auth }: HttpContext) {
@@ -161,5 +170,45 @@ export default class PermissionsController extends BaseController {
       roles,
       permissions,
     };
+  }
+
+  async assignRoles({ request, auth }: HttpContext) {
+    await this.requireSuperUser(auth);
+
+    const { userId, roles } = await request.validateUsing(roleChangeValidator);
+
+    const targetUser = await User.findOrFail(userId).addErrorContext(
+      () => `User with id ${userId} not found`,
+    );
+
+    const manager = Acl.model(targetUser);
+
+    for (const role of roles) {
+      await manager
+        .assignRole(role)
+        .addErrorContext(`Failed to assign role ${role}`);
+    }
+
+    return { success: true };
+  }
+
+  async revokeRoles({ request, auth }: HttpContext) {
+    await this.requireSuperUser(auth);
+
+    const { userId, roles } = await request.validateUsing(roleChangeValidator);
+
+    const targetUser = await User.findOrFail(userId).addErrorContext(
+      () => `User with id ${userId} not found`,
+    );
+
+    const manager = Acl.model(targetUser);
+
+    for (const role of roles) {
+      await manager
+        .revokeRole(role)
+        .addErrorContext(`Failed to revoke role ${role}`);
+    }
+
+    return { success: true };
   }
 }
