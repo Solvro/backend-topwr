@@ -64,8 +64,8 @@ export default class PermissionsController extends BaseController {
     router.post("/allow", [controller, "allow"]).as("allow");
     router.post("/revoke", [controller, "revoke"]).as("revoke");
     router.get("/list", [controller, "listUserPermissions"]).as("list");
-    router.post("roles/assign", [controller, "assignRoles"]).as("assignRoles");
-    router.post("roles/revoke", [controller, "revokeRoles"]).as("revokeRoles");
+    router.post("/roles/assign", [controller, "assignRoles"]).as("assignRoles");
+    router.post("/roles/revoke", [controller, "revokeRoles"]).as("revokeRoles");
   }
 
   async allow({ request, auth }: HttpContext) {

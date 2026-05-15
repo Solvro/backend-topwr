@@ -1,9 +1,4 @@
-import {
-  MorphMap,
-  Permission,
-  Role,
-  hasPermissions,
-} from "@holoyan/adonisjs-permissions";
+import { MorphMap, hasPermissions } from "@holoyan/adonisjs-permissions";
 import {
   AclModelInterface,
   ModelIdType,
@@ -17,8 +12,6 @@ import { compose } from "@adonisjs/core/helpers";
 import hash from "@adonisjs/core/services/hash";
 import logger from "@adonisjs/core/services/logger";
 import { BaseModel, beforeSave, scope } from "@adonisjs/lucid/orm";
-import { manyToMany } from "@adonisjs/lucid/orm";
-import type { ManyToMany } from "@adonisjs/lucid/types/relations";
 
 import { preloadRelations } from "#app/scopes/preload_helper";
 import { handleSearchQuery } from "#app/scopes/search_helper";
@@ -74,20 +67,6 @@ export default class User
   static preloadRelations = preloadRelations();
   static handleSearchQuery = handleSearchQuery();
   static handleSortQuery = handleSortQuery();
-
-  @manyToMany(() => Role, {
-    pivotTable: "model_role",
-    pivotForeignKey: "model_id",
-    pivotRelatedForeignKey: "role_id",
-  })
-  declare userRoles: ManyToMany<typeof Role>;
-
-  @manyToMany(() => Permission, {
-    pivotTable: "model_permission",
-    pivotForeignKey: "model_id",
-    pivotRelatedForeignKey: "permission_id",
-  })
-  declare userPermissions: ManyToMany<typeof Permission>;
 
   @beforeSave()
   static async hashToken(user: User) {
