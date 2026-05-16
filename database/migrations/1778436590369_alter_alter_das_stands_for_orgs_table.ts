@@ -13,13 +13,13 @@ export default class extends BaseSchema {
         .references("id")
         .inTable("floors")
         .nullable()
-        .onDelete("SET NULL");
+        .onDelete("RESTRICT");
       table
         .integer("das_organization_id")
         .references("id")
         .inTable("das_organizations")
         .nullable()
-        .onDelete("SET NULL");
+        .onDelete("RESTRICT");
     });
   }
 
@@ -28,7 +28,7 @@ export default class extends BaseSchema {
       table.dropColumn("floor_id");
       table.dropColumn("das_organization_id");
 
-      table.string("floor", 7).nullable();
+      table.string("floor").nullable();
       table
         .integer("student_organization_id")
         .references("id")
