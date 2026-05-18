@@ -13,9 +13,6 @@ import hash from "@adonisjs/core/services/hash";
 import logger from "@adonisjs/core/services/logger";
 import { BaseModel, beforeSave, scope } from "@adonisjs/lucid/orm";
 
-import { preloadRelations } from "#app/scopes/preload_helper";
-import { handleSearchQuery } from "#app/scopes/search_helper";
-import { handleSortQuery } from "#app/scopes/sort_helper";
 import { typedColumn } from "#decorators/typed_model";
 import { sha256 } from "#utils/hash";
 
@@ -63,10 +60,6 @@ export default class User
   declare updatedAt: DateTime | null;
 
   static accessTokens = DbAccessTokensProvider.forModel(User);
-
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
 
   @beforeSave()
   static async hashToken(user: User) {

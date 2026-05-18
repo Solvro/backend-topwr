@@ -5,7 +5,6 @@ import router from "@adonisjs/core/services/router";
 import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
-import { ForbiddenException } from "#app/exceptions/http_exceptions";
 import User from "#app/models/user";
 
 import BaseController from "../base_controller.js";
@@ -27,6 +26,19 @@ const updateUserValidator = vine.compile(
   }),
 );
 
+const paginationValidator = vine.compile(
+  vine.object({
+    page: vine.number().min(1).optional(),
+    limit: vine.number().min(1).max(100).optional(),
+  }),
+);
+
+const userIdParamValidator = vine.compile(
+  vine.object({
+    id: vine.number(),
+  }),
+);
+
 export default class UsersController extends BaseController {
   $configureRoutes(controller: LazyImport<Constructor<UsersController>>) {
     router.get("/", [controller, "findAll"]).as("users.list");
@@ -36,23 +48,11 @@ export default class UsersController extends BaseController {
     router.post("/", [controller, "create"]).as("users.create");
   }
 
-  private async requireSuperUserOrSelf(
-    auth: HttpContext["auth"],
-    userId: number,
-  ): Promise<void> {
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    if (!(await this.isSuperUser(auth)) && auth.user?.id !== userId) {
-      throw new ForbiddenException();
-    }
-  }
-
   async findAll({ request, auth }: HttpContext) {
     await this.requireSuperUser(auth);
 
-    const page = request.input("page", 1) as number;
-    const limit = request.input("limit", 10) as number;
+    const { page = 1, limit = 10 } =
+      await request.validateUsing(paginationValidator);
 
     const users = await User.query()
       .select("id", "fullName", "email")
@@ -62,29 +62,26 @@ export default class UsersController extends BaseController {
   }
 
   async findOne({ request, auth }: HttpContext) {
-    const userId = request.param("id") as string;
+    const user = await request.validateUsing(userIdParamValidator);
 
-    await this.requireSuperUserOrSelf(auth, Number.parseInt(userId));
+    await this.requireSuperUser(auth);
 
     const targetUser = await User.query()
       .select("id", "fullName", "email")
-      .where("id", userId)
+      .where("id", user.id)
       .firstOrFail()
-      .addErrorContext(() => `User with id ${userId} not found`);
+      .addErrorContext(() => `User with id ${user.id} not found`);
 
     return { data: targetUser };
   }
 
   async delete({ request, auth }: HttpContext) {
-    await this.requireSuperUserOrSelf(
-      auth,
-      Number.parseInt(request.param("id") as string),
-    );
+    const user = await request.validateUsing(userIdParamValidator);
 
-    const userId = request.param("id") as string;
+    await this.requireSuperUser(auth);
 
-    const targetUser = await User.findOrFail(userId).addErrorContext(
-      () => `User with id ${userId} not found`,
+    const targetUser = await User.findOrFail(user.id).addErrorContext(
+      () => `User with id ${user.id} not found`,
     );
 
     await targetUser.delete();
@@ -93,17 +90,17 @@ export default class UsersController extends BaseController {
   }
 
   async update({ request, auth }: HttpContext) {
-    const userId = request.param("id") as string;
+    const user = await request.validateUsing(userIdParamValidator);
 
-    await this.requireSuperUserOrSelf(auth, Number.parseInt(userId));
+    await this.requireSuperUser(auth);
 
     const payload = await request.validateUsing(updateUserValidator);
 
     const updatedUser = await db.transaction(async (trx) => {
       const targetUser = await User.query({ client: trx })
-        .where("id", userId)
+        .where("id", user.id)
         .firstOrFail()
-        .addErrorContext(() => `User with id ${userId} not found`);
+        .addErrorContext(() => `User with id ${user.id} not found`);
 
       targetUser.merge(payload);
       await targetUser.save();
