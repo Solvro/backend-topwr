@@ -6,7 +6,8 @@ import type { BelongsTo } from "@adonisjs/lucid/types/relations";
 
 import { typedColumn } from "#decorators/typed_model";
 import Das from "#models/das";
-import StudentOrganization from "#models/student_organization";
+import DasOrganization from "#models/das_organization";
+import Floor from "#models/floor";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -32,12 +33,14 @@ export default class DasStand extends BaseModel {
   @typedColumn({ type: "string", validator: vine.string().maxLength(127) })
   declare name: string;
 
-  @typedColumn({
-    type: "string",
-    optional: true,
-    validator: vine.string().maxLength(7).optional().nullable(),
+  @typedColumn({ foreignKeyOf: () => Floor, optional: true })
+  declare floorId: number | null;
+
+  @belongsTo(() => Floor, {
+    localKey: "id",
+    foreignKey: "floorId",
   })
-  declare floor: string | null; // Also knowing PWr, floor number could also not be a number
+  declare floor: BelongsTo<typeof Floor>;
 
   @typedColumn({
     type: "string",
@@ -45,11 +48,14 @@ export default class DasStand extends BaseModel {
   })
   declare description: string | null;
 
-  @typedColumn({
-    foreignKeyOf: () => StudentOrganization,
-    optional: true,
+  @typedColumn({ foreignKeyOf: () => DasOrganization, optional: true })
+  declare dasOrganizationId: number | null;
+
+  @belongsTo(() => DasOrganization, {
+    localKey: "id",
+    foreignKey: "dasOrganizationId",
   })
-  declare studentOrganizationId: number | null;
+  declare dasOrganization: BelongsTo<typeof DasOrganization>;
 
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare logoKey: string | null;
@@ -59,12 +65,6 @@ export default class DasStand extends BaseModel {
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
-
-  @belongsTo(() => StudentOrganization, {
-    localKey: "id",
-    foreignKey: "studentOrganizationId",
-  })
-  declare studentOrganization: BelongsTo<typeof StudentOrganization>;
 
   @belongsTo(() => FileEntry, {
     localKey: "id",
