@@ -23,7 +23,10 @@ export default class Building extends BaseModel {
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
 
-  @typedColumn({ type: "string" })
+  @typedColumn({
+    type: "string",
+    validator: vine.string().trim().minLength(1),
+  })
   declare identifier: string;
 
   @typedColumn({ type: "string", optional: true })
