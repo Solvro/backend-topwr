@@ -48,10 +48,10 @@ jobs:
         run: npm ci
 
       - name: Fix with lint
-        run: npm run lint:fix
+        run: npm run lint:fix || true
 
       - name: Fix with Prettier
-        run: npm run format
+        run: npm run format || true
 
       - name: Push changes if any made
         env:
