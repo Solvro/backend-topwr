@@ -12,21 +12,21 @@ function newPassword(value: unknown, _: unknown, field: FieldContext) {
       field,
     );
   }
-  if (/.*[a-z].*/.test(value) === false) {
+  if (!/[a-z]/.test(value)) {
     field.report(
       "The {{field}} field does not contain any lower case letter",
       "newPasswordRule",
       field,
     );
   }
-  if (/.*[A-Z].*/.test(value) === false) {
+  if (!/[A-Z]/.test(value)) {
     field.report(
       "The {{field}} field does not contain any upper case letter",
       "newPasswordRule",
       field,
     );
   }
-  if (/.*[0-9].*/.test(value) === false) {
+  if (!/[0-9]/.test(value)) {
     field.report(
       "The {{field}} field does not contain any digit",
       "newPasswordRule",

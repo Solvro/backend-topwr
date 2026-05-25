@@ -48,7 +48,7 @@ export default class extends BaseSeeder {
         departmentId: 1,
         linkType: LinkType.Default,
         name: "Link to WA",
-        link: "http://wa.pwr.edu.pl",
+        link: "https://wa.pwr.edu.pl",
       },
       {
         departmentId: 2,
