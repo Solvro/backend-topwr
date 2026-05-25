@@ -71,12 +71,12 @@ async function ensureSolvroAdminRoleId(): Promise<number> {
         if (typeof first === "object" && first !== null && "id" in first) {
           return Number((first as { id: number | string }).id);
         }
-        return Number(first as number | string);
+        return Number(first);
       }
       if (typeof result === "object" && result !== null && "id" in result) {
         return Number((result as { id: number | string }).id);
       }
-      return Number(result as number | string);
+      return Number(result);
     });
 
   return idNum;

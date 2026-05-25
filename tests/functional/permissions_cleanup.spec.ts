@@ -124,7 +124,7 @@ async function insertRoleRow(
   if (typeof first === "object" && first !== null && "id" in first) {
     return Number((first as { id: number | string }).id);
   }
-  return Number(first as number | string);
+  return Number(first);
 }
 
 async function insertModelRoleRow(
@@ -163,7 +163,7 @@ async function ensureSolvroAdminRoleId(): Promise<number> {
   if (typeof first === "object" && first !== null && "id" in first) {
     return Number((first as { id: number | string }).id);
   }
-  return Number(first as number | string);
+  return Number(first);
 }
 
 async function assignSolvroAdmin(user: User): Promise<void> {
