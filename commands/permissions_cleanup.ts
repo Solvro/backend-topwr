@@ -35,7 +35,7 @@ export default class PermissionsCleanup extends BaseCommandExtended {
     const tasks = this.ui.tasks({ verbose: true });
     tasks.add("Permission cleanup", async (task) => {
       try {
-        return (await this.runInternal(task)) ?? "Done";
+        return await this.runInternal(task);
       } catch (e) {
         const message =
           e instanceof Error ? e.message : "Unknown error occurred";
@@ -48,7 +48,7 @@ export default class PermissionsCleanup extends BaseCommandExtended {
 
   private async runInternal(
     task: Parameters<Parameters<ReturnType<typeof this.ui.tasks>["add"]>[1]>[0],
-  ) {
+  ): Promise<string> {
     // Stage 1: Discover ACL-enabled models
     task.update("Stage 1 - Discovering ACL-enabled models");
     const models = await this.importModels();

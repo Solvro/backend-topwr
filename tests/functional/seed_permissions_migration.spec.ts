@@ -23,7 +23,10 @@ test.group("Seed permissions migration", (group) => {
   });
 
   test("all expected permissions are seeded", async ({ assert }) => {
-    const rows = await db.knexQuery().table("permissions").select("slug");
+    const rows: { slug: string }[] = await db
+      .knexQuery()
+      .table("permissions")
+      .select("slug");
 
     const slugs = rows.map((r) => r.slug);
     for (const expected of EXPECTED_PERMISSIONS) {
@@ -32,7 +35,10 @@ test.group("Seed permissions migration", (group) => {
   });
 
   test("all expected roles are seeded", async ({ assert }) => {
-    const rows = await db.knexQuery().table("access_roles").select("slug");
+    const rows: { slug: string }[] = await db
+      .knexQuery()
+      .table("access_roles")
+      .select("slug");
 
     const slugs = rows.map((r) => r.slug);
     for (const expected of EXPECTED_ROLES) {
