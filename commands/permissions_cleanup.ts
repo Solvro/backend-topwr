@@ -35,7 +35,7 @@ export default class PermissionsCleanup extends BaseCommandExtended {
     const tasks = this.ui.tasks({ verbose: true });
     tasks.add("Permission cleanup", async (task) => {
       try {
-        return ((await this.runInternal(task)) as string | undefined) ?? "Done";
+        return (await this.runInternal(task)) ?? "Done";
       } catch (e) {
         const message =
           e instanceof Error ? e.message : "Unknown error occurred";
