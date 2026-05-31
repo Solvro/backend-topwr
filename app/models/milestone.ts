@@ -26,8 +26,14 @@ export default class Milestone extends BaseModel {
 
   @typedManyToMany(() => Contributor, {
     pivotTable: "contributor_roles",
-    pivotColumns: { role_id: { type: "integer", detachFilter: true } },
+    pivotColumns: {
+      role_id: { type: "integer", detachFilter: true },
+      order: { type: "number", hasDefault: true },
+    },
     pivotTimestamps: true,
+    onQuery: (query) => {
+      return query.orderBy("contributor_roles.order", "asc");
+    },
   })
   declare contributors: ManyToMany<typeof Contributor>;
 

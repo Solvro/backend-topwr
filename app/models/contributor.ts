@@ -28,9 +28,6 @@ export default class Contributor extends BaseModel {
   @typedColumn({ foreignKeyOf: () => FileEntry, optional: true })
   declare photoKey: string | null;
 
-  @typedColumn({ type: "number", hasDefault: true })
-  declare order: number;
-
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
@@ -55,7 +52,10 @@ export default class Contributor extends BaseModel {
 
   @typedManyToMany(() => Milestone, {
     pivotTable: "contributor_roles",
-    pivotColumns: { role_id: { type: "integer", detachFilter: true } },
+    pivotColumns: {
+      role_id: { type: "integer", detachFilter: true },
+      order: { type: "number", hasDefault: true },
+    },
     pivotTimestamps: true,
   })
   declare milestones: ManyToMany<typeof Milestone>;
