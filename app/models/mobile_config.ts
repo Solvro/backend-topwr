@@ -40,6 +40,18 @@ export default class MobileConfig extends BaseModel {
   })
   declare parkingMicroserviceUrl: string;
 
+  @typedColumn({
+    type: "string",
+    validator: vine
+      .string()
+      .url({ protocols: ["https"], require_protocol: true })
+      .optional(),
+  })
+  declare boothsApiBaseUrl: string | null;
+
+  @typedColumn({ type: "boolean", hasDefault: true })
+  declare boothsEnabled: boolean;
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
