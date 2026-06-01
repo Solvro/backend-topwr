@@ -49,9 +49,7 @@ export default class MobileConfig extends BaseModel {
   })
   declare boothsApiBaseUrl: string | null;
 
-  @typedColumn({
-    type: "boolean",
-  })
+  @typedColumn({ type: "boolean", hasDefault: true })
   declare boothsEnabled: boolean;
 
   @typedColumn.dateTime({ autoCreate: true })
