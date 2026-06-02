@@ -1,3 +1,6 @@
+import jwt from "jsonwebtoken";
+import crypto from "node:crypto";
+
 import { test } from "@japa/runner";
 
 import testUtils from "@adonisjs/core/services/test_utils";
@@ -6,6 +9,96 @@ import db from "@adonisjs/lucid/services/db";
 import Contributor from "#models/contributor";
 import Milestone from "#models/milestone";
 import Role from "#models/role";
+import User from "#models/user";
+import env from "#start/env";
+
+function uniqueEmail(prefix: string) {
+  const id = crypto.randomUUID().slice(0, 8);
+  return `${prefix}-${id}@order.test`;
+}
+
+async function makeToken(user: User): Promise<string> {
+  const ACCESS_SECRET = env.get("ACCESS_SECRET");
+  const AUDIENCE = "admin.topwr.solvro.pl";
+  const ISSUER = "admin.topwr.solvro.pl";
+  const ACCESS_EXPIRES_IN_MS = Number.parseInt(
+    env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
+  );
+
+  return jwt.sign({ isRefresh: false }, ACCESS_SECRET, {
+    subject: user.id.toString(),
+    audience: AUDIENCE,
+    issuer: ISSUER,
+    expiresIn: ACCESS_EXPIRES_IN_MS,
+    algorithm: "HS256",
+    allowInsecureKeySizes: false,
+    allowInvalidAsymmetricKeyTypes: false,
+  });
+}
+
+async function ensureSolvroAdminRoleId(): Promise<number> {
+  const existing: unknown = await db
+    .knexQuery()
+    .table("access_roles")
+    .where({ slug: "solvro_admin" })
+    .first();
+  if (existing !== null && existing !== undefined) {
+    return Number((existing as { id: number | string }).id);
+  }
+
+  const idNum = await db
+    .knexQuery()
+    .table("access_roles")
+    .insert({
+      slug: "solvro_admin",
+      created_at: new Date(),
+      updated_at: new Date(),
+    })
+    .returning("id")
+    .then((result: unknown) => {
+      if (Array.isArray(result)) {
+        const first = result[0] as unknown;
+        if (typeof first === "object" && first !== null && "id" in first) {
+          return Number((first as { id: number | string }).id);
+        }
+        return Number(first);
+      }
+      if (typeof result === "object" && result !== null && "id" in result) {
+        return Number((result as { id: number | string }).id);
+      }
+      return Number(result);
+    });
+
+  return idNum;
+}
+
+async function assignSolvroAdmin(user: User): Promise<void> {
+  const roleId = await ensureSolvroAdminRoleId();
+  const existing: unknown = await db
+    .knexQuery()
+    .table("model_roles")
+    .where({ model_type: "users", model_id: user.id, role_id: roleId })
+    .first();
+  if (existing === null || existing === undefined) {
+    await db.knexQuery().table("model_roles").insert({
+      model_type: "users",
+      model_id: user.id,
+      role_id: roleId,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+  }
+}
+
+async function adminAuthHeader(): Promise<string> {
+  const admin = await User.create({
+    email: uniqueEmail("order-admin"),
+    password: "Passw0rd!",
+    fullName: "Order Test Admin",
+  });
+  await assignSolvroAdmin(admin);
+  return `Bearer ${await makeToken(admin)}`;
+}
 
 test.group("Contributor per-milestone order", (group) => {
   group.setup(async () => {
@@ -220,5 +313,121 @@ test.group("Contributor per-milestone order", (group) => {
     assert.lengthOf(rows, 2);
     assert.equal(rows[0].order, 3);
     assert.equal(rows[1].order, 3);
+  });
+
+  test("PATCH /milestones/:id/contributors/:contributorId updates pivot order", async ({
+    client,
+    assert,
+  }) => {
+    const auth = await adminAuthHeader();
+    const role = await Role.create({ name: "OrderTest Role PATCH" });
+    const c1 = await Contributor.create({ name: "OrderTest Patch A" });
+    const c2 = await Contributor.create({ name: "OrderTest Patch B" });
+    const milestone = await Milestone.create({
+      name: "OrderTest Milestone PATCH",
+    });
+
+    await db
+      .knexQuery()
+      .table("contributor_roles")
+      .insert([
+        {
+          contributor_id: c1.id,
+          role_id: role.id,
+          milestone_id: milestone.id,
+          order: 10,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+        {
+          contributor_id: c2.id,
+          role_id: role.id,
+          milestone_id: milestone.id,
+          order: 5,
+          created_at: new Date(),
+          updated_at: new Date(),
+        },
+      ]);
+
+    const patchRes = await client
+      .patch(`/api/v1/milestones/${milestone.id}/contributors/${c1.id}`)
+      .header("Authorization", auth)
+      .json({ role_id: role.id, order: 1 });
+    patchRes.assertStatus(200);
+    const patchBody = patchRes.body() as { success?: boolean };
+    assert.equal(patchBody.success, true);
+
+    const res = await client.get(
+      `/api/v1/milestones/${milestone.id}/contributors`,
+    );
+    res.assertStatus(200);
+    const body = res.body() as {
+      data: { id: number; meta: { pivot_order: number } }[];
+    };
+    assert.deepEqual(
+      body.data.map((c) => c.id),
+      [c1.id, c2.id],
+    );
+    assert.equal(body.data[0].meta.pivot_order, 1);
+    assert.equal(body.data[1].meta.pivot_order, 5);
+  });
+
+  test("PATCH pivot update returns 404 when no row matches", async ({
+    client,
+  }) => {
+    const auth = await adminAuthHeader();
+    const role = await Role.create({ name: "OrderTest Role PATCH 404" });
+    const contributor = await Contributor.create({
+      name: "OrderTest Patch 404",
+    });
+    const milestone = await Milestone.create({
+      name: "OrderTest Milestone PATCH 404",
+    });
+
+    const res = await client
+      .patch(
+        `/api/v1/milestones/${milestone.id}/contributors/${contributor.id}`,
+      )
+      .header("Authorization", auth)
+      .json({ role_id: role.id, order: 1 });
+    res.assertStatus(404);
+  });
+
+  test("PATCH pivot update validates required pivot key and updatable fields", async ({
+    client,
+  }) => {
+    const auth = await adminAuthHeader();
+    const role = await Role.create({ name: "OrderTest Role PATCH 422" });
+    const contributor = await Contributor.create({
+      name: "OrderTest Patch 422",
+    });
+    const milestone = await Milestone.create({
+      name: "OrderTest Milestone PATCH 422",
+    });
+
+    await db.knexQuery().table("contributor_roles").insert({
+      contributor_id: contributor.id,
+      role_id: role.id,
+      milestone_id: milestone.id,
+      order: 1,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    const missingRole = await client
+      .patch(
+        `/api/v1/milestones/${milestone.id}/contributors/${contributor.id}`,
+      )
+      .header("Authorization", auth)
+      .json({ order: 2 });
+    missingRole.assertStatus(422);
+
+    const missingOrder = await client
+      .patch(
+        `/api/v1/milestones/${milestone.id}/contributors/${contributor.id}`,
+      )
+      .header("Authorization", auth)
+      .json({ role_id: role.id });
+    missingOrder.assertStatus(400);
   });
 });

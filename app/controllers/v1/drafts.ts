@@ -182,6 +182,7 @@ export abstract class GenericDraftController<
       case "oneToManyRelationStore":
       case "manyToManyRelationAttach":
       case "manyToManyRelationDetach":
+      case "manyToManyRelationUpdatePivot":
         return "authOnly";
       // other actions
       case "index":
@@ -243,6 +244,7 @@ export abstract class GenericDraftController<
       oneToManyRelationStore: "update",
       manyToManyRelationAttach: "update",
       manyToManyRelationDetach: "update",
+      manyToManyRelationUpdatePivot: "update",
     };
     const slug = slugMap[action];
 
