@@ -329,6 +329,30 @@ test.group("Permissions", (group) => {
     okDetach.assertStatus(200);
     const okDetachBody = okDetach.body() as unknown as { success?: boolean };
     assert.equal(okDetachBody.success, true);
+
+    // Re-attach for pivot update permission checks (milestones have updatable pivot order)
+    await db.knexQuery().table("contributor_roles").insert({
+      contributor_id: person.id,
+      role_id: role.id,
+      milestone_id: milestone.id,
+      order: 1,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    const badPatch = await client
+      .patch(`/api/v1/milestones/${milestone.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${userToken}`)
+      .json({ role_id: role.id, order: 2 });
+    badPatch.assertStatus(403);
+
+    const okPatch = await client
+      .patch(`/api/v1/milestones/${milestone.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({ role_id: role.id, order: 2 });
+    okPatch.assertStatus(200);
+    const okPatchBody = okPatch.body() as unknown as { success?: boolean };
+    assert.equal(okPatchBody.success, true);
   });
 
   test("destroy blocked without permission; allowed for solvro_admin", async ({
