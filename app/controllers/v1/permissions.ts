@@ -186,7 +186,9 @@ export default class PermissionsController extends BaseController {
     for (const role of roles) {
       await manager
         .assignRole(role)
-        .addErrorContext(`Failed to assign role ${role}`);
+        .addErrorContext(
+          () => `Failed to assign role ${role} to user ${targetUser.id}`,
+        );
     }
 
     return { success: true };
@@ -206,7 +208,9 @@ export default class PermissionsController extends BaseController {
     for (const role of roles) {
       await manager
         .revokeRole(role)
-        .addErrorContext(`Failed to revoke role ${role}`);
+        .addErrorContext(
+          () => `Failed to revoke role ${role} from user ${targetUser.id}`,
+        );
     }
 
     return { success: true };

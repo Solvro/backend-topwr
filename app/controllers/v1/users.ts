@@ -79,12 +79,13 @@ export default class UsersController extends BaseController {
     const user = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
+    await db.transaction(async (trx) => {
+      const targetUser = await User.findOrFail(user.id, {
+        client: trx,
+      }).addErrorContext(() => `User with id ${user.id} not found`);
 
-    const targetUser = await User.findOrFail(user.id).addErrorContext(
-      () => `User with id ${user.id} not found`,
-    );
-
-    await targetUser.delete();
+      await targetUser.delete();
+    });
 
     return { success: true };
   }
