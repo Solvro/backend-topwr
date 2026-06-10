@@ -275,7 +275,7 @@ test.group("Contributor per-milestone order", (group) => {
     assert.equal(rows[1].order, 2);
   });
 
-  test("trigger reuses order for same contributor+milestone with different role", async ({
+  test("a contributor can only have one role per milestone", async ({
     assert,
   }) => {
     const role1 = await Role.create({ name: "OrderTest Role 4a" });
@@ -293,26 +293,26 @@ test.group("Contributor per-milestone order", (group) => {
       created_at: new Date(),
       updated_at: new Date(),
     });
-    await db.knexQuery().table("contributor_roles").insert({
-      contributor_id: contributor.id,
-      role_id: role2.id,
-      milestone_id: milestone.id,
-      created_at: new Date(),
-      updated_at: new Date(),
+
+    // A second role for the same (contributor, milestone) violates the
+    // unique constraint and must be rejected.
+    await assert.rejects(async () => {
+      await db.knexQuery().table("contributor_roles").insert({
+        contributor_id: contributor.id,
+        role_id: role2.id,
+        milestone_id: milestone.id,
+        created_at: new Date(),
+        updated_at: new Date(),
+      });
     });
 
-    const rows = (await db
-      .knexQuery()
-      .table("contributor_roles")
-      .where({
-        contributor_id: contributor.id,
-        milestone_id: milestone.id,
-      })
-      .orderBy("role_id")) as { role_id: number; order: number }[];
+    const rows = (await db.knexQuery().table("contributor_roles").where({
+      contributor_id: contributor.id,
+      milestone_id: milestone.id,
+    })) as { role_id: number; order: number }[];
 
-    assert.lengthOf(rows, 2);
-    assert.equal(rows[0].order, 3);
-    assert.equal(rows[1].order, 3);
+    assert.lengthOf(rows, 1);
+    assert.equal(rows[0].role_id, role1.id);
   });
 
   test("PATCH /milestones/:id/contributors/:contributorId updates pivot order", async ({
