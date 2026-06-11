@@ -3,6 +3,7 @@ import type { VineBoolean, VineObject, VineValidator } from "@vinejs/vine";
 import type { OptionalModifier } from "@vinejs/vine/schema/base/literal";
 import type { SchemaTypes } from "@vinejs/vine/types";
 
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 import type {
   LucidModel,
   ModelColumnOptions,
@@ -16,6 +17,10 @@ import type { ValidatedColumnDef } from "#decorators/typed_model";
 import { InvalidModelDefinition } from "#exceptions/model_autogen_errors";
 import "#utils/maps";
 
+export interface ValidatorMetadata {
+  trx?: TransactionClientContract | undefined;
+}
+
 export type RelationValidator = VineValidator<
   VineObject<
     Record<string, OptionalModifier<VineBoolean>>,
@@ -25,7 +30,8 @@ export type RelationValidator = VineValidator<
   >,
   [undefined]
 >;
-export type AnyValidator = VineValidator<SchemaTypes, [undefined]>;
+
+export type AnyValidator = VineValidator<SchemaTypes, ValidatorMetadata>;
 
 export interface PrimaryKeyFieldDescriptor {
   fieldName: string;
