@@ -11,6 +11,7 @@ import type {
   StoreRouteNode,
 } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 import type {
   ExtractScopes,
   LucidModel,
@@ -147,6 +148,11 @@ export type ControllerAction =
 export default abstract class AutoCrudController<
   T extends LucidModel & Scopes<LucidModel>,
 > extends BaseController {
+  /**
+   * Isolation level used by all transactions started by the auto CRUD handlers.
+   */
+  private readonly isolationLevel = "repeatable read" as const;
+
   /**
    * Relations which should be supported in queries
    * Supports nested relations
@@ -682,20 +688,31 @@ export default abstract class AutoCrudController<
     const { request } = httpCtx;
     await this.selfValidate();
     // Public by default; override requiredPermissionFor to restrict
-    await this.authenticate(httpCtx, "index");
-    const { page, limit } = await request.validateUsing(paginationValidator);
-    const relations = await request.validateUsing(this.relationValidator);
-    const baseQuery = this.model
-      .query()
-      .withScopes((scopes: ExtractScopes<T> & ScopesWithoutFirstArg<T>) => {
-        scopes.handleSearchQuery(request.qs());
-        scopes.preloadRelations(relations);
-        scopes.handleSortQuery(request.input("sort"));
-      });
-    if (page === undefined && limit === undefined) {
-      return { data: await baseQuery };
-    }
-    return await baseQuery.paginate(page ?? 1, limit ?? 10);
+    const data = await db.transaction(
+      async (trx) => {
+        await this.authenticate(httpCtx, "index");
+
+        const { page, limit } =
+          await request.validateUsing(paginationValidator);
+        const relations = await request.validateUsing(this.relationValidator);
+        const baseQuery = this.model
+          .query({ client: trx })
+          .withScopes((scopes: ExtractScopes<T> & ScopesWithoutFirstArg<T>) => {
+            scopes.handleSearchQuery(request.qs());
+            scopes.preloadRelations(relations);
+            scopes.handleSortQuery(request.input("sort"));
+          });
+
+        if (page === undefined && limit === undefined) {
+          return { data: await baseQuery };
+        }
+
+        return await baseQuery.paginate(page ?? 1, limit ?? 10);
+      },
+      { isolationLevel: this.isolationLevel },
+    );
+
+    return data;
   }
 
   /**
@@ -706,34 +723,43 @@ export default abstract class AutoCrudController<
   async show(httpCtx: HttpContext): Promise<unknown> {
     const { request } = httpCtx;
     await this.selfValidate();
-    await this.authenticate(httpCtx, "show");
+    const data = await db.transaction(
+      async (trx) => {
+        await this.authenticate(httpCtx, "show");
 
-    let id: string | number;
-    if (this.singletonId !== undefined) {
-      id = this.singletonId;
-    } else {
-      const { params } = (await request.validateUsing(
-        this.pathIdValidator,
-      )) as {
-        params: { id: string | number };
-      };
-      id = params.id;
-    }
+        let id: string | number;
+        if (this.singletonId !== undefined) {
+          id = this.singletonId;
+        } else {
+          const { params } = (await request.validateUsing(
+            this.pathIdValidator,
+            { meta: { trx } },
+          )) as {
+            params: { id: string | number };
+          };
+          id = params.id;
+        }
 
-    const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    await this.authorizeById(httpCtx, "show", { localId: id });
-    const relations = await request.validateUsing(this.relationValidator);
-    const data = await this.model
-      .query()
-      .withScopes((scopes: ExtractScopes<T> & ScopesWithoutFirstArg<T>) => {
-        scopes.preloadRelations(relations);
-      })
-      .where(primaryColumnName, id)
-      .firstOrFail()
-      .addErrorContext(
-        () =>
-          `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
-      );
+        const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
+        await this.authorizeById(httpCtx, "show", { localId: id });
+        const relations = await request.validateUsing(this.relationValidator);
+
+        const fetchedData = await this.model
+          .query({ client: trx })
+          .withScopes((scopes: ExtractScopes<T> & ScopesWithoutFirstArg<T>) => {
+            scopes.preloadRelations(relations);
+          })
+          .where(primaryColumnName, id)
+          .firstOrFail()
+          .addErrorContext(
+            () =>
+              `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
+          );
+        return fetchedData;
+      },
+      { isolationLevel: this.isolationLevel },
+    );
+
     await this.authorizeRecord(httpCtx, "show", data);
     return { data };
   }
@@ -744,46 +770,52 @@ export default abstract class AutoCrudController<
    * Return type set to Promise<unknown> to allow for method overrides
    */
   async store(httpCtx: HttpContext): Promise<unknown> {
-    const { request, auth } = httpCtx;
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    await this.authenticate(httpCtx, "store");
     await this.selfValidate();
+    let toStore!: PartialModel<T>;
+    const result = await db.transaction(
+      async (trx) => {
+        const { auth } = httpCtx;
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
 
-    let toStore = (await request.validateUsing(
-      this.storeValidator,
-    )) as PartialModel<T>;
+        await this.authenticate(httpCtx, "store");
 
-    toStore =
-      (await this.storeHook({
-        http: httpCtx,
-        model: this.model,
-        request: toStore,
-      })) ?? toStore;
+        toStore = (await httpCtx.request.validateUsing(this.storeValidator, {
+          meta: { trx },
+        })) as PartialModel<T>;
 
-    const result = await this.model.create(toStore).addErrorContext({
-      message: "Failed to store object",
-      code: "E_DB_ERROR",
-      status: 500,
-    });
+        toStore =
+          (await this.storeHook({
+            http: httpCtx,
+            model: this.model,
+            request: toStore,
+          })) ?? toStore;
 
-    await result.refresh().addErrorContext({
-      message: "Failed to fetch updated object",
-      code: "E_DB_ERROR",
-      status: 500,
-    });
+        const Model = this.model;
+        const createdModel = await Model.create(toStore, { client: trx });
 
-    await this.postStoreHook({
-      http: httpCtx,
-      model: this.model,
-      request: toStore,
-      record: result,
-    }).addErrorContext({
-      message: "Controller's postStoreHook threw an error",
-      code: "E_INTERNAL_CONTROLLER_ERROR",
-      status: 500,
-    });
+        await createdModel.refresh().addErrorContext({
+          message: "Failed to fetch updated object",
+          code: "E_DB_ERROR",
+          status: 500,
+        });
+
+        await this.postStoreHook({
+          http: httpCtx,
+          model: this.model,
+          request: toStore,
+          record: createdModel,
+        }).addErrorContext({
+          message: "Controller's postStoreHook threw an error",
+          code: "E_INTERNAL_CONTROLLER_ERROR",
+          status: 500,
+        });
+        return createdModel;
+      },
+
+      { isolationLevel: this.isolationLevel },
+    );
 
     return {
       success: true,
@@ -791,20 +823,37 @@ export default abstract class AutoCrudController<
     };
   }
 
-  protected async getFirstOrFail(id: string | number) {
+  /**
+   * Fetch a single model instance by its primary key or throw if it does not exist.
+   *
+   * Optionally accepts a transaction client to execute the query
+   * within an existing transaction context.
+   */
+  protected async getFirstOrFail(
+    id: string | number,
+    trx?: TransactionClientContract,
+  ) {
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
-    return await this.model
-      .query()
+    const data = await this.model
+      .query(trx !== undefined ? { client: trx } : undefined)
       .where(primaryColumnName, id)
       .firstOrFail()
       .addErrorContext(
         () =>
           `${this.model.name} with '${primaryColumnName}' = '${id}' does not exist`,
       );
+    return data;
   }
 
-  protected async saveOrFail(row: InstanceType<T>) {
-    await row.save().addErrorContext({
+  protected async saveOrFail(
+    row: InstanceType<T>,
+    trx?: TransactionClientContract,
+  ) {
+    if (trx !== undefined) {
+      row.useTransaction(trx);
+    }
+
+    return await row.save().addErrorContext({
       message: "Failed to commit updates",
       code: "E_DB_ERROR",
       status: 500,
@@ -816,48 +865,58 @@ export default abstract class AutoCrudController<
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
+
   async update(httpCtx: HttpContext): Promise<unknown> {
     const { request, auth } = httpCtx;
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
-    await this.authenticate(httpCtx, "update");
     await this.selfValidate();
+    const row = await db.transaction(
+      async (trx) => {
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
+        await this.authenticate(httpCtx, "update");
 
-    let id: string | number;
-    if (this.singletonId !== undefined) {
-      id = this.singletonId;
-    } else {
-      const { params } = (await request.validateUsing(
-        this.pathIdValidator,
-      )) as {
-        params: { id: string | number };
-      };
-      id = params.id;
-    }
-    let updates = (await request.validateUsing(
-      this.updateValidator,
-    )) as PartialModel<T>;
+        let id: string | number;
+        if (this.singletonId !== undefined) {
+          id = this.singletonId;
+        } else {
+          const { params } = (await request.validateUsing(
+            this.pathIdValidator,
+            { meta: { trx } },
+          )) as {
+            params: { id: string | number };
+          };
+          id = params.id;
+        }
+        await this.authorizeById(httpCtx, "update", { localId: id });
 
-    await this.authorizeById(httpCtx, "update", { localId: id });
-    const row = await this.getFirstOrFail(id);
-    await this.authorizeRecord(httpCtx, "update", row);
-    updates =
-      (await this.updateHook({
-        http: httpCtx,
-        model: this.model,
-        record: row,
-        request: updates,
-      })) ?? updates;
+        let updates = (await request.validateUsing(this.updateValidator, {
+          meta: { trx },
+        })) as PartialModel<T>;
 
-    row.merge(updates);
-    await this.saveOrFail(row);
-    await row.refresh().addErrorContext({
-      message: "Failed to fetch updated object",
-      code: "E_DB_ERROR",
-      status: 500,
-    });
+        const searchedRow = await this.getFirstOrFail(id, trx);
+        await this.authorizeRecord(httpCtx, "update", searchedRow);
+        updates =
+          (await this.updateHook({
+            http: httpCtx,
+            model: this.model,
+            record: searchedRow,
+            request: updates,
+          })) ?? updates;
 
+        searchedRow.merge(updates);
+
+        const updatedRow = await this.saveOrFail(searchedRow, trx);
+
+        await updatedRow.refresh().addErrorContext({
+          message: "Failed to fetch updated object",
+          code: "E_DB_ERROR",
+          status: 500,
+        });
+        return updatedRow;
+      },
+      { isolationLevel: this.isolationLevel },
+    );
     return {
       success: true,
       data: row,
@@ -874,45 +933,49 @@ export default abstract class AutoCrudController<
     if (!auth.isAuthenticated) {
       await auth.authenticate();
     }
-    await this.authenticate(httpCtx, "destroy");
-    await this.selfValidate();
+    await db.transaction(
+      async (trx) => {
+        await this.authenticate(httpCtx, "destroy");
+        await this.selfValidate();
 
-    const {
-      params: { id },
-    } = (await request
-      .validateUsing(this.pathIdValidator)
-      .addErrorContext(() => {
-        return {
-          message: `Attempt to delete non existent ${this.model.name}`,
-          code: "E_NOT_FOUND",
-          status: 404,
+        const {
+          params: { id },
+        } = (await request
+          .validateUsing(this.pathIdValidator, { meta: { trx } })
+          .addErrorContext(() => {
+            return {
+              message: `Attempt to delete non existent ${this.model.name}`,
+              code: "E_NOT_FOUND",
+              status: 404,
+            };
+          })) as {
+          params: { id: string | number };
         };
-      })) as {
-      params: { id: string | number };
-    };
 
-    await this.authorizeById(httpCtx, "destroy", { localId: id });
+        await this.authorizeById(httpCtx, "destroy", { localId: id });
 
-    const record = await this.getFirstOrFail(id);
-    await this.authorizeRecord(httpCtx, "destroy", record);
+        const record = await this.getFirstOrFail(id, trx);
+        await this.authorizeRecord(httpCtx, "destroy", record);
 
-    await this.destroyHook({
-      http: httpCtx,
-      model: this.model,
-      record,
-    });
+        await this.destroyHook({
+          http: httpCtx,
+          model: this.model,
+          record,
+        });
 
-    await record.delete().addErrorContext({
-      message: "Failed to delete object",
-      code: "E_DB_ERROR",
-      status: 500,
-    });
-
-    // Clean up any permissions scoped to the deleted instance
-    const morphAlias = getMorphMapAlias(this.model);
-    if (morphAlias !== null) {
-      await deletePermissionsForEntity(morphAlias, id);
-    }
+        await record.delete().addErrorContext({
+          message: "Failed to delete object",
+          code: "E_DB_ERROR",
+          status: 500,
+        });
+        // Clean up any permissions scoped to the deleted instance
+        const morphAlias = getMorphMapAlias(this.model);
+        if (morphAlias !== null) {
+          await deletePermissionsForEntity(morphAlias, id);
+        }
+      },
+      { isolationLevel: this.isolationLevel },
+    );
 
     return {
       success: true,
@@ -928,55 +991,64 @@ export default abstract class AutoCrudController<
     const { request, route } = httpCtx;
     await this.selfValidate();
     const relationName = this.relationNameFromRoute(route);
-    await this.authenticate(httpCtx, "relationIndex", relationName);
 
-    const {
-      params: { id },
-    } = (await request.validateUsing(this.pathIdValidator)) as {
-      params: { id: string | number };
-    };
-    const relations = await request.validateUsing(
-      this.subrelationValidator(relationName),
+    const data = await db.transaction(
+      async (trx) => {
+        await this.authenticate(httpCtx, "relationIndex", relationName);
+        const {
+          params: { id },
+        } = (await request.validateUsing(this.pathIdValidator, {
+          meta: { trx },
+        })) as {
+          params: { id: string | number };
+        };
+        const relations = await request.validateUsing(
+          this.subrelationValidator(relationName),
+        );
+        const { page, limit } =
+          await request.validateUsing(paginationValidator);
+
+        await this.authorizeById(httpCtx, "relationIndex", {
+          localId: id,
+          relationName,
+        });
+
+        const mainInstance = await this.getFirstOrFail(id, trx);
+        await this.authorizeRecord(httpCtx, "relationIndex", mainInstance);
+        const relatedQuery = mainInstance
+          .related(relationName as ExtractModelRelations<InstanceType<T>>)
+          .query()
+          .withScopes((scopes: ScopesWithoutFirstArg<LucidModel>) => {
+            try {
+              scopes.handleSearchQuery(request.qs());
+            } catch {
+              logger.warn(
+                `handleSearchQuery query scope is not defined on ${this.model.name}'s '${relationName}' relation!`,
+              );
+            }
+            try {
+              scopes.preloadRelations(relations);
+            } catch {
+              logger.warn(
+                `preloadRelations query scope is not defined on ${this.model.name}'s '${relationName}' relation!`,
+              );
+            }
+            try {
+              scopes.handleSortQuery(request.input("sort"));
+            } catch {
+              logger.warn(
+                `handleSortQuery query scope is not defined on ${this.model.name}'s '${relationName}' relation!`,
+              );
+            }
+          });
+        if (page === undefined && limit === undefined) {
+          return { data: await relatedQuery };
+        }
+        return await relatedQuery.paginate(page ?? 1, limit ?? 10);
+      },
+      { isolationLevel: this.isolationLevel },
     );
-    const { page, limit } = await request.validateUsing(paginationValidator);
-
-    await this.authorizeById(httpCtx, "relationIndex", {
-      localId: id,
-      relationName,
-    });
-    const mainInstance = await this.getFirstOrFail(id);
-    await this.authorizeRecord(httpCtx, "relationIndex", mainInstance);
-    const relatedQuery = mainInstance
-      .related(relationName as ExtractModelRelations<InstanceType<T>>)
-      .query()
-      .withScopes((scopes: ScopesWithoutFirstArg<LucidModel>) => {
-        try {
-          scopes.handleSearchQuery(request.qs());
-        } catch {
-          logger.warn(
-            `handleSearchQuery query scope is not defined on ${this.model.name}'s '${relationName}' relation!`,
-          );
-        }
-        try {
-          scopes.preloadRelations(relations);
-        } catch {
-          logger.warn(
-            `preloadRelations query scope is not defined on ${this.model.name}'s '${relationName}' relation!`,
-          );
-        }
-        try {
-          scopes.handleSortQuery(request.input("sort"));
-        } catch {
-          logger.warn(
-            `handleSortQuery query scope is not defined on ${this.model.name}'s '${relationName}' relation!`,
-          );
-        }
-      });
-
-    if (page === undefined && limit === undefined) {
-      return { data: await relatedQuery };
-    }
-    return await relatedQuery.paginate(page ?? 1, limit ?? 10);
+    return data;
   }
 
   /**
@@ -986,81 +1058,92 @@ export default abstract class AutoCrudController<
    */
   async oneToOneRelationStore(httpCtx: HttpContext): Promise<unknown> {
     const { request, route, auth } = httpCtx;
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
     await this.selfValidate();
-    const relationName = this.relationNameFromRoute(route);
-    await this.authenticate(httpCtx, "oneToOneRelationStore", relationName);
 
-    const {
-      params: { id },
-    } = (await request.validateUsing(this.pathIdValidator)) as {
-      params: { id: string | number };
-    };
-    await this.authorizeById(httpCtx, "oneToOneRelationStore", {
-      localId: id,
-      relationName,
-    });
-    const toStore = (await request.validateUsing(
-      this.relatedStoreValidator(relationName),
-    )) as Partial<ModelAttributes<LucidRow>>;
+    const res = await db.transaction(
+      async (trx) => {
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
 
-    const mainInstance = await this.getFirstOrFail(id);
-    await this.authorizeRecord(
-      { request, route, auth } as unknown as HttpContext,
-      "oneToOneRelationStore",
-      mainInstance,
+        const relationName = this.relationNameFromRoute(route);
+        await this.authenticate(httpCtx, "oneToOneRelationStore", relationName);
+
+        const {
+          params: { id },
+        } = (await request.validateUsing(this.pathIdValidator, {
+          meta: { trx },
+        })) as {
+          params: { id: string | number };
+        };
+        await this.authorizeById(httpCtx, "oneToOneRelationStore", {
+          localId: id,
+          relationName,
+        });
+
+        const toStore = (await request.validateUsing(
+          this.relatedStoreValidator(relationName),
+          { meta: { trx } },
+        )) as Partial<ModelAttributes<LucidRow>>;
+
+        const mainInstance = await this.getFirstOrFail(id, trx);
+        await this.authorizeRecord(
+          { request, route, auth } as unknown as HttpContext,
+          "oneToOneRelationStore",
+          mainInstance,
+        );
+
+        const relationClient = mainInstance.related(
+          relationName as ExtractModelRelations<InstanceType<T>>,
+        );
+        if (relationClient.relation.type !== "hasOne") {
+          throw new InternalControllerError(
+            `Relation '${relationName}' of model '${this.model.name}' was passed into the 'oneToOneRelationStore' method, ` +
+              `which only supports 'hasOne' relations, but this relation is of type '${relationClient.relation.type}'!`,
+          );
+        }
+
+        // verify that the object doesn't exist already
+        const relatedCount = (await relationClient
+          .query()
+          .count({ total: "*" })
+          .exec()
+          .addErrorContext({
+            message: "Failed to count existing related objects",
+            code: "E_DB_ERROR",
+            status: 500,
+          })) as unknown as [{ $extras: { total: string } }];
+
+        if (Number.parseInt(relatedCount[0].$extras.total) > 0) {
+          throw new ConflictException(
+            `Related object for 1:1 relation '${relationName}' already exists!`,
+            {
+              code: "E_EXISTS",
+            },
+          );
+        }
+        const fetchedData = await (
+          relationClient as HasManyClientContract<
+            HasOneRelationContract<T, LucidModel>,
+            LucidModel
+          >
+        )
+          .create(toStore)
+          .addErrorContext({
+            message: "Failed to store object",
+            code: "E_DB_ERROR",
+            status: 500,
+          });
+
+        await fetchedData.refresh().addErrorContext({
+          message: "Failed to fetch updated object",
+          code: "E_DB_ERROR",
+          status: 500,
+        });
+        return fetchedData;
+      },
+      { isolationLevel: this.isolationLevel },
     );
-
-    const relationClient = mainInstance.related(
-      relationName as ExtractModelRelations<InstanceType<T>>,
-    );
-    if (relationClient.relation.type !== "hasOne") {
-      throw new InternalControllerError(
-        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'oneToOneRelationStore' method, ` +
-          `which only supports 'hasOne' relations, but this relation is of type '${relationClient.relation.type}'!`,
-      );
-    }
-
-    // verify that the object doesn't exist already
-    const relatedCount = (await relationClient
-      .query()
-      .count({ total: "*" })
-      .exec()
-      .addErrorContext({
-        message: "Failed to count existing related objects",
-        code: "E_DB_ERROR",
-        status: 500,
-      })) as unknown as [{ $extras: { total: string } }];
-
-    if (Number.parseInt(relatedCount[0].$extras.total) > 0) {
-      throw new ConflictException(
-        `Related object for 1:1 relation '${relationName}' already exists!`,
-        {
-          code: "E_EXISTS",
-        },
-      );
-    }
-
-    const res = await (
-      relationClient as HasManyClientContract<
-        HasOneRelationContract<T, LucidModel>,
-        LucidModel
-      >
-    )
-      .create(toStore)
-      .addErrorContext({
-        message: "Failed to store object",
-        code: "E_DB_ERROR",
-        status: 500,
-      });
-
-    await res.refresh().addErrorContext({
-      message: "Failed to fetch updated object",
-      code: "E_DB_ERROR",
-      status: 500,
-    });
 
     return {
       success: true,
@@ -1075,61 +1158,77 @@ export default abstract class AutoCrudController<
    */
   async oneToManyRelationStore(httpCtx: HttpContext): Promise<unknown> {
     const { request, route, auth } = httpCtx;
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
     await this.selfValidate();
-    const relationName = this.relationNameFromRoute(route);
-    await this.authenticate(httpCtx, "oneToManyRelationStore", relationName);
 
-    const {
-      params: { id },
-    } = (await request.validateUsing(this.pathIdValidator)) as {
-      params: { id: string | number };
-    };
-    await this.authorizeById(httpCtx, "oneToManyRelationStore", {
-      localId: id,
-      relationName,
-    });
-    const toStore = (await request.validateUsing(
-      this.relatedStoreValidator(relationName),
-    )) as Partial<ModelAttributes<LucidRow>>;
+    const res = await db.transaction(
+      async (trx) => {
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
 
-    const mainInstance = await this.getFirstOrFail(id);
-    await this.authorizeRecord(
-      { request, route, auth } as unknown as HttpContext,
-      "oneToManyRelationStore",
-      mainInstance,
+        const relationName = this.relationNameFromRoute(route);
+        await this.authenticate(
+          httpCtx,
+          "oneToManyRelationStore",
+          relationName,
+        );
+
+        const {
+          params: { id },
+        } = (await request.validateUsing(this.pathIdValidator, {
+          meta: { trx },
+        })) as {
+          params: { id: string | number };
+        };
+        await this.authorizeById(httpCtx, "oneToManyRelationStore", {
+          localId: id,
+          relationName,
+        });
+
+        const toStore = (await request.validateUsing(
+          this.relatedStoreValidator(relationName),
+          { meta: { trx } },
+        )) as Partial<ModelAttributes<LucidRow>>;
+
+        const mainInstance = await this.getFirstOrFail(id, trx);
+
+        await this.authorizeRecord(
+          { request, route, auth } as unknown as HttpContext,
+          "oneToManyRelationStore",
+          mainInstance,
+        );
+
+        const relationClient = mainInstance.related(
+          relationName as ExtractModelRelations<InstanceType<T>>,
+        );
+        if (relationClient.relation.type !== "hasMany") {
+          throw new InternalControllerError(
+            `Relation '${relationName}' of model '${this.model.name}' was passed into the 'oneToManyRelationStore' method, ` +
+              `which only supports 'hasMany' relations, but this relation is of type '${relationClient.relation.type}'!`,
+          );
+        }
+        const fetchedData = await (
+          relationClient as HasManyClientContract<
+            HasManyRelationContract<T, LucidModel>,
+            LucidModel
+          >
+        )
+          .create(toStore)
+          .addErrorContext({
+            message: "Failed to store object",
+            code: "E_DB_ERROR",
+            status: 500,
+          });
+
+        await fetchedData.refresh().addErrorContext({
+          message: "Failed to fetch updated object",
+          code: "E_DB_ERROR",
+          status: 500,
+        });
+        return fetchedData;
+      },
+      { isolationLevel: this.isolationLevel },
     );
-
-    const relationClient = mainInstance.related(
-      relationName as ExtractModelRelations<InstanceType<T>>,
-    );
-    if (relationClient.relation.type !== "hasMany") {
-      throw new InternalControllerError(
-        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'oneToManyRelationStore' method, ` +
-          `which only supports 'hasMany' relations, but this relation is of type '${relationClient.relation.type}'!`,
-      );
-    }
-    const res = await (
-      relationClient as HasManyClientContract<
-        HasManyRelationContract<T, LucidModel>,
-        LucidModel
-      >
-    )
-      .create(toStore)
-      .addErrorContext({
-        message: "Failed to store object",
-        code: "E_DB_ERROR",
-        status: 500,
-      });
-
-    await res.refresh().addErrorContext({
-      message: "Failed to fetch updated object",
-      code: "E_DB_ERROR",
-      status: 500,
-    });
-
     return {
       success: true,
       data: res,
@@ -1137,136 +1236,177 @@ export default abstract class AutoCrudController<
   }
 
   async manyToManyRelationAttach(httpCtx: HttpContext): Promise<unknown> {
-    const { request, route, auth } = httpCtx;
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
+    const { route, auth } = httpCtx;
     await this.selfValidate();
-    const relationName = this.relationNameFromRoute(route);
-    await this.authenticate(httpCtx, "manyToManyRelationAttach", relationName);
 
-    const {
-      params: { localId, relatedId },
-    } = (await request.validateUsing(
-      this.manyToManyIdsValidator(relationName),
-    )) as { params: { localId: string | number; relatedId: string | number } };
-    const pivotProps = (await request.validateUsing(
-      this.attachValidator(relationName),
-    )) as Record<string, unknown>;
+    await db.transaction(
+      async (trx) => {
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
 
-    await this.authorizeById(httpCtx, "manyToManyRelationAttach", {
-      localId,
-      relatedId,
-      relationName,
-    });
+        const relationName = this.relationNameFromRoute(route);
+        await this.authenticate(
+          httpCtx,
+          "manyToManyRelationAttach",
+          relationName,
+        );
 
-    const mainInstance = await this.getFirstOrFail(localId);
-    await this.authorizeRecord(
-      httpCtx,
-      "manyToManyRelationAttach",
-      mainInstance,
+        const {
+          params: { localId, relatedId },
+        } = (await httpCtx.request.validateUsing(
+          this.manyToManyIdsValidator(relationName),
+          { meta: { trx } },
+        )) as {
+          params: { localId: string | number; relatedId: string | number };
+        };
+        const pivotProps = (await httpCtx.request.validateUsing(
+          this.attachValidator(relationName),
+          { meta: { trx } },
+        )) as Record<string, unknown>;
+
+        await this.authorizeById(httpCtx, "manyToManyRelationAttach", {
+          localId,
+          relatedId,
+          relationName,
+        });
+
+        const mainInstance = await this.getFirstOrFail(localId, trx);
+
+        await this.authorizeRecord(
+          httpCtx,
+          "manyToManyRelationAttach",
+          mainInstance,
+        );
+        const relationClient = mainInstance.related(
+          relationName as ExtractModelRelations<InstanceType<T>>,
+        );
+        if (relationClient.relation.type !== "manyToMany") {
+          throw new InternalControllerError(
+            `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationAttach' method, ` +
+              `which only supports 'manyToMany' relations, but this relation is of type '${relationClient.relation.type}'!`,
+          );
+        }
+        await (
+          relationClient as ManyToManyClientContract<
+            ManyToManyRelationContract<T, LucidModel>,
+            LucidModel
+          >
+        )
+          .attach({
+            [relatedId]: pivotProps,
+          })
+          .addErrorContext({
+            message: "Failed to attach object",
+            code: "E_DB_ERROR",
+            status: 500,
+          });
+      },
+      { isolationLevel: this.isolationLevel },
     );
-    const relationClient = mainInstance.related(
-      relationName as ExtractModelRelations<InstanceType<T>>,
-    );
-    if (relationClient.relation.type !== "manyToMany") {
-      throw new InternalControllerError(
-        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationAttach' method, ` +
-          `which only supports 'manyToMany' relations, but this relation is of type '${relationClient.relation.type}'!`,
-      );
-    }
-    await (
-      relationClient as ManyToManyClientContract<
-        ManyToManyRelationContract<T, LucidModel>,
-        LucidModel
-      >
-    )
-      .attach({
-        [relatedId]: pivotProps,
-      })
-      .addErrorContext({
-        message: "Failed to attach object",
-        code: "E_DB_ERROR",
-        status: 500,
-      });
 
     return { success: true };
   }
 
   async manyToManyRelationDetach(httpCtx: HttpContext): Promise<unknown> {
     const { request, route, auth } = httpCtx;
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
     await this.selfValidate();
-    const relationName = this.relationNameFromRoute(route);
-    await this.authenticate(httpCtx, "manyToManyRelationDetach", relationName);
+    const numDetached = await db.transaction(
+      async (trx) => {
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
 
-    const {
-      params: { localId, relatedId },
-    } = (await request.validateUsing(
-      this.manyToManyIdsValidator(relationName),
-    )) as { params: { localId: string | number; relatedId: string | number } };
-    const detachFilters = (await request.validateUsing(
-      this.detachValidator(relationName),
-    )) as Record<string, unknown>;
+        const relationName = this.relationNameFromRoute(route);
+        await this.authenticate(
+          httpCtx,
+          "manyToManyRelationDetach",
+          relationName,
+        );
 
-    await this.authorizeById(httpCtx, "manyToManyRelationDetach", {
-      localId,
-      relatedId,
-      relationName,
-    });
+        const {
+          params: { localId, relatedId },
+        } = (await request.validateUsing(
+          this.manyToManyIdsValidator(relationName),
+          { meta: { trx } },
+        )) as {
+          params: { localId: string | number; relatedId: string | number };
+        };
+        const detachFilters = (await request.validateUsing(
+          this.detachValidator(relationName),
+          { meta: { trx } },
+        )) as Record<string, unknown>;
+        const definedDetachFilters = Object.fromEntries(
+          Object.entries(detachFilters).filter(
+            ([, value]) => value !== undefined,
+          ),
+        );
 
-    const relation = this.model.$relationsDefinitions.get(relationName);
-    if (relation === undefined) {
-      throw new InternalControllerError(
-        `Relation '${relationName}' does not exist on model '${this.model.name}'`,
-      );
-    }
-    if (relation.type !== "manyToMany") {
-      throw new InternalControllerError(
-        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationDetach' method, ` +
-          `which only supports 'manyToMany' relations, but this relation is of type '${relation.type}'!`,
-      );
-    }
-    if (!relation.booted) {
-      relation.boot();
-    }
+        await this.authorizeById(httpCtx, "manyToManyRelationDetach", {
+          localId,
+          relatedId,
+          relationName,
+        });
 
-    // We can avoid fetching the main instance here since authorization was done pre-DB,
-    // but still support row-level authorization hooks when overridden.
-    if (this.authorizeRecord !== AutoCrudController.prototype.authorizeRecord) {
-      const mainInstance = await this.getFirstOrFail(localId);
-      await this.authorizeRecord(
-        httpCtx,
-        "manyToManyRelationDetach",
-        mainInstance,
-      );
-    }
+        const relation = this.model.$relationsDefinitions.get(relationName);
+        if (relation === undefined) {
+          throw new InternalControllerError(
+            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
+          );
+        }
+        if (relation.type !== "manyToMany") {
+          throw new InternalControllerError(
+            `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationDetach' method, ` +
+              `which only supports 'manyToMany' relations, but this relation is of type '${relation.type}'!`,
+          );
+        }
+        if (!relation.booted) {
+          relation.boot();
+        }
 
-    let result;
-    try {
-      result = await db
-        .knexQuery()
-        .table(relation.pivotTable)
-        .where({
-          ...detachFilters,
-          [relation.pivotForeignKey]: localId,
-          [relation.pivotRelatedForeignKey]: relatedId,
-        })
-        .delete();
-    } catch (err) {
-      throw new BaseError("Failed to detach objects", {
-        cause: err,
-        code: "E_DB_ERROR",
-        status: 500,
-      });
-    }
+        // We can avoid fetching the main instance here since authorization was done pre-DB,
+        // but still support row-level authorization hooks when overridden.
+        if (
+          this.authorizeRecord !== AutoCrudController.prototype.authorizeRecord
+        ) {
+          const mainInstance = await this.getFirstOrFail(localId, trx);
 
-    if (result === 0) {
-      throw new NotFoundException("No relation attachments matched your query");
-    }
+          await this.authorizeRecord(
+            httpCtx,
+            "manyToManyRelationDetach",
+            mainInstance,
+          );
+        }
 
-    return { success: true, numDetached: result };
+        let deletedRows: number;
+        try {
+          deletedRows = (await trx
+            .from(relation.pivotTable)
+            .where({
+              ...definedDetachFilters,
+              [relation.pivotForeignKey]: localId,
+              [relation.pivotRelatedForeignKey]: relatedId,
+            })
+            .delete()) as unknown as number;
+        } catch (err) {
+          throw new BaseError("Failed to detach objects", {
+            cause: err,
+            code: "E_DB_ERROR",
+            status: 500,
+          });
+        }
+
+        if (deletedRows === 0) {
+          throw new NotFoundException(
+            "No relation attachments matched your query",
+          );
+        }
+
+        return deletedRows;
+      },
+      { isolationLevel: this.isolationLevel },
+    );
+
+    return { success: true, numDetached };
   }
 }
