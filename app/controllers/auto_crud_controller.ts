@@ -771,7 +771,6 @@ export default abstract class AutoCrudController<
    */
   async store(httpCtx: HttpContext): Promise<unknown> {
     await this.selfValidate();
-    let toStore!: PartialModel<T>;
     const result = await db.transaction(
       async (trx) => {
         const { auth } = httpCtx;
@@ -781,6 +780,7 @@ export default abstract class AutoCrudController<
 
         await this.authenticate(httpCtx, "store");
 
+        let toStore: PartialModel<T>;
         toStore = (await httpCtx.request.validateUsing(this.storeValidator, {
           meta: { trx },
         })) as PartialModel<T>;
@@ -845,15 +845,8 @@ export default abstract class AutoCrudController<
     return data;
   }
 
-  protected async saveOrFail(
-    row: InstanceType<T>,
-    trx?: TransactionClientContract,
-  ) {
-    if (trx !== undefined) {
-      row.useTransaction(trx);
-    }
-
-    return await row.save().addErrorContext({
+  protected async saveOrFail(row: InstanceType<T>) {
+    await row.save().addErrorContext({
       message: "Failed to commit updates",
       code: "E_DB_ERROR",
       status: 500,
@@ -869,7 +862,7 @@ export default abstract class AutoCrudController<
   async update(httpCtx: HttpContext): Promise<unknown> {
     const { request, auth } = httpCtx;
     await this.selfValidate();
-    const row = await db.transaction(
+    const result = await db.transaction(
       async (trx) => {
         if (!auth.isAuthenticated) {
           await auth.authenticate();
@@ -894,32 +887,32 @@ export default abstract class AutoCrudController<
           meta: { trx },
         })) as PartialModel<T>;
 
-        const searchedRow = await this.getFirstOrFail(id, trx);
-        await this.authorizeRecord(httpCtx, "update", searchedRow);
+        const row = await this.getFirstOrFail(id, trx);
+        await this.authorizeRecord(httpCtx, "update", row);
         updates =
           (await this.updateHook({
             http: httpCtx,
             model: this.model,
-            record: searchedRow,
+            record: row,
             request: updates,
           })) ?? updates;
 
-        searchedRow.merge(updates);
+        row.merge(updates);
 
-        const updatedRow = await this.saveOrFail(searchedRow, trx);
+        await this.saveOrFail(row);
 
-        await updatedRow.refresh().addErrorContext({
+        await row.refresh().addErrorContext({
           message: "Failed to fetch updated object",
           code: "E_DB_ERROR",
           status: 500,
         });
-        return updatedRow;
+        return row;
       },
       { isolationLevel: this.isolationLevel },
     );
     return {
       success: true,
-      data: row,
+      data: result,
     };
   }
 
@@ -971,7 +964,7 @@ export default abstract class AutoCrudController<
         // Clean up any permissions scoped to the deleted instance
         const morphAlias = getMorphMapAlias(this.model);
         if (morphAlias !== null) {
-          await deletePermissionsForEntity(morphAlias, id);
+          await deletePermissionsForEntity(morphAlias, id, trx);
         }
       },
       { isolationLevel: this.isolationLevel },
