@@ -3,6 +3,7 @@ import type { BaseType } from "@vinejs/vine";
 import type { FieldContext, SchemaTypes } from "@vinejs/vine/types";
 
 import db from "@adonisjs/lucid/services/db";
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 import type { LucidModel } from "@adonisjs/lucid/types/model";
 
 import { InvalidModelDefinition } from "#exceptions/model_autogen_errors";
@@ -23,13 +24,16 @@ async function foreignKeyRule(
     return;
   }
 
+  const conn =
+    "trx" in field.meta ? (field.meta.trx as TransactionClientContract) : db;
+
   if (!(typeof value === "number" || typeof value === "string")) {
     return;
   }
 
-  const res = (await db
+  const res = (await conn
     .knexQuery()
-    .select(db.knexRawQuery("1"))
+    .select(conn.knexRawQuery("1"))
     .from(options.table)
     .where(options.column, value)
     .limit(1, { skipBinding: true })) as unknown[];
