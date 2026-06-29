@@ -1426,108 +1426,122 @@ export default abstract class AutoCrudController<
 
   async manyToManyRelationUpdatePivot(httpCtx: HttpContext): Promise<unknown> {
     const { request, route, auth } = httpCtx;
-    if (!auth.isAuthenticated) {
-      await auth.authenticate();
-    }
     await this.selfValidate();
-    const relationName = this.relationNameFromRoute(route);
-    await this.authenticate(
-      httpCtx,
-      "manyToManyRelationUpdatePivot",
-      relationName,
-    );
+    await db.transaction(
+      async (trx) => {
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
 
-    const {
-      params: { localId, relatedId },
-    } = (await request.validateUsing(
-      this.manyToManyIdsValidator(relationName),
-    )) as { params: { localId: string | number; relatedId: string | number } };
-    const body = (await request.validateUsing(
-      this.updatePivotValidator(relationName),
-    )) as Record<string, unknown>;
-
-    await this.authorizeById(httpCtx, "manyToManyRelationUpdatePivot", {
-      localId,
-      relatedId,
-      relationName,
-    });
-
-    const relation = this.model.$relationsDefinitions.get(relationName);
-    if (relation === undefined) {
-      throw new InternalControllerError(
-        `Relation '${relationName}' does not exist on model '${this.model.name}'`,
-      );
-    }
-    if (relation.type !== "manyToMany") {
-      throw new InternalControllerError(
-        `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationUpdatePivot' method, ` +
-          `which only supports 'manyToMany' relations, but this relation is of type '${relation.type}'!`,
-      );
-    }
-    if (!validateTypedManyToManyRelation(relation)) {
-      throw new InternalControllerError(
-        `Relation '${relationName}' isn't properly typed!`,
-      );
-    }
-    if (!relation.booted) {
-      relation.boot();
-    }
-
-    const { pivotKey, pivotUpdate } = splitPivotUpdateBody(relation, body);
-
-    if (Object.keys(pivotUpdate).length === 0) {
-      throw new BadRequestException(
-        "At least one updatable pivot field must be provided",
-      );
-    }
-
-    for (const [name, field] of Object.entries(
-      relation.options.meta.declaredColumnTypes,
-    )) {
-      if (field.detachFilter && !(name in pivotKey)) {
-        throw new BadRequestException(
-          `Missing required pivot key field: ${name}`,
+        const relationName = this.relationNameFromRoute(route);
+        await this.authenticate(
+          httpCtx,
+          "manyToManyRelationUpdatePivot",
+          relationName,
         );
-      }
-    }
 
-    if (this.authorizeRecord !== AutoCrudController.prototype.authorizeRecord) {
-      const mainInstance = await this.getFirstOrFail(localId);
-      await this.authorizeRecord(
-        httpCtx,
-        "manyToManyRelationUpdatePivot",
-        mainInstance,
-      );
-    }
+        const {
+          params: { localId, relatedId },
+        } = (await request.validateUsing(
+          this.manyToManyIdsValidator(relationName),
+          { meta: { trx } },
+        )) as {
+          params: { localId: string | number; relatedId: string | number };
+        };
+        const body = (await request.validateUsing(
+          this.updatePivotValidator(relationName),
+          { meta: { trx } },
+        )) as Record<string, unknown>;
 
-    let result;
-    try {
-      result = await db
-        .knexQuery()
-        .table(relation.pivotTable)
-        .where({
-          ...pivotKey,
-          [relation.pivotForeignKey]: localId,
-          [relation.pivotRelatedForeignKey]: relatedId,
-        })
-        .update({
-          ...pivotUpdate,
-          ...("pivotTimestamps" in relation.options &&
-          relation.options.pivotTimestamps === true
-            ? { updated_at: new Date() }
-            : {}),
+        await this.authorizeById(httpCtx, "manyToManyRelationUpdatePivot", {
+          localId,
+          relatedId,
+          relationName,
         });
-    } catch (err) {
-      throw new BaseError("Failed to update pivot row", {
-        cause: err,
-        code: "E_DB_ERROR",
-        status: 500,
-      });
-    }
 
-    if (result === 0) {
-      throw new NotFoundException("No relation attachments matched your query");
-    }
+        const relation = this.model.$relationsDefinitions.get(relationName);
+        if (relation === undefined) {
+          throw new InternalControllerError(
+            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
+          );
+        }
+        if (relation.type !== "manyToMany") {
+          throw new InternalControllerError(
+            `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationUpdatePivot' method, ` +
+              `which only supports 'manyToMany' relations, but this relation is of type '${relation.type}'!`,
+          );
+        }
+        if (!validateTypedManyToManyRelation(relation)) {
+          throw new InternalControllerError(
+            `Relation '${relationName}' isn't properly typed!`,
+          );
+        }
+        if (!relation.booted) {
+          relation.boot();
+        }
+
+        const { pivotKey, pivotUpdate } = splitPivotUpdateBody(relation, body);
+
+        if (Object.keys(pivotUpdate).length === 0) {
+          throw new BadRequestException(
+            "At least one updatable pivot field must be provided",
+          );
+        }
+
+        for (const [name, field] of Object.entries(
+          relation.options.meta.declaredColumnTypes,
+        )) {
+          if (field.detachFilter && !(name in pivotKey)) {
+            throw new BadRequestException(
+              `Missing required pivot key field: ${name}`,
+            );
+          }
+        }
+
+        if (
+          this.authorizeRecord !== AutoCrudController.prototype.authorizeRecord
+        ) {
+          const mainInstance = await this.getFirstOrFail(localId, trx);
+
+          await this.authorizeRecord(
+            httpCtx,
+            "manyToManyRelationUpdatePivot",
+            mainInstance,
+          );
+        }
+
+        let updatedRows: number;
+        try {
+          updatedRows = (await trx
+            .from(relation.pivotTable)
+            .where({
+              ...pivotKey,
+              [relation.pivotForeignKey]: localId,
+              [relation.pivotRelatedForeignKey]: relatedId,
+            })
+            .update({
+              ...pivotUpdate,
+              ...("pivotTimestamps" in relation.options &&
+              relation.options.pivotTimestamps === true
+                ? { updated_at: new Date() }
+                : {}),
+            })) as unknown as number;
+        } catch (err) {
+          throw new BaseError("Failed to update pivot row", {
+            cause: err,
+            code: "E_DB_ERROR",
+            status: 500,
+          });
+        }
+
+        if (updatedRows === 0) {
+          throw new NotFoundException(
+            "No relation attachments matched your query",
+          );
+        }
+      },
+      { isolationLevel: this.isolationLevel },
+    );
 
     return { success: true };
   }
