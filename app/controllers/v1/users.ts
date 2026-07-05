@@ -6,6 +6,7 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
 import User from "#app/models/user";
+import { ConflictException } from "#exceptions/http_exceptions";
 
 import BaseController from "../base_controller.js";
 
@@ -64,31 +65,27 @@ export default class UsersController extends BaseController {
   }
 
   async findOne({ request, auth }: HttpContext) {
-    const {
-      params: { id },
-    } = await request.validateUsing(userIdParamValidator);
+    const { params } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
 
     const targetUser = await User.query()
       .select("id", "fullName", "email")
-      .where("id", id)
+      .where("id", params.id)
       .firstOrFail()
-      .addErrorContext(() => `User with id ${id} not found`);
+      .addErrorContext(() => `User with id ${params.id} not found`);
 
     return { data: targetUser };
   }
 
   async delete({ request, auth }: HttpContext) {
-    const {
-      params: { id },
-    } = await request.validateUsing(userIdParamValidator);
+    const { params } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
     await db.transaction(async (trx) => {
-      const targetUser = await User.findOrFail(id, {
+      const targetUser = await User.findOrFail(params.id, {
         client: trx,
-      }).addErrorContext(() => `User with id ${id} not found`);
+      }).addErrorContext(() => `User with id ${params.id} not found`);
 
       await targetUser.delete();
     });
@@ -97,34 +94,39 @@ export default class UsersController extends BaseController {
   }
 
   async update({ request, auth }: HttpContext) {
-    const {
-      params: { id },
-    } = await request.validateUsing(userIdParamValidator);
+    const { params } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
-
     const payload = await request.validateUsing(updateUserValidator);
 
-    const updatedUser = await db.transaction(async (trx) => {
-      const targetUser = await User.query({ client: trx })
-        .where("id", id)
-        .firstOrFail()
-        .addErrorContext(() => `User with id ${id} not found`);
+    try {
+      const updatedUser = await db.transaction(async (trx) => {
+        const targetUser = await User.query({ client: trx })
+          .where("id", params.id)
+          .firstOrFail()
+          .addErrorContext(() => `User with id ${params.id} not found`);
 
-      targetUser.merge(payload);
-      await targetUser.save();
+        targetUser.merge(payload);
+        await targetUser.save();
 
-      return targetUser;
-    });
+        return targetUser;
+      });
 
-    return {
-      success: true,
-      data: {
-        id: updatedUser.id,
-        fullName: updatedUser.fullName,
-        email: updatedUser.email,
-      },
-    };
+      return {
+        success: true,
+        data: {
+          id: updatedUser.id,
+          fullName: updatedUser.fullName,
+          email: updatedUser.email,
+        },
+      };
+    } catch (error: unknown) {
+      const dbError = error as { code?: string };
+      if (dbError.code === "23505") {
+        throw new ConflictException("User with this email already exists");
+      }
+      throw error;
+    }
   }
 
   async create({ request, auth }: HttpContext) {
@@ -132,18 +134,25 @@ export default class UsersController extends BaseController {
 
     const payload = await request.validateUsing(createUserValidator);
 
-    const newUser = await db.transaction(async (trx) => {
-      const user = await User.create(payload, { client: trx });
-      return user;
-    });
-
-    return {
-      success: true,
-      data: {
-        id: newUser.id,
-        fullName: newUser.fullName,
-        email: newUser.email,
-      },
-    };
+    try {
+      const newUser = await db.transaction(async (trx) => {
+        const user = await User.create(payload, { client: trx });
+        return user;
+      });
+      return {
+        success: true,
+        data: {
+          id: newUser.id,
+          fullName: newUser.fullName,
+          email: newUser.email,
+        },
+      };
+    } catch (error: unknown) {
+      const dbError = error as { code?: string };
+      if (dbError.code === "23505") {
+        throw new ConflictException("User with this email already exists");
+      }
+      throw error;
+    }
   }
 }
