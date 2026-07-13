@@ -51,7 +51,6 @@ import {
   AutogenCacheEntry,
   hasUpdatablePivotColumns,
   relationValidator,
-  splitPivotUpdateBody,
 } from "#utils/model_autogen";
 import type {
   AnyValidator,
@@ -1448,10 +1447,13 @@ export default abstract class AutoCrudController<
         )) as {
           params: { localId: string | number; relatedId: string | number };
         };
-        const body = (await request.validateUsing(
+        const { query, update } = (await request.validateUsing(
           this.updatePivotValidator(relationName),
           { meta: { trx } },
-        )) as Record<string, unknown>;
+        )) as {
+          query: Record<string, unknown>;
+          update: Record<string, unknown>;
+        };
 
         await this.authorizeById(httpCtx, "manyToManyRelationUpdatePivot", {
           localId,
@@ -1480,22 +1482,10 @@ export default abstract class AutoCrudController<
           relation.boot();
         }
 
-        const { pivotKey, pivotUpdate } = splitPivotUpdateBody(relation, body);
-
-        if (Object.keys(pivotUpdate).length === 0) {
+        if (Object.keys(update).length === 0) {
           throw new BadRequestException(
             "At least one updatable pivot field must be provided",
           );
-        }
-
-        for (const [name, field] of Object.entries(
-          relation.options.meta.declaredColumnTypes,
-        )) {
-          if (field.detachFilter && !(name in pivotKey)) {
-            throw new BadRequestException(
-              `Missing required pivot key field: ${name}`,
-            );
-          }
         }
 
         if (
@@ -1515,12 +1505,12 @@ export default abstract class AutoCrudController<
           updatedRows = (await trx
             .from(relation.pivotTable)
             .where({
-              ...pivotKey,
+              ...query,
               [relation.pivotForeignKey]: localId,
               [relation.pivotRelatedForeignKey]: relatedId,
             })
             .update({
-              ...pivotUpdate,
+              ...update,
               ...("pivotTimestamps" in relation.options &&
               relation.options.pivotTimestamps === true
                 ? { updated_at: new Date() }

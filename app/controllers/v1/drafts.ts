@@ -361,7 +361,7 @@ export abstract class GenericDraftController<
 
       // Use findOrFail with error context
       const draft = (await this.model
-        .findOrFail(draftId)
+        .findOrFail(draftId, { client: trx })
         .addErrorContext(
           () => `${this.model.name} with id ${draftId} not found`,
         )) as DraftInstance & InstanceType<Draft>;

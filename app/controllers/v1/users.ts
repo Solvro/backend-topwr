@@ -35,7 +35,9 @@ const paginationValidator = vine.compile(
 
 const userIdParamValidator = vine.compile(
   vine.object({
-    id: vine.number(),
+    params: vine.object({
+      id: vine.number(),
+    }),
   }),
 );
 
@@ -62,27 +64,31 @@ export default class UsersController extends BaseController {
   }
 
   async findOne({ request, auth }: HttpContext) {
-    const user = await request.validateUsing(userIdParamValidator);
+    const {
+      params: { id },
+    } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
 
     const targetUser = await User.query()
       .select("id", "fullName", "email")
-      .where("id", user.id)
+      .where("id", id)
       .firstOrFail()
-      .addErrorContext(() => `User with id ${user.id} not found`);
+      .addErrorContext(() => `User with id ${id} not found`);
 
     return { data: targetUser };
   }
 
   async delete({ request, auth }: HttpContext) {
-    const user = await request.validateUsing(userIdParamValidator);
+    const {
+      params: { id },
+    } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
     await db.transaction(async (trx) => {
-      const targetUser = await User.findOrFail(user.id, {
+      const targetUser = await User.findOrFail(id, {
         client: trx,
-      }).addErrorContext(() => `User with id ${user.id} not found`);
+      }).addErrorContext(() => `User with id ${id} not found`);
 
       await targetUser.delete();
     });
@@ -91,7 +97,9 @@ export default class UsersController extends BaseController {
   }
 
   async update({ request, auth }: HttpContext) {
-    const user = await request.validateUsing(userIdParamValidator);
+    const {
+      params: { id },
+    } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
 
@@ -99,9 +107,9 @@ export default class UsersController extends BaseController {
 
     const updatedUser = await db.transaction(async (trx) => {
       const targetUser = await User.query({ client: trx })
-        .where("id", user.id)
+        .where("id", id)
         .firstOrFail()
-        .addErrorContext(() => `User with id ${user.id} not found`);
+        .addErrorContext(() => `User with id ${id} not found`);
 
       targetUser.merge(payload);
       await targetUser.save();

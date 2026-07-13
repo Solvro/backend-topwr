@@ -352,7 +352,7 @@ test.group("Contributor per-milestone order", (group) => {
     const patchRes = await client
       .patch(`/api/v1/milestones/${milestone.id}/contributors/${c1.id}`)
       .header("Authorization", auth)
-      .json({ role_id: role.id, order: 1 });
+      .json({ query: { role_id: role.id }, update: { order: 1 } });
     patchRes.assertStatus(200);
     const patchBody = patchRes.body() as { success?: boolean };
     assert.equal(patchBody.success, true);
@@ -389,7 +389,7 @@ test.group("Contributor per-milestone order", (group) => {
         `/api/v1/milestones/${milestone.id}/contributors/${contributor.id}`,
       )
       .header("Authorization", auth)
-      .json({ role_id: role.id, order: 1 });
+      .json({ query: { role_id: role.id }, update: { order: 1 } });
     res.assertStatus(404);
   });
 
@@ -419,7 +419,7 @@ test.group("Contributor per-milestone order", (group) => {
         `/api/v1/milestones/${milestone.id}/contributors/${contributor.id}`,
       )
       .header("Authorization", auth)
-      .json({ order: 2 });
+      .json({ query: {}, update: { order: 2 } });
     missingRole.assertStatus(422);
 
     const missingOrder = await client
@@ -427,7 +427,15 @@ test.group("Contributor per-milestone order", (group) => {
         `/api/v1/milestones/${milestone.id}/contributors/${contributor.id}`,
       )
       .header("Authorization", auth)
-      .json({ role_id: role.id });
+      .json({ query: { role_id: role.id }, update: {} });
     missingOrder.assertStatus(400);
+
+    const flatBody = await client
+      .patch(
+        `/api/v1/milestones/${milestone.id}/contributors/${contributor.id}`,
+      )
+      .header("Authorization", auth)
+      .json({ role_id: role.id, order: 2 });
+    flatBody.assertStatus(422);
   });
 });
