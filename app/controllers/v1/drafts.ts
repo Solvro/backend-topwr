@@ -182,6 +182,7 @@ export abstract class GenericDraftController<
       case "oneToManyRelationStore":
       case "manyToManyRelationAttach":
       case "manyToManyRelationDetach":
+      case "manyToManyRelationUpdatePivot":
         return "authOnly";
       // other actions
       case "index":
@@ -243,6 +244,7 @@ export abstract class GenericDraftController<
       oneToManyRelationStore: "update",
       manyToManyRelationAttach: "update",
       manyToManyRelationDetach: "update",
+      manyToManyRelationUpdatePivot: "update",
     };
     const slug = slugMap[action];
 
@@ -359,7 +361,7 @@ export abstract class GenericDraftController<
 
       // Use findOrFail with error context
       const draft = (await this.model
-        .findOrFail(draftId)
+        .findOrFail(draftId, { client: trx })
         .addErrorContext(
           () => `${this.model.name} with id ${draftId} not found`,
         )) as DraftInstance & InstanceType<Draft>;

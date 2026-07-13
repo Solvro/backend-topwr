@@ -329,6 +329,30 @@ test.group("Permissions", (group) => {
     okDetach.assertStatus(200);
     const okDetachBody = okDetach.body() as unknown as { success?: boolean };
     assert.equal(okDetachBody.success, true);
+
+    // Re-attach for pivot update permission checks (milestones have updatable pivot order)
+    await db.knexQuery().table("contributor_roles").insert({
+      contributor_id: person.id,
+      role_id: role.id,
+      milestone_id: milestone.id,
+      order: 1,
+      created_at: new Date(),
+      updated_at: new Date(),
+    });
+
+    const badPatch = await client
+      .patch(`/api/v1/milestones/${milestone.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${userToken}`)
+      .json({ query: { role_id: role.id }, update: { order: 2 } });
+    badPatch.assertStatus(403);
+
+    const okPatch = await client
+      .patch(`/api/v1/milestones/${milestone.id}/contributors/${person.id}`)
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({ query: { role_id: role.id }, update: { order: 2 } });
+    okPatch.assertStatus(200);
+    const okPatchBody = okPatch.body() as unknown as { success?: boolean };
+    assert.equal(okPatchBody.success, true);
   });
 
   test("destroy blocked without permission; allowed for solvro_admin", async ({
@@ -372,5 +396,39 @@ test.group("Permissions", (group) => {
       .delete(`/api/v1/libraries/${id}`)
       .header("Authorization", `Bearer ${adminToken}`);
     ok.assertStatus(200);
+  });
+
+  test("user routes validate and use the :id route parameter", async ({
+    client,
+  }) => {
+    const admin = await User.create({
+      email: uniqueEmail("users-admin"),
+      password: "Passw0rd!",
+      fullName: "Users Route Admin",
+    });
+    await assignSolvroAdmin(admin);
+    const adminToken = await makeToken(admin);
+
+    const target = await User.create({
+      email: uniqueEmail("users-target"),
+      password: "Passw0rd!",
+      fullName: "Users Route Target",
+    });
+
+    const show = await client
+      .get(`/api/v1/users/${target.id}`)
+      .header("Authorization", `Bearer ${adminToken}`);
+    show.assertStatus(200);
+
+    const update = await client
+      .patch(`/api/v1/users/${target.id}`)
+      .header("Authorization", `Bearer ${adminToken}`)
+      .json({ fullName: "Users Route Updated" });
+    update.assertStatus(200);
+
+    const destroy = await client
+      .delete(`/api/v1/users/${target.id}`)
+      .header("Authorization", `Bearer ${adminToken}`);
+    destroy.assertStatus(200);
   });
 });

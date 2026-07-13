@@ -38,6 +38,7 @@ import {
   InternalControllerValidationError,
 } from "#exceptions/base_controller_errors";
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   NotFoundException,
@@ -46,7 +47,11 @@ import type { preloadRelations } from "#scopes/preload_helper";
 import type { handleSearchQuery } from "#scopes/search_helper";
 import type { handleSortQuery } from "#scopes/sort_helper";
 import "#utils/maps";
-import { AutogenCacheEntry, relationValidator } from "#utils/model_autogen";
+import {
+  AutogenCacheEntry,
+  hasUpdatablePivotColumns,
+  relationValidator,
+} from "#utils/model_autogen";
 import type {
   AnyValidator,
   PrimaryKeyFieldDescriptor,
@@ -141,7 +146,8 @@ export type ControllerAction =
   | "oneToOneRelationStore"
   | "oneToManyRelationStore"
   | "manyToManyRelationAttach"
-  | "manyToManyRelationDetach";
+  | "manyToManyRelationDetach"
+  | "manyToManyRelationUpdatePivot";
 
 // Use the same Constructor type as other controllers (e.g., mobile_config_controller)
 
@@ -194,6 +200,7 @@ export default abstract class AutoCrudController<
    *  - oneToManyRelationStore -> "create"
    *  - manyToManyRelationAttach -> "update"
    *  - manyToManyRelationDetach -> "update"
+   *  - manyToManyRelationUpdatePivot -> "update"
    *  - index/show -> none (public by default)
    *
    * @param action The controller action being performed
@@ -216,6 +223,7 @@ export default abstract class AutoCrudController<
         return "create";
       case "manyToManyRelationAttach":
       case "manyToManyRelationDetach":
+      case "manyToManyRelationUpdatePivot":
         return "update";
       case "index":
       case "show":
@@ -440,6 +448,10 @@ export default abstract class AutoCrudController<
     return this.modelCacheEntry.manyToManyIdsValidator(relationName);
   }
 
+  protected updatePivotValidator(relationName: string): AnyValidator {
+    return this.modelCacheEntry.updatePivotValidator(relationName);
+  }
+
   /**
    * The actual self-validation function, does not cache!
    */
@@ -644,6 +656,14 @@ export default abstract class AutoCrudController<
               "manyToManyRelationDetach",
             ])
             .as(`relation.${relationName}.detach`);
+          if (hasUpdatablePivotColumns(relation)) {
+            router
+              .patch(`/:localId/${snakeCaseName}/:relatedId`, [
+                controller,
+                "manyToManyRelationUpdatePivot",
+              ])
+              .as(`relation.${relationName}.updatePivot`);
+          }
         }
       }
     } else {
@@ -1401,5 +1421,118 @@ export default abstract class AutoCrudController<
     );
 
     return { success: true, numDetached };
+  }
+
+  async manyToManyRelationUpdatePivot(httpCtx: HttpContext): Promise<unknown> {
+    const { request, route, auth } = httpCtx;
+    await this.selfValidate();
+    await db.transaction(
+      async (trx) => {
+        if (!auth.isAuthenticated) {
+          await auth.authenticate();
+        }
+
+        const relationName = this.relationNameFromRoute(route);
+        await this.authenticate(
+          httpCtx,
+          "manyToManyRelationUpdatePivot",
+          relationName,
+        );
+
+        const {
+          params: { localId, relatedId },
+        } = (await request.validateUsing(
+          this.manyToManyIdsValidator(relationName),
+          { meta: { trx } },
+        )) as {
+          params: { localId: string | number; relatedId: string | number };
+        };
+        const { query, update } = (await request.validateUsing(
+          this.updatePivotValidator(relationName),
+          { meta: { trx } },
+        )) as {
+          query: Record<string, unknown>;
+          update: Record<string, unknown>;
+        };
+
+        await this.authorizeById(httpCtx, "manyToManyRelationUpdatePivot", {
+          localId,
+          relatedId,
+          relationName,
+        });
+
+        const relation = this.model.$relationsDefinitions.get(relationName);
+        if (relation === undefined) {
+          throw new InternalControllerError(
+            `Relation '${relationName}' does not exist on model '${this.model.name}'`,
+          );
+        }
+        if (relation.type !== "manyToMany") {
+          throw new InternalControllerError(
+            `Relation '${relationName}' of model '${this.model.name}' was passed into the 'manyToManyRelationUpdatePivot' method, ` +
+              `which only supports 'manyToMany' relations, but this relation is of type '${relation.type}'!`,
+          );
+        }
+        if (!validateTypedManyToManyRelation(relation)) {
+          throw new InternalControllerError(
+            `Relation '${relationName}' isn't properly typed!`,
+          );
+        }
+        if (!relation.booted) {
+          relation.boot();
+        }
+
+        if (Object.keys(update).length === 0) {
+          throw new BadRequestException(
+            "At least one updatable pivot field must be provided",
+          );
+        }
+
+        if (
+          this.authorizeRecord !== AutoCrudController.prototype.authorizeRecord
+        ) {
+          const mainInstance = await this.getFirstOrFail(localId, trx);
+
+          await this.authorizeRecord(
+            httpCtx,
+            "manyToManyRelationUpdatePivot",
+            mainInstance,
+          );
+        }
+
+        let updatedRows: number;
+        try {
+          updatedRows = (await trx
+            .from(relation.pivotTable)
+            .where({
+              ...query,
+              [relation.pivotForeignKey]: localId,
+              [relation.pivotRelatedForeignKey]: relatedId,
+            })
+            .update({
+              ...update,
+              ...("pivotTimestamps" in relation.options &&
+              relation.options.pivotTimestamps === true
+                ? { updated_at: new Date() }
+                : {}),
+            })) as unknown as number;
+        } catch (err) {
+          throw new BaseError("Failed to update pivot row", {
+            cause: err,
+            code: "E_DB_ERROR",
+            status: 500,
+          });
+        }
+
+        if (updatedRows === 0) {
+          throw new NotFoundException(
+            "No relation attachments matched your query",
+          );
+        }
+      },
+      { isolationLevel: this.isolationLevel },
+    );
+
+    return { success: true };
   }
 }
