@@ -15,6 +15,7 @@ import {
 import RefreshToken from "#models/refresh_token";
 import User from "#models/user";
 import env from "#start/env";
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
 export interface JwtAccessTokenResponse {
   type: "bearer";
@@ -66,7 +67,8 @@ interface RefreshTokenPayload extends SupportedPayload {
 }
 
 export class JwtGuard implements GuardContract<User> {
-  readonly #ctx: HttpContext;
+  #ctx: HttpContext;
+  #trx?: TransactionClientContract;
 
   constructor(ctx: HttpContext) {
     this.#ctx = ctx;
@@ -184,14 +186,34 @@ export class JwtGuard implements GuardContract<User> {
     return authHeader.substring(7);
   }
 
-  public async authenticate(): Promise<User> {
-    if (this.authenticationAttempted) {
+  public useTransaction(trx: TransactionClientContract): this {
+    this.#trx = trx;
+    return this;
+  }
+
+  public async authenticate(
+    trx: TransactionClientContract | undefined = this.#trx,
+  ): Promise<User> {
+    this.#trx = undefined;
+
+    if (this.authenticationAttempted && trx === undefined) {
       return this.getUserOrFail();
     }
-    this.authenticationAttempted = true;
-    const token = this.extractTokenFromHeaderOrFail();
-    const payload = this.validateAccessToken(token);
-    const owner = await User.findBy("id", payload.sub);
+
+    let userId: number;
+    if (this.authenticationAttempted) {
+      userId = this.getUserOrFail().id;
+    } else {
+      this.authenticationAttempted = true;
+      const token = this.extractTokenFromHeaderOrFail();
+      const payload = this.validateAccessToken(token);
+      userId = payload.sub;
+    }
+
+    const owner = await User.find(
+      userId,
+      trx === undefined ? undefined : { client: trx },
+    );
     if (owner === null) {
       this.throw401();
     }
