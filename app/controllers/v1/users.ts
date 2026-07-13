@@ -6,6 +6,10 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
 import User from "#app/models/user";
+import {
+  ConflictException,
+  InternalServerException,
+} from "#exceptions/http_exceptions";
 
 import BaseController from "../base_controller.js";
 
@@ -102,7 +106,6 @@ export default class UsersController extends BaseController {
     } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
-
     const payload = await request.validateUsing(updateUserValidator);
 
     const updatedUser = await db.transaction(async (trx) => {
@@ -112,7 +115,18 @@ export default class UsersController extends BaseController {
         .addErrorContext(() => `User with id ${id} not found`);
 
       targetUser.merge(payload);
-      await targetUser.save();
+
+      try {
+        await targetUser.save();
+      } catch (error: unknown) {
+        const dbError = error as { code?: string };
+        if (dbError.code === "23505") {
+          throw new ConflictException("User with this email already exists");
+        }
+        throw new InternalServerException("Failed to save changes", {
+          cause: error,
+        });
+      }
 
       return targetUser;
     });
@@ -133,10 +147,18 @@ export default class UsersController extends BaseController {
     const payload = await request.validateUsing(createUserValidator);
 
     const newUser = await db.transaction(async (trx) => {
-      const user = await User.create(payload, { client: trx });
-      return user;
+      try {
+        return await User.create(payload, { client: trx });
+      } catch (error: unknown) {
+        const dbError = error as { code?: string };
+        if (dbError.code === "23505") {
+          throw new ConflictException("User with this email already exists");
+        }
+        throw new InternalServerException("Failed to create the user", {
+          cause: error,
+        });
+      }
     });
-
     return {
       success: true,
       data: {
