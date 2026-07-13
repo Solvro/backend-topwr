@@ -6,7 +6,10 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 import db from "@adonisjs/lucid/services/db";
 
 import User from "#app/models/user";
-import { ConflictException } from "#exceptions/http_exceptions";
+import {
+  ConflictException,
+  InternalServerException,
+} from "#exceptions/http_exceptions";
 
 import BaseController from "../base_controller.js";
 
@@ -105,34 +108,37 @@ export default class UsersController extends BaseController {
     await this.requireSuperUser(auth);
     const payload = await request.validateUsing(updateUserValidator);
 
-    try {
-      const updatedUser = await db.transaction(async (trx) => {
-        const targetUser = await User.query({ client: trx })
-          .where("id", id)
-          .firstOrFail()
-          .addErrorContext(() => `User with id ${id} not found`);
+    const updatedUser = await db.transaction(async (trx) => {
+      const targetUser = await User.query({ client: trx })
+        .where("id", id)
+        .firstOrFail()
+        .addErrorContext(() => `User with id ${id} not found`);
 
-        targetUser.merge(payload);
+      targetUser.merge(payload);
+
+      try {
         await targetUser.save();
-
-        return targetUser;
-      });
-
-      return {
-        success: true,
-        data: {
-          id: updatedUser.id,
-          fullName: updatedUser.fullName,
-          email: updatedUser.email,
-        },
-      };
-    } catch (error: unknown) {
-      const dbError = error as { code?: string };
-      if (dbError.code === "23505") {
-        throw new ConflictException("User with this email already exists");
+      } catch (error: unknown) {
+        const dbError = error as { code?: string };
+        if (dbError.code === "23505") {
+          throw new ConflictException("User with this email already exists");
+        }
+        throw new InternalServerException("Failed to save changes", {
+          cause: error,
+        });
       }
-      throw error;
-    }
+
+      return targetUser;
+    });
+
+    return {
+      success: true,
+      data: {
+        id: updatedUser.id,
+        fullName: updatedUser.fullName,
+        email: updatedUser.email,
+      },
+    };
   }
 
   async create({ request, auth }: HttpContext) {
@@ -140,25 +146,26 @@ export default class UsersController extends BaseController {
 
     const payload = await request.validateUsing(createUserValidator);
 
-    try {
-      const newUser = await db.transaction(async (trx) => {
-        const user = await User.create(payload, { client: trx });
-        return user;
-      });
-      return {
-        success: true,
-        data: {
-          id: newUser.id,
-          fullName: newUser.fullName,
-          email: newUser.email,
-        },
-      };
-    } catch (error: unknown) {
-      const dbError = error as { code?: string };
-      if (dbError.code === "23505") {
-        throw new ConflictException("User with this email already exists");
+    const newUser = await db.transaction(async (trx) => {
+      try {
+        return await User.create(payload, { client: trx });
+      } catch (error: unknown) {
+        const dbError = error as { code?: string };
+        if (dbError.code === "23505") {
+          throw new ConflictException("User with this email already exists");
+        }
+        throw new InternalServerException("Failed to create the user", {
+          cause: error,
+        });
       }
-      throw error;
-    }
+    });
+    return {
+      success: true,
+      data: {
+        id: newUser.id,
+        fullName: newUser.fullName,
+        email: newUser.email,
+      },
+    };
   }
 }
