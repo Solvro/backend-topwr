@@ -65,27 +65,31 @@ export default class UsersController extends BaseController {
   }
 
   async findOne({ request, auth }: HttpContext) {
-    const { params } = await request.validateUsing(userIdParamValidator);
+    const {
+      params: { id },
+    } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
 
     const targetUser = await User.query()
       .select("id", "fullName", "email")
-      .where("id", params.id)
+      .where("id", id)
       .firstOrFail()
-      .addErrorContext(() => `User with id ${params.id} not found`);
+      .addErrorContext(() => `User with id ${id} not found`);
 
     return { data: targetUser };
   }
 
   async delete({ request, auth }: HttpContext) {
-    const { params } = await request.validateUsing(userIdParamValidator);
+    const {
+      params: { id },
+    } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
     await db.transaction(async (trx) => {
-      const targetUser = await User.findOrFail(params.id, {
+      const targetUser = await User.findOrFail(id, {
         client: trx,
-      }).addErrorContext(() => `User with id ${params.id} not found`);
+      }).addErrorContext(() => `User with id ${id} not found`);
 
       await targetUser.delete();
     });
@@ -94,7 +98,9 @@ export default class UsersController extends BaseController {
   }
 
   async update({ request, auth }: HttpContext) {
-    const { params } = await request.validateUsing(userIdParamValidator);
+    const {
+      params: { id },
+    } = await request.validateUsing(userIdParamValidator);
 
     await this.requireSuperUser(auth);
     const payload = await request.validateUsing(updateUserValidator);
@@ -102,9 +108,9 @@ export default class UsersController extends BaseController {
     try {
       const updatedUser = await db.transaction(async (trx) => {
         const targetUser = await User.query({ client: trx })
-          .where("id", params.id)
+          .where("id", id)
           .firstOrFail()
-          .addErrorContext(() => `User with id ${params.id} not found`);
+          .addErrorContext(() => `User with id ${id} not found`);
 
         targetUser.merge(payload);
         await targetUser.save();
