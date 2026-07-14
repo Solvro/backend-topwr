@@ -73,3 +73,30 @@ export async function normalizeOrderField(table: string): Promise<void> {
     );
   });
 }
+
+/**
+ * Normalizes contributor order separately for every milestone.
+ *
+ * A contributor may have multiple roles in a milestone, so all of its pivot
+ * rows must receive the same order value.
+ */
+export async function normalizeContributorOrder(): Promise<void> {
+  await db.rawQuery(`
+    WITH normalized AS (
+      SELECT
+        "milestone_id",
+        "contributor_id",
+        ROW_NUMBER() OVER (
+          PARTITION BY "milestone_id"
+          ORDER BY MIN("order") ASC, "contributor_id" ASC
+        ) AS "new_order"
+      FROM "contributor_roles"
+      GROUP BY "milestone_id", "contributor_id"
+    )
+    UPDATE "contributor_roles" AS "target"
+    SET "order" = "normalized"."new_order"
+    FROM "normalized"
+    WHERE "target"."milestone_id" = "normalized"."milestone_id"
+      AND "target"."contributor_id" = "normalized"."contributor_id";
+  `);
+}
