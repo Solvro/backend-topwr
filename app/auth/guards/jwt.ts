@@ -68,7 +68,7 @@ interface RefreshTokenPayload extends SupportedPayload {
 
 export class JwtGuard implements GuardContract<User> {
   #ctx: HttpContext;
-  #trx?: TransactionClientContract;
+  #trx?: TransactionClientContract | undefined;
 
   constructor(ctx: HttpContext) {
     this.#ctx = ctx;
@@ -191,12 +191,8 @@ export class JwtGuard implements GuardContract<User> {
     return this;
   }
 
-  public async authenticate(
-    trx: TransactionClientContract | undefined = this.#trx,
-  ): Promise<User> {
-    this.#trx = undefined;
-
-    if (this.authenticationAttempted && trx === undefined) {
+  public async authenticate(): Promise<User> {
+    if (this.authenticationAttempted && this.#trx === undefined) {
       return this.getUserOrFail();
     }
 
@@ -212,7 +208,7 @@ export class JwtGuard implements GuardContract<User> {
 
     const owner = await User.find(
       userId,
-      trx === undefined ? undefined : { client: trx },
+      this.#trx === undefined ? undefined : { client: this.#trx },
     );
     if (owner === null) {
       this.throw401();
