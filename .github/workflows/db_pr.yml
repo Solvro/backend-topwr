@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Check out the base branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
@@ -54,8 +54,10 @@ jobs:
       - name: Run existing AdonisJS migrations
         run: node ace migration:run
 
-      - name: Check out the PR branch
-        uses: actions/checkout@v4
+      - name: Checkout the PR branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
       - name: Reinstall dependencies
         run: npm ci
@@ -125,8 +127,10 @@ jobs:
       - name: Seed the database
         run: node ace db:seed
 
-      - name: Check out the PR branch
-        uses: actions/checkout@v4
+      - name: Checkout the PR branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
       - name: Reinstall dependencies
         run: npm ci
@@ -147,9 +151,10 @@ jobs:
     name: Verify ordering
     runs-on: ubuntu-latest
     steps:
-      - name: Check out the PR branch
-        uses: actions/checkout@v4
+      - name: Checkout the PR branch
+        uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
           fetch-depth: 0 # need full history for diffing
 
       - name: Fetch the base commit
@@ -186,7 +191,6 @@ jobs:
       DB_PASSWORD: postgres
       DB_DATABASE: postgres
       PGPASSWORD: postgres
-      ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
 
     services:
       postgres:
@@ -210,7 +214,7 @@ jobs:
           EOF
 
       - name: Check out the base branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
@@ -233,9 +237,10 @@ jobs:
         env:
           DB_DATABASE: topwr1
 
-      - name: Check out the PR branch
-        uses: actions/checkout@v4
+      - name: Checkout the PR branch
+        uses: actions/checkout@v7
         with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
           fetch-depth: 0 # need full history for diffing
 
       - name: Fetch the base commit
@@ -298,7 +303,6 @@ jobs:
       DB_PASSWORD: postgres
       DB_DATABASE: postgres
       PGPASSWORD: postgres
-      ADMIN_RELATIONS_KEY: ${{ secrets.ADMIN_RELATIONS_KEY }}
 
     services:
       postgres:
@@ -315,7 +319,7 @@ jobs:
 
     steps:
       - name: Check out the base branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
 
@@ -336,8 +340,10 @@ jobs:
       - name: Run existing AdonisJS migrations
         run: node ace migration:run
 
-      - name: Check out the PR branch
-        uses: actions/checkout@v4
+      - name: Checkout the PR branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
       - name: Reinstall dependencies
         run: npm ci
