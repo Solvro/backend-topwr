@@ -33,8 +33,10 @@ jobs:
           - 5432:5432
 
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
       - name: Setup node
         uses: actions/setup-node@v4

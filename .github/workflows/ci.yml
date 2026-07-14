@@ -29,9 +29,10 @@ jobs:
       DB_DATABASE: postgres
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
+          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -52,7 +53,7 @@ jobs:
 
       - name: Check commit name
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
-        run: npx commitlint --from ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha  }} --to ${{ github.sha }} --verbose
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha  }} --to ${{ github.event.pull_request.head.sha || github.event.merge_group.head_sha }} --verbose
 
       - name: Run prettier
         run: npm run format:check
