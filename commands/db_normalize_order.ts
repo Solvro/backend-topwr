@@ -1,13 +1,13 @@
 import { BaseCommand, flags } from "@adonisjs/core/ace";
 import type { CommandOptions } from "@adonisjs/core/types/ace";
 
-import { normalizeOrderField } from "#utils/db";
+import { normalizeContributorOrder, normalizeOrderField } from "#utils/db";
 
 export default class DbNormalizeOrder extends BaseCommand {
   static commandName = "db:normalize-order";
   static description =
     "Replaces the order columns with a fresh integer sequence, keeping the entry order unchanged";
-  private orderedTables = ["contributors", "guide_articles", "guide_questions"];
+  private orderedTables = ["guide_articles", "guide_questions"];
 
   static options: CommandOptions = {
     startApp: true,
@@ -34,6 +34,10 @@ export default class DbNormalizeOrder extends BaseCommand {
     }
 
     const tasks = this.ui.tasks();
+    tasks.add("Normalize contributor order for each milestone", async () => {
+      await normalizeContributorOrder();
+      return "done";
+    });
     for (const table of this.orderedTables) {
       tasks.add(`Normalize order for table "${table}"`, async () => {
         await normalizeOrderField(table);
