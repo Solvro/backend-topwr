@@ -1,99 +1,16 @@
-import jwt from "jsonwebtoken";
-import crypto from "node:crypto";
-
 import { test } from "@japa/runner";
 
 import testUtils from "@adonisjs/core/services/test_utils";
-import db from "@adonisjs/lucid/services/db";
 
 import User from "#models/user";
-import env from "#start/env";
 
-function uniqueEmail(prefix: string) {
-  const id = crypto.randomUUID().slice(0, 8);
-  return `${prefix}-${id}@user.test`;
-}
+import {
+  createAdminWithToken,
+  createUniqueEmail,
+  createUserWithToken,
+} from "./auth_helpers.js";
 
-async function makeToken(user: User): Promise<string> {
-  const ACCESS_SECRET = env.get("ACCESS_SECRET");
-  const AUDIENCE = "admin.topwr.solvro.pl";
-  const ISSUER = "admin.topwr.solvro.pl";
-  const ACCESS_EXPIRES_IN_MS = Number.parseInt(
-    env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
-  );
-
-  return jwt.sign(
-    {
-      isRefresh: false,
-    },
-    ACCESS_SECRET,
-    {
-      subject: user.id.toString(),
-      audience: AUDIENCE,
-      issuer: ISSUER,
-      expiresIn: ACCESS_EXPIRES_IN_MS,
-      algorithm: "HS256",
-      allowInsecureKeySizes: false,
-      allowInvalidAsymmetricKeyTypes: false,
-    },
-  );
-}
-
-async function ensureSolvroAdminRoleId(): Promise<number> {
-  // Ensure 'solvro_admin' exists in access_roles and return its id
-  const existing: unknown = await db
-    .knexQuery()
-    .table("access_roles")
-    .where({ slug: "solvro_admin" })
-    .first();
-  if (existing !== null && existing !== undefined) {
-    return Number((existing as { id: number | string }).id);
-  }
-
-  const idNum = await db
-    .knexQuery()
-    .table("access_roles")
-    .insert({
-      slug: "solvro_admin",
-      created_at: new Date(),
-      updated_at: new Date(),
-    })
-    .returning("id")
-    .then((result: unknown) => {
-      if (Array.isArray(result)) {
-        const first = result[0] as unknown;
-        if (typeof first === "object" && first !== null && "id" in first) {
-          return Number((first as { id: number | string }).id);
-        }
-        return Number(first);
-      }
-      if (typeof result === "object" && result !== null && "id" in result) {
-        return Number((result as { id: number | string }).id);
-      }
-      return Number(result);
-    });
-
-  return idNum;
-}
-
-async function assignSolvroAdmin(user: User) {
-  const roleId = await ensureSolvroAdminRoleId();
-  // model_roles: model_type, model_id, role_id
-  const existing: unknown = await db
-    .knexQuery()
-    .table("model_roles")
-    .where({ model_type: "users", model_id: user.id, role_id: roleId })
-    .first();
-  if (existing === null || existing === undefined) {
-    await db.knexQuery().table("model_roles").insert({
-      model_type: "users",
-      model_id: user.id,
-      role_id: roleId,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-  }
-}
+const uniqueEmail = createUniqueEmail("user.test");
 
 test.group("User Management API", (group) => {
   group.setup(async () => {
@@ -107,13 +24,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const adminUser = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 1",
-    });
-    await assignSolvroAdmin(adminUser);
-    const token = await makeToken(adminUser);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin1",
+      "Solvro Admin",
+    );
 
     const response = await client.get("/api/v1/users").bearerToken(token);
 
@@ -139,12 +54,11 @@ test.group("User Management API", (group) => {
   test("get /api/v1/users requires superuser: regular user gets 403 ", async ({
     client,
   }) => {
-    const regularUser = await User.create({
-      email: uniqueEmail("student"),
-      password: "SecurePassword123!",
-      fullName: "Regular Student 1",
-    });
-    const token = await makeToken(regularUser);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user1",
+      "Regular User 1",
+    );
 
     const response = await client.get("/api/v1/users").bearerToken(token);
 
@@ -155,13 +69,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 2",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin2",
+      "Solvro Admin 2",
+    );
 
     const targetUser = await User.create({
       email: uniqueEmail("target"),
@@ -184,12 +96,12 @@ test.group("User Management API", (group) => {
   test("get /api/v1/users/:id requires superuser: regular user gets 403", async ({
     client,
   }) => {
-    const student = await User.create({
-      email: uniqueEmail("student"),
-      password: "SecurePassword123!",
-      fullName: "Regular User 2",
-    });
-    const token = await makeToken(student);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user2",
+      "Regular User 2",
+    );
+
     const targetUser = await User.create({
       email: uniqueEmail("target_user"),
       password: "SecurePassword!987",
@@ -220,13 +132,11 @@ test.group("User Management API", (group) => {
   test("get /api/v1/users/:id returns 404 when user does not exist", async ({
     client,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 3",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin3",
+      "Solvro Admin 3",
+    );
     const fakeId = 999999;
 
     const response = await client
@@ -248,12 +158,11 @@ test.group("User Management API", (group) => {
   test("get /api/v1/users/:id prevents data leak: regular user gets 403 for nonexistent user", async ({
     client,
   }) => {
-    const regularUser = await User.create({
-      email: uniqueEmail("student"),
-      password: "SecurePassword123!",
-      fullName: "Regular User",
-    });
-    const token = await makeToken(regularUser);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user3",
+      "Regular User 3",
+    );
     const fakeId = 999999;
 
     const response = await client
@@ -267,13 +176,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const adminUser = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 4",
-    });
-    await assignSolvroAdmin(adminUser);
-    const token = await makeToken(adminUser);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin4",
+      "Solvro Admin 4",
+    );
 
     const newUserEmail = uniqueEmail("new.user");
     const newUserData = {
@@ -302,14 +209,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 5",
-    });
-
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin5",
+      "Solvro Admin 5",
+    );
 
     const newUserBadData = {
       email: uniqueEmail("bad_pass"),
@@ -330,13 +234,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 6",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin6",
+      "Solvro Admin 6",
+    );
 
     const takenEmail = uniqueEmail("taken");
     await User.create({
@@ -363,12 +265,11 @@ test.group("User Management API", (group) => {
   test("post /api/v1/users requires superuser: regular user gets 403", async ({
     client,
   }) => {
-    const regularUser = await User.create({
-      email: uniqueEmail("student"),
-      password: "SecurePassword123!",
-      fullName: "Regular User",
-    });
-    const token = await makeToken(regularUser);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user4",
+      "Regular User 4",
+    );
 
     const newUser = {
       email: uniqueEmail("new_user"),
@@ -401,13 +302,11 @@ test.group("User Management API", (group) => {
   test("delete /api/v1/users/:id deletes user when requested by admin", async ({
     client,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 7",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin7",
+      "Solvro Admin 7",
+    );
 
     const userToDelete = await User.create({
       email: uniqueEmail("to_delete"),
@@ -427,12 +326,11 @@ test.group("User Management API", (group) => {
   test("delete /api/v1/users/:id requires superuser: regular user gets 403", async ({
     client,
   }) => {
-    const regularUser = await User.create({
-      email: uniqueEmail("student"),
-      password: "SecurePassword123!",
-      fullName: "Regular User",
-    });
-    const token = await makeToken(regularUser);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user5",
+      "Regular User 5",
+    );
 
     const targetUser = await User.create({
       email: uniqueEmail("targe_user"),
@@ -464,13 +362,11 @@ test.group("User Management API", (group) => {
   test("delete /api/v1/users/:id returns 404 when user does not exist", async ({
     client,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 8",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin8",
+      "Solvro Admin 8",
+    );
 
     const fakeUserId = 999999;
 
@@ -493,12 +389,11 @@ test.group("User Management API", (group) => {
   test("delete /api/v1/users/:id prevents data leak: regular user gets 403 for nonexistent user", async ({
     client,
   }) => {
-    const regularUser = await User.create({
-      email: uniqueEmail("student"),
-      password: "SecurePassword123!",
-      fullName: "Regular User",
-    });
-    const token = await makeToken(regularUser);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user6",
+      "Regular User 6",
+    );
     const fakeId = 999999;
 
     const response = await client
@@ -512,13 +407,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 9",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin9",
+      "Solvro Admin 9",
+    );
 
     const originalEmail = uniqueEmail("to_change");
     const targetUser = await User.create({
@@ -554,12 +447,11 @@ test.group("User Management API", (group) => {
   test("patch /api/v1/users/:id requires superuser: regular user gets 403", async ({
     client,
   }) => {
-    const regularUser = await User.create({
-      email: uniqueEmail("regular_user"),
-      password: "SecurePassword123!",
-      fullName: "Regular User",
-    });
-    const token = await makeToken(regularUser);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user7",
+      "Regular User 7",
+    );
 
     const targetUser = await User.create({
       email: uniqueEmail("target_user"),
@@ -596,13 +488,11 @@ test.group("User Management API", (group) => {
   test("patch /api/v1/users/:id returns 404 when user does not exist", async ({
     client,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 9",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin10",
+      "Solvro Admin 10",
+    );
 
     const fakeUserId = 999999;
 
@@ -630,12 +520,11 @@ test.group("User Management API", (group) => {
   test("patch /api/v1/users/:id prevents data leak: regular user gets 403 for nonexistent user", async ({
     client,
   }) => {
-    const regularUser = await User.create({
-      email: uniqueEmail("student"),
-      password: "SecurePassword123!",
-      fullName: "Regular User",
-    });
-    const token = await makeToken(regularUser);
+    const { token } = await createUserWithToken(
+      uniqueEmail,
+      "user8",
+      "Regular User 8",
+    );
     const fakeId = 999999;
 
     const response = await client
@@ -652,13 +541,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 10",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin11",
+      "Solvro Admin 11",
+    );
 
     const targetUser = await User.create({
       email: uniqueEmail("target_user"),
@@ -688,13 +575,11 @@ test.group("User Management API", (group) => {
     client,
     assert,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin"),
-      password: "SecurePassword123!",
-      fullName: "Admin 11",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { token } = await createAdminWithToken(
+      uniqueEmail,
+      "admin12",
+      "Solvro Admin 12",
+    );
 
     const targetUser = await User.create({
       email: uniqueEmail("target_user"),

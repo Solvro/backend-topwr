@@ -1,5 +1,4 @@
 import { Acl } from "@holoyan/adonisjs-permissions";
-import jwt from "jsonwebtoken";
 import crypto from "node:crypto";
 
 import { test } from "@japa/runner";
@@ -13,39 +12,22 @@ import { OrganizationStatus } from "#enums/organization_status";
 import { OrganizationType } from "#enums/organization_type";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 import User from "#models/user";
-import env from "#start/env";
 import {
   aclTotal,
   deleteOrphanedPermissionsForModel,
   deletePermissionsForEntity,
 } from "#utils/permissions";
 
+import {
+  createAdminWithToken,
+  createUniqueEmail,
+  createUserWithToken,
+} from "./auth_helpers.js";
+
+const uniqueEmail = createUniqueEmail("cleanup.test");
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function uniqueEmail(prefix: string) {
-  const id = crypto.randomUUID().slice(0, 8);
-  return `${prefix}-${id}@cleanup.test`;
-}
-
-async function makeToken(user: User): Promise<string> {
-  const ACCESS_SECRET = env.get("ACCESS_SECRET");
-  const AUDIENCE = "admin.topwr.solvro.pl";
-  const ISSUER = "admin.topwr.solvro.pl";
-  const ACCESS_EXPIRES_IN_MS = Number.parseInt(
-    env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
-  );
-  return jwt.sign({ isRefresh: false }, ACCESS_SECRET, {
-    subject: user.id.toString(),
-    audience: AUDIENCE,
-    issuer: ISSUER,
-    expiresIn: ACCESS_EXPIRES_IN_MS,
-    algorithm: "HS256",
-    allowInsecureKeySizes: false,
-    allowInvalidAsymmetricKeyTypes: false,
-  });
-}
 
 async function countPermissionsFor(
   entityType: string,
@@ -139,50 +121,6 @@ async function insertModelRoleRow(
     created_at: new Date(),
     updated_at: new Date(),
   });
-}
-
-async function ensureSolvroAdminRoleId(): Promise<number> {
-  const existing = (await db
-    .knexQuery()
-    .table("access_roles")
-    .where({ slug: "solvro_admin" })
-    .first()) as { id: number | string } | undefined | null;
-  if (existing !== null && existing !== undefined) {
-    return Number(existing.id);
-  }
-  const result = await db
-    .knexQuery()
-    .table("access_roles")
-    .insert({
-      slug: "solvro_admin",
-      created_at: new Date(),
-      updated_at: new Date(),
-    })
-    .returning("id");
-  const first = (result as unknown[])[0];
-  if (typeof first === "object" && first !== null && "id" in first) {
-    return Number((first as { id: number | string }).id);
-  }
-  return Number(first);
-}
-
-async function assignSolvroAdmin(user: User): Promise<void> {
-  const roleId = await ensureSolvroAdminRoleId();
-  const exists = await db
-    .knexQuery()
-    .table("model_roles")
-    .where({ model_type: "users", model_id: user.id, role_id: roleId })
-    .first()
-    .then((row: unknown) => row !== null && row !== undefined);
-  if (!exists) {
-    await db.knexQuery().table("model_roles").insert({
-      model_type: "users",
-      model_id: user.id,
-      role_id: roleId,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-  }
 }
 
 async function createBaseDraft(
@@ -499,13 +437,13 @@ test.group("BaseController.destroy() auto-cleanup", (group) => {
     client,
     assert,
   }) => {
-    const user = await User.create({
-      email: uniqueEmail("destroycleanup1"),
-      password: "Passw0rd!",
-      fullName: "Destroy Cleanup User",
-    });
+    const { user, token } = await createUserWithToken(
+      uniqueEmail,
+      "destroycleanup",
+      "Destroy Cleanup User",
+    );
+
     await user.refresh();
-    const token = await makeToken(user);
 
     const draft = await createBaseDraft(user.id);
 
@@ -549,13 +487,13 @@ test.group("BaseController.destroy() auto-cleanup", (group) => {
     client,
     assert,
   }) => {
-    const user = await User.create({
-      email: uniqueEmail("destroycleanup2"),
-      password: "Passw0rd!",
-      fullName: "Destroy Cleanup User 2",
-    });
+    const { user, token } = await createUserWithToken(
+      uniqueEmail,
+      "destroycleanup2",
+      "Destroy Cleanup User 2",
+    );
+
     await user.refresh();
-    const token = await makeToken(user);
 
     const draftToDelete = await createBaseDraft(user.id);
     const draftToKeep = await createBaseDraft(user.id);
@@ -603,13 +541,13 @@ test.group("BaseController.destroy() auto-cleanup", (group) => {
     });
 
     // Need solvro_admin to delete a Library
-    const admin = await User.create({
-      email: uniqueEmail("libadmin"),
-      password: "Passw0rd!",
-      fullName: "Lib Admin",
-    });
-    await assignSolvroAdmin(admin);
-    const token = await makeToken(admin);
+    const { user: admin, token } = await createAdminWithToken(
+      uniqueEmail,
+      "libadmin",
+      "Lib Admin",
+    );
+
+    await admin.refresh();
 
     const res = await client
       .delete(`/api/v1/libraries/${lib.id}`)
