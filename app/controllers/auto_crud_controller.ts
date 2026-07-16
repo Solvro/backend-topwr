@@ -494,6 +494,16 @@ export default abstract class AutoCrudController<
           );
           break;
         }
+        if (!relation.booted) {
+          try {
+            relation.boot();
+          } catch (e) {
+            issues.push(
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              `Issue with relation '${relationDef}': Failed to boot subrelation '${nextRelation}' on '${currentModel.name}': ${typeof e === "object" && "message" in e ? e.message : e}`,
+            );
+          }
+        }
         currentModel = relation.relatedModel();
       }
     }
@@ -522,6 +532,16 @@ export default abstract class AutoCrudController<
         issues.push(
           `ManyToMany relation '${relationDef}' isn't properly typed`,
         );
+      }
+      if (!relation.booted) {
+        try {
+          relation.boot();
+        } catch (e) {
+          issues.push(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            `Failed to boot CRUD relation '${relationDef}': ${typeof e === "object" && "message" in e ? e.message : e}`,
+          );
+        }
       }
       const relatedModel = relation.relatedModel();
       for (const [name, column] of relatedModel.$columnsDefinitions.entries()) {
