@@ -24,6 +24,7 @@ export default class StudentOrganizationTag extends BaseModel {
   @typedManyToMany(() => StudentOrganization, {
     pivotTable: "student_organizations_student_organization_tags",
     localKey: "tag",
+    relatedKey: "id",
     pivotForeignKey: "tag",
     pivotRelatedForeignKey: "student_organization_id",
     pivotTimestamps: true,

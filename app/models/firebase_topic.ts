@@ -52,7 +52,8 @@ export default class FirebaseTopic extends BaseModel {
 
   @typedManyToMany(() => PushNotificationEntry, {
     pivotTable: "push_notification_entries_topics",
-    localKey: "topic_name",
+    localKey: "topicName",
+    relatedKey: "id",
     pivotForeignKey: "firebase_topic_topic_name",
     pivotRelatedForeignKey: "push_notification_entry_id",
     pivotTimestamps: false,
