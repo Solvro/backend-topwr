@@ -33,7 +33,9 @@ export default class DasTimetable extends BaseModel {
   })
   declare das: BelongsTo<typeof Das>;
 
-  @hasMany(() => DasTimetableEntry)
+  @hasMany(() => DasTimetableEntry, {
+    foreignKey: "timetableId",
+  })
   declare entries: HasMany<typeof DasTimetableEntry>;
 
   static preloadRelations = preloadRelations();
