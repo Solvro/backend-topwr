@@ -12,13 +12,7 @@ import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganization from "#models/student_organization";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 
-import {
-  createAdminWithToken,
-  createUniqueEmail,
-  createUserWithToken,
-} from "./auth_helpers.js";
-
-const uniqueEmail = createUniqueEmail("drafts.test");
+import { createAdminWithToken, createUserWithToken } from "./auth_helpers.js";
 
 test.group("Drafts ACL (per-model and class-level)", (group) => {
   group.setup(async () => {
@@ -31,18 +25,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
   test("student org draft: per-model read allows only assigned user", async ({
     client,
   }) => {
-    const { user: u1, token: t1 } = await createUserWithToken(
-      uniqueEmail,
-      "u1",
-      "User 1",
-    );
-    const { user: u2, token: t2 } = await createUserWithToken(
-      uniqueEmail,
-      "u2",
-      "User 2",
-    );
-    await u1.refresh();
-    await u2.refresh();
+    const { user: u1, token: t1 } = await createUserWithToken("u1", "User 1");
+    const { token: t2 } = await createUserWithToken("u2", "User 2");
 
     const draft = await StudentOrganizationDraft.create({
       name: "Draft Org A",
@@ -71,13 +55,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
   test("student org draft: class-level read allows any draft", async ({
     client,
   }) => {
-    const { user: user3, token } = await createUserWithToken(
-      uniqueEmail,
-      "user3",
-      "User 3",
-    );
-
-    await user3.refresh();
+    const { user: user3, token } = await createUserWithToken("user3", "User 3");
 
     const d1 = await StudentOrganizationDraft.create({
       name: "Draft Org B",
@@ -117,17 +95,10 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     client,
   }) => {
     const { user: u1, token: t1 } = await createUserWithToken(
-      uniqueEmail,
       "user4",
       "User 4",
     );
-    const { user: u2, token: t2 } = await createUserWithToken(
-      uniqueEmail,
-      "user5",
-      "User 5",
-    );
-    await u1.refresh();
-    await u2.refresh();
+    const { token: t2 } = await createUserWithToken("user5", "User 5");
 
     const draft = await StudentOrganizationDraft.create({
       name: "Draft Org D",
@@ -157,17 +128,10 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
 
   test("guide article draft: per-model read and update", async ({ client }) => {
     const { user: u1, token: t1 } = await createUserWithToken(
-      uniqueEmail,
       "user6",
       "User 6",
     );
-    const { user: u2, token: t2 } = await createUserWithToken(
-      uniqueEmail,
-      "user7",
-      "User 7",
-    );
-    await u1.refresh();
-    await u2.refresh();
+    const { token: t2 } = await createUserWithToken("user7", "User 7");
 
     const { default: FileEntry } = await import("#models/file_entry");
     const file = FileEntry.createNew("png");
@@ -210,13 +174,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
   test("student org draft: store requires class-level create on StudentOrganizationDraft and suggest_new StudentOrganization", async ({
     client,
   }) => {
-    const { user, token } = await createUserWithToken(
-      uniqueEmail,
-      "user8",
-      "User 8",
-    );
-
-    await user.refresh();
+    const { user, token } = await createUserWithToken("user8", "User 8");
 
     // no permission -> 403
     const noPerm = await client
@@ -270,12 +228,10 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     client,
   }) => {
     const { user: owner, token: tOwner } = await createUserWithToken(
-      uniqueEmail,
       "u14",
       "Owner",
     );
     const { user: other, token: tOther } = await createUserWithToken(
-      uniqueEmail,
       "u15",
       "Other",
     );
@@ -335,12 +291,10 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     client,
   }) => {
     const { user: owner, token: tOwner } = await createUserWithToken(
-      uniqueEmail,
       "u16",
       "Owner",
     );
     const { user: other, token: tOther } = await createUserWithToken(
-      uniqueEmail,
       "u17",
       "Other",
     );
@@ -393,18 +347,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
   test("student org draft: destroy requires permission; per-model allowed", async ({
     client,
   }) => {
-    const { user: u1, token: t1 } = await createUserWithToken(
-      uniqueEmail,
-      "u9",
-      "User 9",
-    );
-    const { user: u2, token: t2 } = await createUserWithToken(
-      uniqueEmail,
-      "u10",
-      "User 10",
-    );
-    await u1.refresh();
-    await u2.refresh();
+    const { user: u1, token: t1 } = await createUserWithToken("u9", "User 9");
+    const { token: t2 } = await createUserWithToken("u10", "User 10");
 
     const draft = await StudentOrganizationDraft.create({
       name: "Draft To Delete",
@@ -434,11 +378,7 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
   test("guide article draft: store requires class-level create on GuideArticleDraft and suggest_new GuideArticle", async ({
     client,
   }) => {
-    const { user, token } = await createUserWithToken(
-      uniqueEmail,
-      "user11",
-      "User",
-    );
+    const { user, token } = await createUserWithToken("user11", "User");
 
     const { default: FileEntry } = await import("#models/file_entry");
     const { default: GuideArticle } = await import("#models/guide_article");
@@ -491,16 +431,8 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
   test("guide article draft: destroy requires per-model", async ({
     client,
   }) => {
-    const { user: u1, token: t1 } = await createUserWithToken(
-      uniqueEmail,
-      "u12",
-      "User 12",
-    );
-    const { token: t2 } = await createUserWithToken(
-      uniqueEmail,
-      "u13",
-      "User 13",
-    );
+    const { user: u1, token: t1 } = await createUserWithToken("u12", "User 12");
+    const { token: t2 } = await createUserWithToken("u13", "User 13");
 
     const { default: FileEntry } = await import("#models/file_entry");
     const file2 = FileEntry.createNew("png");
@@ -532,12 +464,9 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     assert,
   }) => {
     const { user: adminUser, token: adminToken } = await createAdminWithToken(
-      uniqueEmail,
       "admin1",
       "Admin 1",
     );
-
-    await adminUser.refresh();
 
     const draft = await StudentOrganizationDraft.create({
       name: "Draft Org To Approve",
@@ -575,12 +504,9 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     assert,
   }) => {
     const { user: adminUser, token: adminToken } = await createAdminWithToken(
-      uniqueEmail,
       "admin2",
       "Admin 2",
     );
-
-    await adminUser.refresh();
 
     const existingOrg = await StudentOrganization.create({
       name: "Existing Org",
@@ -623,12 +549,9 @@ test.group("Drafts ACL (per-model and class-level)", (group) => {
     client,
   }) => {
     const { user: regularUser, token } = await createUserWithToken(
-      uniqueEmail,
       "regular-approve",
       "Regular User",
     );
-
-    await regularUser.refresh();
 
     const draft = await StudentOrganizationDraft.create({
       name: "Draft Org No Approve",

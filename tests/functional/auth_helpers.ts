@@ -6,11 +6,9 @@ import db from "@adonisjs/lucid/services/db";
 import User from "#models/user";
 import env from "#start/env";
 
-export function createUniqueEmail(domain: string) {
-  return (prefix: string): string => {
-    const id = crypto.randomUUID().slice(0, 8);
-    return `${prefix}-${id}@${domain}`;
-  };
+export function uniqueEmail(prefix: string): string {
+  const id = crypto.randomUUID().slice(0, 8);
+  return `${prefix}-${id}@example.test`;
 }
 
 export async function makeToken(user: User): Promise<string> {
@@ -95,30 +93,30 @@ export async function assignSolvroAdmin(user: User) {
 }
 
 export async function createUserWithToken(
-  uniqueEmail: (prefix: string) => string,
   prefix: string,
   fullName: string,
-): Promise<{ user: User; token: string }> {
+): Promise<{ user: User; token: string; password: string }> {
+  const password = `Test-${crypto.randomUUID().slice(0, 8)}!`;
   const user = await User.create({
     email: uniqueEmail(prefix),
-    password: "Passw0rd!",
+    password,
     fullName,
   });
   const token = await makeToken(user);
-  return { user, token };
+  return { user, token, password };
 }
 
 export async function createAdminWithToken(
-  uniqueEmail: (prefix: string) => string,
   prefix: string,
   fullName: string,
-): Promise<{ user: User; token: string }> {
+): Promise<{ user: User; token: string; password: string }> {
+  const password = `Test-${crypto.randomUUID().slice(0, 8)}!`;
   const user = await User.create({
     email: uniqueEmail(prefix),
-    password: "Passw0rd!",
+    password,
     fullName,
   });
   await assignSolvroAdmin(user);
   const token = await makeToken(user);
-  return { user, token };
+  return { user, token, password };
 }

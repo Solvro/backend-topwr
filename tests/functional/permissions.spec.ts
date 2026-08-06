@@ -10,13 +10,7 @@ import Milestone from "#models/milestone";
 import Role from "#models/role";
 import User from "#models/user";
 
-import {
-  createAdminWithToken,
-  createUniqueEmail,
-  createUserWithToken,
-} from "./auth_helpers.js";
-
-const uniqueEmail = createUniqueEmail("perm.test");
+import { createAdminWithToken, createUserWithToken } from "./auth_helpers.js";
 
 test.group("Permissions", (group) => {
   group.setup(async () => {
@@ -27,7 +21,7 @@ test.group("Permissions", (group) => {
   });
   group.each.teardown(async () => {
     // Light cleanup for test-created users and libraries
-    await User.query().where("email", "like", "%@perm.test").delete();
+    await User.query().where("email", "like", "%@example.test").delete();
     await Library.query().where("title", "like", "PermTest %").delete();
   });
 
@@ -40,11 +34,7 @@ test.group("Permissions", (group) => {
   test("store requires permission: regular user gets 403", async ({
     client,
   }) => {
-    const { token } = await createUserWithToken(
-      uniqueEmail,
-      "user1",
-      "Perm User 1",
-    );
+    const { token } = await createUserWithToken("user1", "Perm User 1");
 
     const res = await client
       .post("/api/v1/libraries")
@@ -55,11 +45,7 @@ test.group("Permissions", (group) => {
   });
 
   test("solvro_admin bypass: can store", async ({ client, assert }) => {
-    const { token } = await createAdminWithToken(
-      uniqueEmail,
-      "admin1",
-      "Solvro Admin",
-    );
+    const { token } = await createAdminWithToken("admin1", "Solvro Admin");
 
     const res = await client
       .post("/api/v1/libraries")
@@ -86,7 +72,6 @@ test.group("Permissions", (group) => {
   }) => {
     // Create a record as solvro_admin
     const { token: adminToken } = await createAdminWithToken(
-      uniqueEmail,
       "admin2",
       "Solvro Admin 2",
     );
@@ -106,7 +91,6 @@ test.group("Permissions", (group) => {
 
     // Regular user cannot update
     const { token: userToken } = await createUserWithToken(
-      uniqueEmail,
       "user2",
       "Perm User 2",
     );
@@ -132,7 +116,6 @@ test.group("Permissions", (group) => {
     assert,
   }) => {
     const { token: adminToken } = await createAdminWithToken(
-      uniqueEmail,
       "admin3",
       "Solvro Admin 3",
     );
@@ -157,7 +140,6 @@ test.group("Permissions", (group) => {
 
     // Regular user cannot create related
     const { token: userToken } = await createUserWithToken(
-      uniqueEmail,
       "user3",
       "Perm User 3",
     );
@@ -195,13 +177,11 @@ test.group("Permissions", (group) => {
     const milestone = await Milestone.create({ name: "PermTest Milestone" });
 
     const { token: userToken } = await createUserWithToken(
-      uniqueEmail,
       "user4",
       "Perm User 4",
     );
 
     const { token: adminToken } = await createAdminWithToken(
-      uniqueEmail,
       "admin4",
       "Solvro Admin 4",
     );
@@ -243,7 +223,6 @@ test.group("Permissions", (group) => {
     client,
   }) => {
     const { token: adminToken } = await createAdminWithToken(
-      uniqueEmail,
       "admin5",
       "Solvro Admin 5",
     );
@@ -263,7 +242,6 @@ test.group("Permissions", (group) => {
 
     // Regular user cannot delete
     const { token: userToken } = await createUserWithToken(
-      uniqueEmail,
       "user5",
       "Perm User 5",
     );

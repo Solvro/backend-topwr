@@ -20,11 +20,10 @@ import {
 
 import {
   createAdminWithToken,
-  createUniqueEmail,
   createUserWithToken,
+  uniqueEmail,
 } from "./auth_helpers.js";
 
-const uniqueEmail = createUniqueEmail("cleanup.test");
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -438,12 +437,9 @@ test.group("BaseController.destroy() auto-cleanup", (group) => {
     assert,
   }) => {
     const { user, token } = await createUserWithToken(
-      uniqueEmail,
       "destroycleanup",
       "Destroy Cleanup User",
     );
-
-    await user.refresh();
 
     const draft = await createBaseDraft(user.id);
 
@@ -488,12 +484,9 @@ test.group("BaseController.destroy() auto-cleanup", (group) => {
     assert,
   }) => {
     const { user, token } = await createUserWithToken(
-      uniqueEmail,
       "destroycleanup2",
       "Destroy Cleanup User 2",
     );
-
-    await user.refresh();
 
     const draftToDelete = await createBaseDraft(user.id);
     const draftToKeep = await createBaseDraft(user.id);
@@ -541,13 +534,7 @@ test.group("BaseController.destroy() auto-cleanup", (group) => {
     });
 
     // Need solvro_admin to delete a Library
-    const { user: admin, token } = await createAdminWithToken(
-      uniqueEmail,
-      "libadmin",
-      "Lib Admin",
-    );
-
-    await admin.refresh();
+    const { token } = await createAdminWithToken("libadmin", "Lib Admin");
 
     const res = await client
       .delete(`/api/v1/libraries/${lib.id}`)
