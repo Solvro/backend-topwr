@@ -7,7 +7,7 @@ export default class DbNormalizeOrder extends BaseCommand {
   static commandName = "db:normalize-order";
   static description =
     "Replaces the order columns with a fresh integer sequence, keeping the entry order unchanged";
-  private orderedTables = ["guide_articles", "guide_questions"];
+  private readonly orderedTables = ["guide_articles", "guide_questions"];
 
   static options: CommandOptions = {
     startApp: true,

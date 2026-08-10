@@ -47,11 +47,11 @@ export class AutogenCacheEntry {
   #storeValidator?: AnyValidator;
   #updateValidator?: AnyValidator;
   // indexed by relation name
-  #relationStoreValidators = new Map<string, AnyValidator>();
-  #relationAttachValidators = new Map<string, AnyValidator>();
-  #relationDetachValidators = new Map<string, AnyValidator>();
-  #relationUpdatePivotValidators = new Map<string, AnyValidator>();
-  #manyToManyIdValidators = new Map<string, AnyValidator>();
+  readonly #relationStoreValidators = new Map<string, AnyValidator>();
+  readonly #relationAttachValidators = new Map<string, AnyValidator>();
+  readonly #relationDetachValidators = new Map<string, AnyValidator>();
+  readonly #relationUpdatePivotValidators = new Map<string, AnyValidator>();
+  readonly #manyToManyIdValidators = new Map<string, AnyValidator>();
 
   private constructor(model: LucidModel) {
     this.model = model;

@@ -58,10 +58,10 @@ export default class NewsfeedService {
     {};
   private static interval?: NodeJS.Timeout;
 
-  private static parseNewsfeedItem = (
+  private static parseNewsfeedItem(
     newsfeedItem: HTMLElement,
     baseUrl: string,
-  ): NewsfeedArticle => {
+  ): NewsfeedArticle {
     const imageLink = newsfeedItem
       .querySelector(".photo")
       ?.querySelector("img")
@@ -86,7 +86,7 @@ export default class NewsfeedService {
       categories,
       previewText: newsfeedItem.querySelector("p.desc")?.textContent.trim(),
     };
-  };
+  }
 
   private static extractNewsfeedItems(
     html: string,

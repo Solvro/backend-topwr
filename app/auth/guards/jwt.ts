@@ -66,7 +66,7 @@ interface RefreshTokenPayload extends SupportedPayload {
 }
 
 export class JwtGuard implements GuardContract<User> {
-  #ctx: HttpContext;
+  readonly #ctx: HttpContext;
 
   constructor(ctx: HttpContext) {
     this.#ctx = ctx;
