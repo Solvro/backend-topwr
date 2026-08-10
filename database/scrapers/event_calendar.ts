@@ -27,13 +27,13 @@ interface GoogleCalendarEventDto {
 }
 
 class CalendarParser {
-  private events: ICSObject[];
+  private readonly events: ICSObject[];
 
   constructor(
-    private calendarString: string,
+    private readonly calendarString: string,
     // In case no logging is needed
     // eslint-disable-next-line @typescript-eslint/no-empty-function
-    private logger: (message: string) => void = (_) => {},
+    private readonly logger: (message: string) => void = (_) => {},
   ) {
     if (
       !this.calendarString.startsWith("BEGIN:VCALENDAR") ||
