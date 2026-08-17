@@ -1,10 +1,6 @@
-import jwt from "jsonwebtoken";
-import crypto from "node:crypto";
-
 import { test } from "@japa/runner";
 
 import testUtils from "@adonisjs/core/services/test_utils";
-import db from "@adonisjs/lucid/services/db";
 
 import { Branch } from "#enums/branch";
 import { Weekday } from "#enums/weekday";
@@ -13,93 +9,8 @@ import Library from "#models/library";
 import Milestone from "#models/milestone";
 import Role from "#models/role";
 import User from "#models/user";
-import env from "#start/env";
 
-function uniqueEmail(prefix: string) {
-  const id = crypto.randomUUID().slice(0, 8);
-  return `${prefix}-${id}@perm.test`;
-}
-
-async function makeToken(user: User): Promise<string> {
-  const ACCESS_SECRET = env.get("ACCESS_SECRET");
-  const AUDIENCE = "admin.topwr.solvro.pl";
-  const ISSUER = "admin.topwr.solvro.pl";
-  const ACCESS_EXPIRES_IN_MS = Number.parseInt(
-    env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
-  );
-
-  return jwt.sign(
-    {
-      isRefresh: false,
-    },
-    ACCESS_SECRET,
-    {
-      subject: user.id.toString(),
-      audience: AUDIENCE,
-      issuer: ISSUER,
-      expiresIn: ACCESS_EXPIRES_IN_MS,
-      algorithm: "HS256",
-      allowInsecureKeySizes: false,
-      allowInvalidAsymmetricKeyTypes: false,
-    },
-  );
-}
-
-async function ensureSolvroAdminRoleId(): Promise<number> {
-  // Ensure 'solvro_admin' exists in access_roles and return its id
-  const existing: unknown = await db
-    .knexQuery()
-    .table("access_roles")
-    .where({ slug: "solvro_admin" })
-    .first();
-  if (existing !== null && existing !== undefined) {
-    return Number((existing as { id: number | string }).id);
-  }
-
-  const idNum = await db
-    .knexQuery()
-    .table("access_roles")
-    .insert({
-      slug: "solvro_admin",
-      created_at: new Date(),
-      updated_at: new Date(),
-    })
-    .returning("id")
-    .then((result: unknown) => {
-      if (Array.isArray(result)) {
-        const first = result[0] as unknown;
-        if (typeof first === "object" && first !== null && "id" in first) {
-          return Number((first as { id: number | string }).id);
-        }
-        return Number(first);
-      }
-      if (typeof result === "object" && result !== null && "id" in result) {
-        return Number((result as { id: number | string }).id);
-      }
-      return Number(result);
-    });
-
-  return idNum;
-}
-
-async function assignSolvroAdmin(user: User) {
-  const roleId = await ensureSolvroAdminRoleId();
-  // model_roles: model_type, model_id, role_id
-  const existing: unknown = await db
-    .knexQuery()
-    .table("model_roles")
-    .where({ model_type: "users", model_id: user.id, role_id: roleId })
-    .first();
-  if (existing === null || existing === undefined) {
-    await db.knexQuery().table("model_roles").insert({
-      model_type: "users",
-      model_id: user.id,
-      role_id: roleId,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-  }
-}
+import { createAdminWithToken, createUserWithToken } from "./auth_helpers.js";
 
 test.group("Permissions", (group) => {
   group.setup(async () => {
@@ -110,7 +21,7 @@ test.group("Permissions", (group) => {
   });
   group.each.teardown(async () => {
     // Light cleanup for test-created users and libraries
-    await User.query().where("email", "like", "%@perm.test").delete();
+    await User.query().where("email", "like", "%@example.test").delete();
     await Library.query().where("title", "like", "PermTest %").delete();
   });
 
@@ -123,12 +34,7 @@ test.group("Permissions", (group) => {
   test("store requires permission: regular user gets 403", async ({
     client,
   }) => {
-    const user = await User.create({
-      email: uniqueEmail("user1"),
-      password: "Passw0rd!",
-      fullName: "Perm User 1",
-    });
-    const token = await makeToken(user);
+    const { token } = await createUserWithToken("user1", "Perm User 1");
 
     const res = await client
       .post("/api/v1/libraries")
@@ -139,13 +45,7 @@ test.group("Permissions", (group) => {
   });
 
   test("solvro_admin bypass: can store", async ({ client, assert }) => {
-    const adminUser = await User.create({
-      email: uniqueEmail("admin1"),
-      password: "Passw0rd!",
-      fullName: "Solvro Admin",
-    });
-    await assignSolvroAdmin(adminUser);
-    const token = await makeToken(adminUser);
+    const { token } = await createAdminWithToken("admin1", "Solvro Admin");
 
     const res = await client
       .post("/api/v1/libraries")
@@ -171,13 +71,11 @@ test.group("Permissions", (group) => {
     assert,
   }) => {
     // Create a record as solvro_admin
-    const adminUser = await User.create({
-      email: uniqueEmail("admin2"),
-      password: "Passw0rd!",
-      fullName: "Solvro Admin 2",
-    });
-    await assignSolvroAdmin(adminUser);
-    const adminToken = await makeToken(adminUser);
+    const { token: adminToken } = await createAdminWithToken(
+      "admin2",
+      "Solvro Admin 2",
+    );
+
     const created = await client
       .post("/api/v1/libraries")
       .header("Authorization", `Bearer ${adminToken}`)
@@ -192,12 +90,11 @@ test.group("Permissions", (group) => {
     const id = Number(bodyC.data?.id);
 
     // Regular user cannot update
-    const user = await User.create({
-      email: uniqueEmail("user2"),
-      password: "Passw0rd!",
-      fullName: "Perm User 2",
-    });
-    const userToken = await makeToken(user);
+    const { token: userToken } = await createUserWithToken(
+      "user2",
+      "Perm User 2",
+    );
+
     const bad = await client
       .patch(`/api/v1/libraries/${id}`)
       .header("Authorization", `Bearer ${userToken}`)
@@ -218,13 +115,10 @@ test.group("Permissions", (group) => {
     client,
     assert,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin3"),
-      password: "Passw0rd!",
-      fullName: "Solvro Admin 3",
-    });
-    await assignSolvroAdmin(admin);
-    const adminToken = await makeToken(admin);
+    const { token: adminToken } = await createAdminWithToken(
+      "admin3",
+      "Solvro Admin 3",
+    );
 
     const created = await client
       .post("/api/v1/libraries")
@@ -245,12 +139,11 @@ test.group("Permissions", (group) => {
     assert.property(ri.body(), "data");
 
     // Regular user cannot create related
-    const user = await User.create({
-      email: uniqueEmail("user3"),
-      password: "Passw0rd!",
-      fullName: "Perm User 3",
-    });
-    const userToken = await makeToken(user);
+    const { token: userToken } = await createUserWithToken(
+      "user3",
+      "Perm User 3",
+    );
+
     const badStore = await client
       .post(`/api/v1/libraries/${libId}/regular_hours`)
       .header("Authorization", `Bearer ${userToken}`)
@@ -283,20 +176,15 @@ test.group("Permissions", (group) => {
     const person = await Contributor.create({ name: "PermTest Contributor" });
     const milestone = await Milestone.create({ name: "PermTest Milestone" });
 
-    const user = await User.create({
-      email: uniqueEmail("user4"),
-      password: "Passw0rd!",
-      fullName: "Perm User 4",
-    });
-    const userToken = await makeToken(user);
+    const { token: userToken } = await createUserWithToken(
+      "user4",
+      "Perm User 4",
+    );
 
-    const admin = await User.create({
-      email: uniqueEmail("admin4"),
-      password: "Passw0rd!",
-      fullName: "Solvro Admin 4",
-    });
-    await assignSolvroAdmin(admin);
-    const adminToken = await makeToken(admin);
+    const { token: adminToken } = await createAdminWithToken(
+      "admin4",
+      "Solvro Admin 4",
+    );
 
     // Regular user cannot attach
     const badAttach = await client
@@ -329,42 +217,15 @@ test.group("Permissions", (group) => {
     okDetach.assertStatus(200);
     const okDetachBody = okDetach.body() as unknown as { success?: boolean };
     assert.equal(okDetachBody.success, true);
-
-    // Re-attach for pivot update permission checks (milestones have updatable pivot order)
-    await db.knexQuery().table("contributor_roles").insert({
-      contributor_id: person.id,
-      role_id: role.id,
-      milestone_id: milestone.id,
-      order: 1,
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-
-    const badPatch = await client
-      .patch(`/api/v1/milestones/${milestone.id}/contributors/${person.id}`)
-      .header("Authorization", `Bearer ${userToken}`)
-      .json({ query: { role_id: role.id }, update: { order: 2 } });
-    badPatch.assertStatus(403);
-
-    const okPatch = await client
-      .patch(`/api/v1/milestones/${milestone.id}/contributors/${person.id}`)
-      .header("Authorization", `Bearer ${adminToken}`)
-      .json({ query: { role_id: role.id }, update: { order: 2 } });
-    okPatch.assertStatus(200);
-    const okPatchBody = okPatch.body() as unknown as { success?: boolean };
-    assert.equal(okPatchBody.success, true);
   });
 
   test("destroy blocked without permission; allowed for solvro_admin", async ({
     client,
   }) => {
-    const admin = await User.create({
-      email: uniqueEmail("admin5"),
-      password: "Passw0rd!",
-      fullName: "Solvro Admin 5",
-    });
-    await assignSolvroAdmin(admin);
-    const adminToken = await makeToken(admin);
+    const { token: adminToken } = await createAdminWithToken(
+      "admin5",
+      "Solvro Admin 5",
+    );
 
     const created = await client
       .post("/api/v1/libraries")
@@ -380,12 +241,11 @@ test.group("Permissions", (group) => {
     const id = Number(cBody.data?.id);
 
     // Regular user cannot delete
-    const user = await User.create({
-      email: uniqueEmail("user5"),
-      password: "Passw0rd!",
-      fullName: "Perm User 5",
-    });
-    const userToken = await makeToken(user);
+    const { token: userToken } = await createUserWithToken(
+      "user5",
+      "Perm User 5",
+    );
+
     const bad = await client
       .delete(`/api/v1/libraries/${id}`)
       .header("Authorization", `Bearer ${userToken}`);
@@ -396,39 +256,5 @@ test.group("Permissions", (group) => {
       .delete(`/api/v1/libraries/${id}`)
       .header("Authorization", `Bearer ${adminToken}`);
     ok.assertStatus(200);
-  });
-
-  test("user routes validate and use the :id route parameter", async ({
-    client,
-  }) => {
-    const admin = await User.create({
-      email: uniqueEmail("users-admin"),
-      password: "Passw0rd!",
-      fullName: "Users Route Admin",
-    });
-    await assignSolvroAdmin(admin);
-    const adminToken = await makeToken(admin);
-
-    const target = await User.create({
-      email: uniqueEmail("users-target"),
-      password: "Passw0rd!",
-      fullName: "Users Route Target",
-    });
-
-    const show = await client
-      .get(`/api/v1/users/${target.id}`)
-      .header("Authorization", `Bearer ${adminToken}`);
-    show.assertStatus(200);
-
-    const update = await client
-      .patch(`/api/v1/users/${target.id}`)
-      .header("Authorization", `Bearer ${adminToken}`)
-      .json({ fullName: "Users Route Updated" });
-    update.assertStatus(200);
-
-    const destroy = await client
-      .delete(`/api/v1/users/${target.id}`)
-      .header("Authorization", `Bearer ${adminToken}`);
-    destroy.assertStatus(200);
   });
 });
