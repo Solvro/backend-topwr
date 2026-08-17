@@ -330,7 +330,19 @@ export default class DbScrape extends BaseCommand {
       this.logger.info(
         `runAll flag is set - running all ${selectedModules.length} modules.`,
       );
-    } else if (this.modules !== undefined) {
+    } else if (this.modules === undefined) {
+      const selected = await this.prompt.multiple(
+        "Select scraper modules to run",
+        Object.entries(modules).map(([name, entry]) => {
+          return {
+            name,
+            message: `${name} (${entry.Module.description}: ${entry.file})`,
+          };
+        }),
+      );
+      selectedModules = selected.map((name) => modules[name]);
+      this.logger.info(`Running ${selectedModules.length} selected modules.`);
+    } else {
       selectedModules = [];
       for (const name of this.modules) {
         const trimmedName = trimModuleExtension(name);
@@ -354,18 +366,6 @@ export default class DbScrape extends BaseCommand {
         }
         selectedModules.push(module);
       }
-    } else {
-      const selected = await this.prompt.multiple(
-        "Select scraper modules to run",
-        Object.entries(modules).map(([name, entry]) => {
-          return {
-            name,
-            message: `${name} (${entry.Module.description}: ${entry.file})`,
-          };
-        }),
-      );
-      selectedModules = selected.map((name) => modules[name]);
-      this.logger.info(`Running ${selectedModules.length} selected modules.`);
     }
 
     const tasks = this.ui.tasks({ verbose: true });

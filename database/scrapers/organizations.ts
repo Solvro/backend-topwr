@@ -101,17 +101,17 @@ export default class OrganizationsScraper extends BaseScraperModule {
     task.update("Creating organizations...");
     for (const org of orgs.data) {
       const logoKey =
-        org.logo !== null
-          ? await this.directusUploadFieldAndGetKey(org.logo).addErrorContext(
+        org.logo === null
+          ? null
+          : await this.directusUploadFieldAndGetKey(org.logo).addErrorContext(
               `Logo upload for Organization ${org.id} failed.`,
-            )
-          : null;
+            );
       const coverKey =
-        org.cover !== null
-          ? await this.directusUploadFieldAndGetKey(org.cover).addErrorContext(
+        org.cover === null
+          ? null
+          : await this.directusUploadFieldAndGetKey(org.cover).addErrorContext(
               `Cover upload for Organization ${org.id} failed.`,
-            )
-          : null;
+            );
       const orgModel = await StudentOrganization.create({
         id: org.id,
         name: org.name,

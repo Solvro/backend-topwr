@@ -209,15 +209,15 @@ export default class EventCalendarUpdater extends BaseScraperModule {
         "google_cal_id",
         event.googleCalId,
       );
-      if (existingEvent !== null) {
+      if (existingEvent === null) {
+        await CalendarEvent.create({ ...event });
+        newCount++;
+        this.logger.info(`Added new event ${event.name}`);
+      } else {
         existingEvent.merge(event);
         await existingEvent.save();
         updatedCount++;
         this.logger.info(`Updated event ${event.name}`);
-      } else {
-        await CalendarEvent.create({ ...event });
-        newCount++;
-        this.logger.info(`Added new event ${event.name}`);
       }
     }
     task.update(`Added ${newCount} new events, updated ${updatedCount} events`);

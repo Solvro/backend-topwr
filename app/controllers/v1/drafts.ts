@@ -368,7 +368,15 @@ export abstract class GenericDraftController<
 
       let approved: ApprovedInstance & InstanceType<Approved>;
 
-      if (draft.originalId !== null) {
+      if (draft.originalId === null) {
+        approved = (await this.approvedModel
+          .create(this.trimDraft(draft), {
+            client: trx,
+          })
+          .addErrorContext(
+            () => `Failed to create new ${this.approvedModel.name}`,
+          )) as ApprovedInstance & InstanceType<Approved>;
+      } else {
         const existingEntry = await this.approvedModel
           .findOrFail(draft.originalId, { client: trx })
           .addErrorContext(
@@ -386,14 +394,6 @@ export abstract class GenericDraftController<
             () => `Failed to save updated ${this.approvedModel.name}`,
           );
         approved = existingEntry as ApprovedInstance & InstanceType<Approved>;
-      } else {
-        approved = (await this.approvedModel
-          .create(this.trimDraft(draft), {
-            client: trx,
-          })
-          .addErrorContext(
-            () => `Failed to create new ${this.approvedModel.name}`,
-          )) as ApprovedInstance & InstanceType<Approved>;
       }
 
       await draft

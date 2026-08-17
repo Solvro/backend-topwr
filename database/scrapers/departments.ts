@@ -89,7 +89,12 @@ export default class DepartmentsScraper extends BaseScraperModule {
         );
         // Address
         const match = this.addressRegex.exec(departmentEntry.address);
-        if (match !== null) {
+        if (match === null) {
+          this.logger.warning(
+            `Skipped record ${departmentEntry.id} because ${departmentEntry.address} doesn't match regex.`,
+          );
+          return undefined;
+        } else {
           const postalCodeAndCity = match[0];
           const addressLine1 = departmentEntry.address
             .replace(this.addressRegex, "")
@@ -110,11 +115,6 @@ export default class DepartmentsScraper extends BaseScraperModule {
             createdAt: DateTime.now(),
             updatedAt: DateTime.now(),
           };
-        } else {
-          this.logger.warning(
-            `Skipped record ${departmentEntry.id} because ${departmentEntry.address} doesn't match regex.`,
-          );
-          return undefined;
         }
       }),
     );

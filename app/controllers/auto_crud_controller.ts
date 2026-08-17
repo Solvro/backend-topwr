@@ -783,9 +783,7 @@ export default abstract class AutoCrudController<
         await this.authenticate(httpCtx, "show");
 
         let id: string | number;
-        if (this.singletonId !== undefined) {
-          id = this.singletonId;
-        } else {
+        if (this.singletonId === undefined) {
           const { params } = (await request.validateUsing(
             this.pathIdValidator,
             { meta: { trx } },
@@ -793,6 +791,8 @@ export default abstract class AutoCrudController<
             params: { id: string | number };
           };
           id = params.id;
+        } else {
+          id = this.singletonId;
         }
 
         const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
@@ -890,7 +890,7 @@ export default abstract class AutoCrudController<
   ) {
     const primaryColumnName = this.primaryKeyField.columnOptions.columnName;
     const data = await this.model
-      .query(trx !== undefined ? { client: trx } : undefined)
+      .query(trx === undefined ? undefined : { client: trx })
       .where(primaryColumnName, id)
       .firstOrFail()
       .addErrorContext(
@@ -925,9 +925,7 @@ export default abstract class AutoCrudController<
         await this.authenticate(httpCtx, "update");
 
         let id: string | number;
-        if (this.singletonId !== undefined) {
-          id = this.singletonId;
-        } else {
+        if (this.singletonId === undefined) {
           const { params } = (await request.validateUsing(
             this.pathIdValidator,
             { meta: { trx } },
@@ -935,6 +933,8 @@ export default abstract class AutoCrudController<
             params: { id: string | number };
           };
           id = params.id;
+        } else {
+          id = this.singletonId;
         }
         await this.authorizeById(httpCtx, "update", { localId: id });
 

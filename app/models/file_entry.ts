@@ -79,7 +79,7 @@ export default class FileEntry extends BaseModel {
       .where("id", key)
       .first()
       .then((value) =>
-        value !== null ? `${key}.${value.fileExtension}` : null,
+        value === null ? null : `${key}.${value.fileExtension}`,
       );
   }
 }

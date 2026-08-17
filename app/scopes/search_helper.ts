@@ -101,9 +101,9 @@ export function handleSearchQuery<T extends LucidModel>(): QueryScope<
         query = handleArray(query, column, value);
       } else {
         query =
-          range !== undefined
-            ? handleRange(query, column, value, range.isFrom)
-            : handleDirectValue(query, column, value);
+          range === undefined
+            ? handleDirectValue(query, column, value)
+            : handleRange(query, column, value, range.isFrom);
       }
     }
   });
