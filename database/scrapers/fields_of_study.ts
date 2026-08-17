@@ -1,10 +1,10 @@
+import * as cheerio from "cheerio";
+
+import { mapToStudiesType } from "#app/enums/studies_type";
 import { BaseScraperModule } from "#commands/db_scrape";
 import type { TaskHandle } from "#commands/db_scrape";
 import Department from "#models/department";
 import FieldOfStudyModel from "#models/field_of_study";
-
-import * as cheerio from "cheerio";
-import { mapToStudiesType } from "#app/enums/studies_type";
 
 type FieldOfStudyDetailKey = Exclude<keyof FieldOfStudyDetails, "url" | "name">;
 
@@ -41,6 +41,8 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
   static description = "Scrape fields of study";
   static taskTitle? = "Scrape fields of study";
 
+  private readonly departmentSelector = "div.course-header__top a > span";
+  private readonly dataWrapperSelector = ".course-data-bar__data-wrapper";
   private readonly url: string =
     "https://rekrutacja.pwr.edu.pl/wp-admin/admin-ajax.php";
   private readonly basicInit: RequestInit = {
@@ -163,13 +165,9 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
       const htmlDetails = await responseDetails.text();
       const detailPage = cheerio.load(htmlDetails);
 
-      details.department = detailPage("div.course-header__top a > span")
-        .text()
-        .trim();
+      details.department = detailPage(this.departmentSelector).text().trim();
 
-      for (const wrapper of detailPage(
-        ".course-data-bar__data-wrapper",
-      ).toArray()) {
+      for (const wrapper of detailPage(this.dataWrapperSelector).toArray()) {
         const label = detailPage(wrapper)
           .find("h3")
           .text()

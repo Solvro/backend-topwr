@@ -3,10 +3,8 @@ import { DateTime } from "luxon";
 import { BaseScraperModule } from "#commands/db_scrape";
 import type { SourceResponse, TaskHandle } from "#commands/db_scrape";
 import { Branch } from "#enums/branch";
-
 import DepartmentModel from "#models/department";
 import DepartmentLinkModel from "#models/department_link";
-
 import { fixSequence } from "#utils/db";
 
 interface DepartmentsDraft {
@@ -30,18 +28,10 @@ interface DepartmentLinkDraft {
 }
 
 export default class DepartmentsScraper extends BaseScraperModule {
-<<<<<<< HEAD
-  static readonly name = "Departments";
-  static readonly description =
-    "Scrapes pwr departments, field of study and departments links data from directus";
-  static readonly taskTitle =
-    "Scrape departments, field of study and departments links";
-=======
   static name = "Departments";
   static description =
     "Scrapes pwr departments and departments links data from directus";
-  static taskTitle = "Scrape departmentsand departments links";
->>>>>>> 491b612 (feat: implement Fields of Study scraper with Cheerio integration)
+  static taskTitle = "Scrape departments and departments links";
 
   private readonly directusSchemas = ["Departments", "Departments_Links"];
   private readonly addressRegex =
