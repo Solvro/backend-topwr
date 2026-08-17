@@ -52,6 +52,9 @@ export default class MobileConfig extends BaseModel {
   @typedColumn({ type: "boolean", hasDefault: true })
   declare boothsEnabled: boolean;
 
+  @typedColumn({ type: "boolean", hasDefault: true })
+  declare killswitchOfDoomAndDespair: boolean;
+
   @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
