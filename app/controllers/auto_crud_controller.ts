@@ -624,19 +624,19 @@ export default abstract class AutoCrudController<
     controller: LazyImport<Constructor<AutoCrudController<T>>>,
     configurationOptions?: RouteConfigurationOptions,
   ) {
-    if (!(configurationOptions?.skipRoutes.index === true)) {
+    if (configurationOptions?.skipRoutes.index !== true) {
       router.get("/", [controller, "index"]).as("index");
     }
-    if (!(configurationOptions?.skipRoutes.store === true)) {
+    if (configurationOptions?.skipRoutes.store !== true) {
       router.post("/", [controller, "store"]).as("store");
     }
-    if (!(configurationOptions?.skipRoutes.show === true)) {
+    if (configurationOptions?.skipRoutes.show !== true) {
       router.get("/:id", [controller, "show"]).as("show");
     }
-    if (!(configurationOptions?.skipRoutes.destroy === true)) {
+    if (configurationOptions?.skipRoutes.destroy !== true) {
       router.delete("/:id", [controller, "destroy"]).as("destroy");
     }
-    if (!(configurationOptions?.skipRoutes.update === true)) {
+    if (configurationOptions?.skipRoutes.update !== true) {
       router.patch("/:id", [controller, "update"]).as("update");
     }
   }
@@ -687,10 +687,10 @@ export default abstract class AutoCrudController<
     controller: LazyImport<Constructor<AutoCrudController<T>>>,
     configurationOptions?: RouteConfigurationOptions,
   ) {
-    if (!(configurationOptions?.skipRoutes.show === true)) {
+    if (configurationOptions?.skipRoutes.show !== true) {
       router.get("/", [controller, "show"]).as("show");
     }
-    if (!(configurationOptions?.skipRoutes.update === true)) {
+    if (configurationOptions?.skipRoutes.update !== true) {
       router.patch("/", [controller, "update"]).as("update");
     }
   }
