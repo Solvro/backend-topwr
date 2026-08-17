@@ -620,80 +620,95 @@ export default abstract class AutoCrudController<
     throw selfValidationResult;
   }
 
+  private $configureBasicRoutes(
+    controller: LazyImport<Constructor<AutoCrudController<T>>>,
+    configurationOptions?: RouteConfigurationOptions,
+  ) {
+    if (!(configurationOptions?.skipRoutes.index === true)) {
+      router.get("/", [controller, "index"]).as("index");
+    }
+    if (!(configurationOptions?.skipRoutes.store === true)) {
+      router.post("/", [controller, "store"]).as("store");
+    }
+    if (!(configurationOptions?.skipRoutes.show === true)) {
+      router.get("/:id", [controller, "show"]).as("show");
+    }
+    if (!(configurationOptions?.skipRoutes.destroy === true)) {
+      router.delete("/:id", [controller, "destroy"]).as("destroy");
+    }
+    if (!(configurationOptions?.skipRoutes.update === true)) {
+      router.patch("/:id", [controller, "update"]).as("update");
+    }
+  }
+
+  private $configureRelationRoutes(
+    controller: LazyImport<Constructor<AutoCrudController<T>>>,
+    relationName: string,
+  ) {
+    const snakeCaseName = adonisString.snakeCase(relationName);
+    router
+      .get(`/:id/${snakeCaseName}`, [controller, "relationIndex"])
+      .as(`relation.${relationName}.index`);
+    const relation = this.model.$relationsDefinitions.get(relationName);
+    assert(relation !== undefined);
+    if (relation.type === "hasMany") {
+      router
+        .post(`/:id/${snakeCaseName}`, [controller, "oneToManyRelationStore"])
+        .as(`relation.${relationName}.store`);
+    } else if (relation.type === "hasOne") {
+      router
+        .post(`/:id/${snakeCaseName}`, [controller, "oneToOneRelationStore"])
+        .as(`relation.${relationName}.store`);
+    } else if (relation.type === "manyToMany") {
+      router
+        .post(`/:localId/${snakeCaseName}/:relatedId`, [
+          controller,
+          "manyToManyRelationAttach",
+        ])
+        .as(`relation.${relationName}.attach`);
+      router
+        .delete(`/:localId/${snakeCaseName}/:relatedId`, [
+          controller,
+          "manyToManyRelationDetach",
+        ])
+        .as(`relation.${relationName}.detach`);
+      if (hasUpdatablePivotColumns(relation)) {
+        router
+          .patch(`/:localId/${snakeCaseName}/:relatedId`, [
+            controller,
+            "manyToManyRelationUpdatePivot",
+          ])
+          .as(`relation.${relationName}.updatePivot`);
+      }
+    }
+  }
+
+  private $configureSingletonRoutes(
+    controller: LazyImport<Constructor<AutoCrudController<T>>>,
+    configurationOptions?: RouteConfigurationOptions,
+  ) {
+    if (!(configurationOptions?.skipRoutes.show === true)) {
+      router.get("/", [controller, "show"]).as("show");
+    }
+    if (!(configurationOptions?.skipRoutes.update === true)) {
+      router.patch("/", [controller, "update"]).as("update");
+    }
+  }
+
   $configureRoutes(
     controller: LazyImport<Constructor<AutoCrudController<T>>>,
     configurationOptions?: RouteConfigurationOptions,
   ) {
     if (this.singletonId === undefined) {
       // basic routes
-      if (!(configurationOptions?.skipRoutes.index === true)) {
-        router.get("/", [controller, "index"]).as("index");
-      }
-      if (!(configurationOptions?.skipRoutes.store === true)) {
-        router.post("/", [controller, "store"]).as("store");
-      }
-      if (!(configurationOptions?.skipRoutes.show === true)) {
-        router.get("/:id", [controller, "show"]).as("show");
-      }
-      if (!(configurationOptions?.skipRoutes.destroy === true)) {
-        router.delete("/:id", [controller, "destroy"]).as("destroy");
-      }
-      if (!(configurationOptions?.skipRoutes.update === true)) {
-        router.patch("/:id", [controller, "update"]).as("update");
-      }
+      this.$configureBasicRoutes(controller, configurationOptions);
       // relation routes
       for (const relationName of this.crudRelations) {
-        const snakeCaseName = adonisString.snakeCase(relationName);
-        router
-          .get(`/:id/${snakeCaseName}`, [controller, "relationIndex"])
-          .as(`relation.${relationName}.index`);
-        const relation = this.model.$relationsDefinitions.get(relationName);
-        assert(relation !== undefined);
-        if (relation.type === "hasMany") {
-          router
-            .post(`/:id/${snakeCaseName}`, [
-              controller,
-              "oneToManyRelationStore",
-            ])
-            .as(`relation.${relationName}.store`);
-        } else if (relation.type === "hasOne") {
-          router
-            .post(`/:id/${snakeCaseName}`, [
-              controller,
-              "oneToOneRelationStore",
-            ])
-            .as(`relation.${relationName}.store`);
-        } else if (relation.type === "manyToMany") {
-          router
-            .post(`/:localId/${snakeCaseName}/:relatedId`, [
-              controller,
-              "manyToManyRelationAttach",
-            ])
-            .as(`relation.${relationName}.attach`);
-          router
-            .delete(`/:localId/${snakeCaseName}/:relatedId`, [
-              controller,
-              "manyToManyRelationDetach",
-            ])
-            .as(`relation.${relationName}.detach`);
-          if (hasUpdatablePivotColumns(relation)) {
-            router
-              .patch(`/:localId/${snakeCaseName}/:relatedId`, [
-                controller,
-                "manyToManyRelationUpdatePivot",
-              ])
-              .as(`relation.${relationName}.updatePivot`);
-          }
-        }
+        this.$configureRelationRoutes(controller, relationName);
       }
     } else {
       // singleton special routes
-      if (!(configurationOptions?.skipRoutes.show === true)) {
-        router.get("/", [controller, "show"]).as("show");
-      }
-      if (!(configurationOptions?.skipRoutes.update === true)) {
-        router.patch("/", [controller, "update"]).as("update");
-      }
+      this.$configureSingletonRoutes(controller, configurationOptions);
     }
   }
 
