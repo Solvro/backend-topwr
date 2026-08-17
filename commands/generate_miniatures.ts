@@ -39,12 +39,12 @@ class LocalFileEntry implements SupportsListing {
 }
 
 export default class GenerateMiniatures extends BaseCommandExtended {
-  static commandName = "generate_miniatures";
-  static description =
+  static readonly commandName = "generate_miniatures";
+  static readonly description =
     "Runs a script that attempts to generate missing miniatures for all photo-like files that are indexed in the database." +
     " If used with --all flag, it will regenerate all miniatures, not only the missing ones.";
 
-  static options: CommandOptions = {
+  static readonly options: CommandOptions = {
     startApp: true,
   };
 

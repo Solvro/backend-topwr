@@ -91,7 +91,7 @@ export default class Banner extends BaseModel {
     );
   }
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

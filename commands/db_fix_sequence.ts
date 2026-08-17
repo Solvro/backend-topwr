@@ -4,10 +4,11 @@ import type { CommandOptions } from "@adonisjs/core/types/ace";
 import { fixSequence } from "#utils/db";
 
 export default class DbFixSequence extends BaseCommand {
-  static commandName = "db:fix-sequence";
-  static description = "Fixes the autoincrement sequence on a given table";
+  static readonly commandName = "db:fix-sequence";
+  static readonly description =
+    "Fixes the autoincrement sequence on a given table";
 
-  static options: CommandOptions = {
+  static readonly options: CommandOptions = {
     startApp: true,
   };
 

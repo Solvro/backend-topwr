@@ -9,7 +9,7 @@ import Department from "#models/department";
 import StudentOrganization from "#models/student_organization";
 
 export default class extends BaseSeeder {
-  static environment = ["development", "testing"];
+  static readonly environment = ["development", "testing"];
   async run() {
     const dep = await Department.first();
     const depId = dep?.id;

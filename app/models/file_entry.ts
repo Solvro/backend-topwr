@@ -17,7 +17,7 @@ import { typedColumn } from "#decorators/typed_model";
 export const PHOTO_LIKE_EXT = ["png", "jpg", "jpeg", "webp"];
 
 export default class FileEntry extends BaseModel {
-  public static selfAssignPrimaryKey = true;
+  public static readonly selfAssignPrimaryKey = true;
 
   @typedColumn({ type: "uuid", isPrimary: true })
   declare id: UUID;

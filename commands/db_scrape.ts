@@ -70,9 +70,9 @@ export function assertResponseStructure(
 }
 
 export abstract class BaseScraperModule {
-  static name: string;
-  static description: string;
-  static taskTitle?: string;
+  static readonly name: string;
+  static readonly description: string;
+  static readonly taskTitle?: string;
   logger: Logger;
   semaphore: Semaphore;
 
@@ -266,11 +266,11 @@ function trimModuleExtension(filename: string): string {
 }
 
 export default class DbScrape extends BaseCommand {
-  static commandName = "db:scrape";
-  static description =
+  static readonly commandName = "db:scrape";
+  static readonly description =
     "Runs scraper modules to populate the DB with external data";
 
-  static options: CommandOptions = {
+  static readonly options: CommandOptions = {
     startApp: true,
   };
 

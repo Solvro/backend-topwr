@@ -41,10 +41,11 @@ interface DepartmentLinkDraft {
 }
 
 export default class DepartmentsScraper extends BaseScraperModule {
-  static name = "Departments";
-  static description =
+  static readonly name = "Departments";
+  static readonly description =
     "Scrapes pwr departments, field of study and departments links data from directus";
-  static taskTitle = "Scrape departments, field of study and departments links";
+  static readonly taskTitle =
+    "Scrape departments, field of study and departments links";
 
   private readonly directusSchemas = [
     "Departments",

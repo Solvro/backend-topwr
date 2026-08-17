@@ -32,9 +32,9 @@ interface SocialLinkDraft {
 }
 
 export default class AboutUsScraper extends BaseScraperModule {
-  static name = "`About Us` general information";
-  static description = "Updates about us information from Directus";
-  static taskTitle = "Update `About Us` information";
+  static readonly name = "`About Us` general information";
+  static readonly description = "Updates about us information from Directus";
+  static readonly taskTitle = "Update `About Us` information";
 
   async shouldRun(): Promise<boolean> {
     return await this.modelHasNoRows(AboutUsGeneral, AboutUsGeneralLink);

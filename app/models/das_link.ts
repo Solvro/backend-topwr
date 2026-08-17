@@ -42,7 +42,7 @@ export default class DasLink extends BaseModel {
   })
   declare das: BelongsTo<typeof Das>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

@@ -36,7 +36,7 @@ export default class ContributorSocialLink extends BaseModel {
   @belongsTo(() => Contributor)
   declare contributor: BelongsTo<typeof Contributor>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

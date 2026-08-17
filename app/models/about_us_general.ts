@@ -11,7 +11,7 @@ import { handleSortQuery } from "#scopes/sort_helper";
 import FileEntry from "./file_entry.js";
 
 export default class AboutUsGeneral extends BaseModel {
-  public static table = "about_us_general";
+  public static readonly table = "about_us_general";
 
   @typedColumn({ isPrimary: true, type: "integer" })
   declare id: number;
@@ -34,7 +34,7 @@ export default class AboutUsGeneral extends BaseModel {
   })
   declare coverPhoto: BelongsTo<typeof FileEntry>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

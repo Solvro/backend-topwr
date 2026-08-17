@@ -38,7 +38,7 @@ export default class DasTimetable extends BaseModel {
   })
   declare entries: HasMany<typeof DasTimetableEntry>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

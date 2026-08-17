@@ -40,7 +40,7 @@ export default class Milestone extends BaseModel {
   @hasMany(() => Version)
   declare versions: HasMany<typeof Version>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

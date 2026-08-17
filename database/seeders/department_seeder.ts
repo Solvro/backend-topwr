@@ -8,7 +8,7 @@ import DepartmentLink from "#models/department_link";
 import FieldsOfStudy from "#models/field_of_study";
 
 export default class extends BaseSeeder {
-  static environment = ["development", "testing"];
+  static readonly environment = ["development", "testing"];
   async run() {
     await Department.createMany([
       {

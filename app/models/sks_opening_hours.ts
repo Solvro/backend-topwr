@@ -9,8 +9,8 @@ import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
 
 export default class SksOpeningHours extends BaseModel {
-  public static selfAssignPrimaryKey = true;
-  public static table = "sks_opening_hours";
+  public static readonly selfAssignPrimaryKey = true;
+  public static readonly table = "sks_opening_hours";
 
   @typedColumn({
     isPrimary: true,
@@ -32,7 +32,7 @@ export default class SksOpeningHours extends BaseModel {
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

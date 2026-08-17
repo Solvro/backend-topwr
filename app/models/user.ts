@@ -59,7 +59,7 @@ export default class User
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null;
 
-  static accessTokens = DbAccessTokensProvider.forModel(User);
+  static readonly accessTokens = DbAccessTokensProvider.forModel(User);
 
   @beforeSave()
   static async hashToken(user: User) {
@@ -72,7 +72,7 @@ export default class User
     }
   }
 
-  static compareTokens = scope((query, token: string) => {
+  static readonly compareTokens = scope((query, token: string) => {
     void query.where("reset_password_token", sha256(token));
   });
 

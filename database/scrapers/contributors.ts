@@ -74,9 +74,10 @@ interface ContributorDraft {
 }
 
 export default class ContributorsScraper extends BaseScraperModule {
-  static name = "Contributors schema";
-  static description = "Versions, milestones, changes, team members...";
-  static taskTitle = "Scrape the contributors schema";
+  static readonly name = "Contributors schema";
+  static readonly description =
+    "Versions, milestones, changes, team members...";
+  static readonly taskTitle = "Scrape the contributors schema";
 
   private readonly directusSchemas = [
     "TeamVersions",

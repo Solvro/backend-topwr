@@ -26,9 +26,10 @@ interface WeekExceptions {
 }
 
 export default class AcademicCalendarScraper extends BaseScraperModule {
-  static name = "Academic calendar scraper";
-  static description = "Import data about academic calendars and day swaps";
-  static taskTitle = "Fetching academic calendar and day swaps data";
+  static readonly name = "Academic calendar scraper";
+  static readonly description =
+    "Import data about academic calendars and day swaps";
+  static readonly taskTitle = "Fetching academic calendar and day swaps data";
 
   async shouldRun(): Promise<boolean> {
     return await this.modelHasNoRows(AcademicCalendar);

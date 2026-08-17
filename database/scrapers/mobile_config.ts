@@ -12,9 +12,10 @@ interface CacheReferenceData {
 }
 
 export default class CacheReferenceNumberScraper extends BaseScraperModule {
-  static name = "CMS cache reference number";
-  static description = "CMS cache ref number and last updated datetime";
-  static taskTitle =
+  static readonly name = "CMS cache reference number";
+  static readonly description =
+    "CMS cache ref number and last updated datetime";
+  static readonly taskTitle =
     "Scrape the cms cache ref number with last updated datetime";
 
   async run(task: TaskHandle) {

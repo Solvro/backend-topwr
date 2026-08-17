@@ -6,7 +6,7 @@ import { Weekday } from "#enums/weekday";
 import AcademicCalendar from "#models/academic_calendar";
 
 export default class extends BaseSeeder {
-  static environment = ["development", "testing"];
+  static readonly environment = ["development", "testing"];
 
   async run() {
     const calendars = await AcademicCalendar.createMany([

@@ -30,9 +30,9 @@ export default class Role extends BaseModel {
   })
   declare contributors: ManyToMany<typeof Contributor>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 
   serializeExtras = true;
 }

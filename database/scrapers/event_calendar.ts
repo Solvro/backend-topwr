@@ -164,10 +164,10 @@ class CalendarParser {
 }
 
 export default class EventCalendarUpdater extends BaseScraperModule {
-  static name = "Event calendar";
-  static description =
+  static readonly name = "Event calendar";
+  static readonly description =
     "Update and push to the database events from the Student Council Google calendar as Google events (non-editable, removable)";
-  static taskTitle =
+  static readonly taskTitle =
     "Update event calendar with latest events from Student Council Google calendar";
 
   private async fetchGoogleEvents(): Promise<string> {

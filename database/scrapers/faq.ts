@@ -79,10 +79,10 @@ function findQuestionDatesForArticle(
 }
 
 export default class FaqSectionScrapper extends BaseScraperModule {
-  static name = "FAQs";
-  static description =
+  static readonly name = "FAQs";
+  static readonly description =
     "Articles, questions, answers, and authors of the FAQ section";
-  static taskTitle = "Scrape the faq section";
+  static readonly taskTitle = "Scrape the faq section";
 
   async shouldRun(): Promise<boolean> {
     return await this.modelHasNoRows(GuideArticle, GuideQuestion);

@@ -50,10 +50,10 @@ const UUID_REGEX =
   /^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i;
 
 export default class CleanupFiles extends BaseCommandExtended {
-  static commandName = "file_cleanup";
-  static description = `Runs a script that will remove unused, orphaned and ghost files from the database and local storage. Only affects files older than ${TIME_LIMIT_MS} ms.`;
+  static readonly commandName = "file_cleanup";
+  static readonly description = `Runs a script that will remove unused, orphaned and ghost files from the database and local storage. Only affects files older than ${TIME_LIMIT_MS} ms.`;
 
-  static options: CommandOptions = {
+  static readonly options: CommandOptions = {
     startApp: true,
   };
 

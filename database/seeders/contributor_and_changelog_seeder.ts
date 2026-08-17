@@ -10,7 +10,7 @@ import Role from "#models/role";
 import Version from "#models/version";
 
 export default class ContributorAndChangelogSeeder extends BaseSeeder {
-  static environment = ["development", "testing"];
+  static readonly environment = ["development", "testing"];
 
   async run() {
     const milestone = await Milestone.create({ name: "testing milestone" });

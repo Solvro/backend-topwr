@@ -48,7 +48,7 @@ export default class AcademicCalendar extends BaseModel {
   @hasMany(() => Holiday)
   declare holidays: HasMany<typeof Holiday>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

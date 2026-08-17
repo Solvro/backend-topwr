@@ -36,10 +36,10 @@ interface CampusDraft {
 }
 
 export default class BuildingsScraper extends BaseScraperModule {
-  static name = "Buildings and campuses";
-  static description =
+  static readonly name = "Buildings and campuses";
+  static readonly description =
     "Scrapes pwr buildings data from directus and campuses from local file: './assets/campuses.json'";
-  static taskTitle = "Scrape buildings and campuses";
+  static readonly taskTitle = "Scrape buildings and campuses";
 
   async shouldRun(): Promise<boolean> {
     return await this.modelHasNoRows(Campus, Building);

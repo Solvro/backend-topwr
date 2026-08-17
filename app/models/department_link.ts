@@ -36,7 +36,7 @@ export default class DepartmentLink extends BaseModel {
   @belongsTo(() => Department)
   declare department: BelongsTo<typeof Department>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

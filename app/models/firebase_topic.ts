@@ -27,7 +27,7 @@ export interface TopicOverview {
 export const TOPIC_NAME_REGEX = /^[a-zA-Z0-9-_.~%]{1,48}$/;
 
 export default class FirebaseTopic extends BaseModel {
-  public static selfAssignPrimaryKey = true;
+  public static readonly selfAssignPrimaryKey = true;
   // Overall, updating the topic or removing it can lead to sync errors between us and the mobile application
   // Thus a created topic cannot be deleted or have its name changed - only deactivation is permitted
 
@@ -115,7 +115,7 @@ export default class FirebaseTopic extends BaseModel {
     return null;
   }
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

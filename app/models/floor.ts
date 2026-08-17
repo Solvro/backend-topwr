@@ -26,7 +26,7 @@ export default class Floor extends BaseModel {
   @hasMany(() => DasStand)
   declare stands: HasMany<typeof DasStand>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

@@ -10,7 +10,7 @@ import Campus from "#models/campus";
 import Library from "#models/library";
 
 export default class BuildingSeeder extends BaseSeeder {
-  static environment = ["development", "testing"];
+  static readonly environment = ["development", "testing"];
 
   async run() {
     const campuses = await Campus.createMany([

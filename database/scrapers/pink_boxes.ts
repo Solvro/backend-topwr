@@ -18,10 +18,10 @@ interface PinkBoxDraft {
 }
 
 export default class PinkBoxScraper extends BaseScraperModule {
-  static name = "Pink boxes";
-  static description =
+  static readonly name = "Pink boxes";
+  static readonly description =
     'Scrapes pink boxes from local file: "./assets/pink_boxes.json"';
-  static taskTitle = "Scrape pink boxes";
+  static readonly taskTitle = "Scrape pink boxes";
 
   async shouldRun(): Promise<boolean> {
     return (

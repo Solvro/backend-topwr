@@ -5,11 +5,11 @@ import type { CommandOptions } from "@adonisjs/core/types/ace";
 import ResetPasswordService from "#services/reset_password_service";
 
 export default class ResetPassword extends BaseCommand {
-  static commandName = "reset:password";
-  static description =
+  static readonly commandName = "reset:password";
+  static readonly description =
     "Tries to reset the password for user associated with given email address";
 
-  static options: CommandOptions = {
+  static readonly options: CommandOptions = {
     startApp: true,
   };
 

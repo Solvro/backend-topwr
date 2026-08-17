@@ -4,12 +4,12 @@ import type { CommandOptions } from "@adonisjs/core/types/ace";
 import { normalizeContributorOrder, normalizeOrderField } from "#utils/db";
 
 export default class DbNormalizeOrder extends BaseCommand {
-  static commandName = "db:normalize-order";
-  static description =
+  static readonly commandName = "db:normalize-order";
+  static readonly description =
     "Replaces the order columns with a fresh integer sequence, keeping the entry order unchanged";
   private readonly orderedTables = ["guide_articles", "guide_questions"];
 
-  static options: CommandOptions = {
+  static readonly options: CommandOptions = {
     startApp: true,
   };
 

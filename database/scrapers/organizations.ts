@@ -47,10 +47,10 @@ interface DirectusTagPivot {
 }
 
 export default class OrganizationsScraper extends BaseScraperModule {
-  static name = "Organizations";
-  static description =
+  static readonly name = "Organizations";
+  static readonly description =
     "populates all required tables for organizations (tags, links,...)";
-  static taskTitle = "Scraping organizations";
+  static readonly taskTitle = "Scraping organizations";
   private readonly urls = {
     orgs: "https://admin.topwr.solvro.pl/items/Scientific_Circles?limit=-1",
     tags: "https://admin.topwr.solvro.pl/items/Tags",

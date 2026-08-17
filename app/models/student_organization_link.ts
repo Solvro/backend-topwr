@@ -35,7 +35,7 @@ export default class StudentOrganizationLink extends BaseModel {
   @belongsTo(() => StudentOrganization)
   declare organization: BelongsTo<typeof StudentOrganization>;
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

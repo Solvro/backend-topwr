@@ -22,10 +22,10 @@ interface PolinkaStationDraft {
 }
 
 export default class PolinkaStationScraper extends BaseScraperModule {
-  static name = "Polinka Station";
-  static description =
+  static readonly name = "Polinka Station";
+  static readonly description =
     'Scrapes polinkas stations from local file: "./assets/polinka_stations.json"';
-  static taskTitle = "Scrape Polinka Stations";
+  static readonly taskTitle = "Scrape Polinka Stations";
 
   async shouldRun(): Promise<boolean> {
     return (

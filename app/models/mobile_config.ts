@@ -69,7 +69,7 @@ export default class MobileConfig extends BaseModel {
     await MobileConfig.query().increment("translator_reference_number", 1);
   }
 
-  static preloadRelations = preloadRelations();
-  static handleSearchQuery = handleSearchQuery();
-  static handleSortQuery = handleSortQuery();
+  static readonly preloadRelations = preloadRelations();
+  static readonly handleSearchQuery = handleSearchQuery();
+  static readonly handleSortQuery = handleSortQuery();
 }

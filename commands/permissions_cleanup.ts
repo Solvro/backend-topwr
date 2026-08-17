@@ -11,13 +11,13 @@ import BaseCommandExtended from "#commands/base_command_extended";
 import { getMorphMapAlias } from "#utils/permissions";
 
 export default class PermissionsCleanup extends BaseCommandExtended {
-  static commandName = "permissions:cleanup";
-  static description =
+  static readonly commandName = "permissions:cleanup";
+  static readonly description =
     "Removes orphaned ACL rows (permissions, access_roles, model_roles, model_permissions) " +
     "that reference deleted model instances. Scans all models with a morph map and deletes " +
     "rows whose entity_id/model_id no longer corresponds to an existing record.";
 
-  static options: CommandOptions = {
+  static readonly options: CommandOptions = {
     startApp: true,
   };
 

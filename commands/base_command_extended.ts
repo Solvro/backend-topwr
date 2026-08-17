@@ -10,8 +10,8 @@ export interface SupportsListing {
 export default abstract class BaseCommandExtended extends BaseCommand {
   // Apparently, Adonis tries to serialize everything derived from BaseCommand, even if it is abstract.
   // Thus, the name property is required for it to compile.
-  static commandName = "abstract_command";
-  static description = "Calling this command does nothing";
+  static readonly commandName: string = "abstract_command";
+  static readonly description: string = "Calling this command does nothing";
 
   /** Hijack the prompting functions and make them always return the default value or false if none provided
    * It just works
