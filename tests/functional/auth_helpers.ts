@@ -7,7 +7,7 @@ import User from "#models/user";
 import env from "#start/env";
 
 export function uniqueEmail(prefix: string): string {
-  const id = crypto.randomUUID().slice(0, 8);
+  const id = crypto.randomBytes(4).toString("hex");
   return `${prefix}-${id}@example.test`;
 }
 
@@ -96,7 +96,7 @@ export async function createUserWithToken(
   prefix: string,
   fullName: string,
 ): Promise<{ user: User; token: string; password: string }> {
-  const password = `Test-${crypto.randomUUID().slice(0, 8)}!`;
+  const password = `Test-${crypto.randomBytes(16).toString("hex")}!`;
   const user = await User.create({
     email: uniqueEmail(prefix),
     password,
@@ -110,7 +110,7 @@ export async function createAdminWithToken(
   prefix: string,
   fullName: string,
 ): Promise<{ user: User; token: string; password: string }> {
-  const password = `Test-${crypto.randomUUID().slice(0, 8)}!`;
+  const password = `Test-${crypto.randomBytes(16).toString("hex")}!`;
   const user = await User.create({
     email: uniqueEmail(prefix),
     password,
