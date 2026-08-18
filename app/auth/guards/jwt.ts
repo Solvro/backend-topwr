@@ -7,6 +7,7 @@ import { symbols } from "@adonisjs/auth";
 import type { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
 import type { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
 import {
   ForbiddenException,
@@ -15,7 +16,6 @@ import {
 import RefreshToken from "#models/refresh_token";
 import User from "#models/user";
 import env from "#start/env";
-import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
 export interface JwtAccessTokenResponse {
   type: "bearer";
@@ -192,7 +192,10 @@ export class JwtGuard implements GuardContract<User> {
   }
 
   public async authenticate(): Promise<User> {
-    if (this.authenticationAttempted && this.#trx === undefined) {
+    if (
+      this.authenticationAttempted &&
+      this.getUserOrFail().$trx === this.#trx
+    ) {
       return this.getUserOrFail();
     }
 
