@@ -36,6 +36,14 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
+          fetch-depth: 0 # need full history for git merge-base
+
+      - name: Rewind to the fork point
+        env:
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          git fetch origin "$PR_REF"
+          git checkout "`git merge-base HEAD "$PR_REF"`"
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -55,9 +63,9 @@ jobs:
         run: node ace migration:run
 
       - name: Checkout the PR branch
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        env:
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: git checkout "$PR_REF"
 
       - name: Reinstall dependencies
         run: npm ci
@@ -103,9 +111,17 @@ jobs:
 
     steps:
       - name: Check out the base branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
+          fetch-depth: 0 # need full history for git merge-base
+
+      - name: Rewind to the fork point
+        env:
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          git fetch origin "$PR_REF"
+          git checkout "`git merge-base HEAD "$PR_REF"`"
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -128,9 +144,9 @@ jobs:
         run: node ace db:seed
 
       - name: Checkout the PR branch
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        env:
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: git checkout "$PR_REF"
 
       - name: Reinstall dependencies
         run: npm ci
@@ -217,6 +233,14 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
+          fetch-depth: 0 # need full history for git merge-base
+
+      - name: Rewind to the fork point
+        env:
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          git fetch origin "$PR_REF"
+          git checkout "`git merge-base HEAD "$PR_REF"`"
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -237,20 +261,13 @@ jobs:
         env:
           DB_DATABASE: topwr1
 
-      - name: Checkout the PR branch
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
-          fetch-depth: 0 # need full history for diffing
-
-      - name: Fetch the base commit
-        run: git fetch origin $REF_TO_FETCH:base-branch
+      - name: Checkout the PR branch, delete new migrations
         env:
-          REF_TO_FETCH: ${{ github.base_ref || github.event.merge_group.base_sha }}
-
-      - name: Delete new migrations
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
         run: |
-          rm -v `git diff --name-only --diff-filter=A base-branch..HEAD database/migrations` || true
+          BASE_REF="`git rev-parse HEAD`"
+          git checkout "$PR_REF"
+          rm -v `git diff --name-only --diff-filter=A $BASE_REF..HEAD database/migrations` || true
 
       - name: Reinstall dependencies
         run: npm ci
@@ -322,6 +339,14 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ github.base_ref || github.event.merge_group.base_sha }}
+          fetch-depth: 0 # need full history for git merge-base
+
+      - name: Rewind to the fork point
+        env:
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: |
+          git fetch origin "$PR_REF"
+          git checkout "`git merge-base HEAD "$PR_REF"`"
 
       - name: Setup node
         uses: actions/setup-node@v4
@@ -341,9 +366,9 @@ jobs:
         run: node ace migration:run
 
       - name: Checkout the PR branch
-        uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        env:
+          PR_REF: ${{ github.event.after || github.event.pull_request.head.sha || github.event.merge_group.head_sha }}
+        run: git checkout "$PR_REF"
 
       - name: Reinstall dependencies
         run: npm ci
