@@ -7,6 +7,7 @@ import { symbols } from "@adonisjs/auth";
 import type { AuthClientResponse, GuardContract } from "@adonisjs/auth/types";
 import type { HttpContext } from "@adonisjs/core/http";
 import logger from "@adonisjs/core/services/logger";
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
 import {
   ForbiddenException,
@@ -66,7 +67,8 @@ interface RefreshTokenPayload extends SupportedPayload {
 }
 
 export class JwtGuard implements GuardContract<User> {
-  readonly #ctx: HttpContext;
+  #ctx: HttpContext;
+  #trx?: TransactionClientContract | undefined;
 
   constructor(ctx: HttpContext) {
     this.#ctx = ctx;
@@ -184,20 +186,45 @@ export class JwtGuard implements GuardContract<User> {
     return authHeader.substring(7);
   }
 
+  public useTransaction(trx: TransactionClientContract): this {
+    this.#trx = trx;
+    return this;
+  }
+
   public async authenticate(): Promise<User> {
+    let userId: number;
     if (this.authenticationAttempted) {
-      return this.getUserOrFail();
+      // if we already authenticated the user in this request
+      // and this.user is undefined, then auth failed
+      if (this.user === undefined) {
+        this.throw403();
+      }
+      // check if we're still in the same transaction
+      if (this.user.$trx === this.#trx) {
+        // same transaction = safe to return existing object
+        return this.user;
+      }
+      // different transaction = need to refetch
+      userId = this.user.id;
+    } else {
+      // haven't authenticated yet - extract data from the JWT
+      this.authenticationAttempted = true;
+      const token = this.extractTokenFromHeaderOrFail();
+      const payload = this.validateAccessToken(token);
+      userId = payload.sub;
     }
-    this.authenticationAttempted = true;
-    const token = this.extractTokenFromHeaderOrFail();
-    const payload = this.validateAccessToken(token);
-    const owner = await User.findBy("id", payload.sub);
-    if (owner === null) {
+
+    this.user =
+      (await User.find(
+        userId,
+        this.#trx === undefined ? undefined : { client: this.#trx },
+      )) ?? undefined;
+    if (this.user === undefined) {
+      this.isAuthenticated = false;
       this.throw401();
     }
-    this.user = owner;
     this.isAuthenticated = true;
-    return owner;
+    return this.user;
   }
 
   async check(): Promise<boolean> {
