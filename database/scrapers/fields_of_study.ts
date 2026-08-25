@@ -1,3 +1,8 @@
+import { toIBaseError } from "@solvro/error-handling/base";
+import {
+  analyzeErrorStack,
+  prepareReportForLogging,
+} from "@solvro/error-handling/reporting";
 import * as cheerio from "cheerio";
 
 import { mapToStudiesType } from "#app/enums/studies_type";
@@ -51,7 +56,6 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
     },
     body: new URLSearchParams({
       action: "getFilteredStudies",
-      s_level: "s2",
     }),
     method: "POST",
   };
@@ -79,10 +83,14 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
     this.basicSecondDegreeTermSpan,
     this.extendedSecondDegreeTermSpan,
   ];
-  private extendInit(studyLevel: string) {
-    const body = this.basicInit.body as URLSearchParams;
-    body.set("s_level", studyLevel);
-    return Object.assign(this.basicInit, body);
+  private extendInit(studyLevel: string): RequestInit {
+    const body = new URLSearchParams(this.basicInit.body as URLSearchParams);
+    body.append("s_level", studyLevel);
+
+    return {
+      ...this.basicInit,
+      body,
+    };
   }
 
   private async mapDetailsToModel(
@@ -105,23 +113,20 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
     fieldOfStudy.name = details.name;
     fieldOfStudy.url = details.url;
     fieldOfStudy.isEnglish = details.language === "angielski";
-    if (
-      this.firstDegreeTermSpans.some((value) =>
-        details.timeSpan.includes(value.toString()),
-      )
-    ) {
+
+    const match = /\d+/.exec(details.timeSpan);
+    if (match === null) {
+      throw new Error(
+        `Could not extract term span from: "${details.timeSpan}"`,
+      );
+    }
+
+    const studyTermSpan = Number(match[0]);
+    if (this.firstDegreeTermSpans.includes(studyTermSpan)) {
       fieldOfStudy.studiesType = mapToStudiesType(false, false);
-    } else if (
-      this.longCycleTermSpans.some((value) =>
-        details.timeSpan.includes(value.toString()),
-      )
-    ) {
+    } else if (this.longCycleTermSpans.includes(studyTermSpan)) {
       fieldOfStudy.studiesType = mapToStudiesType(true, false);
-    } else if (
-      this.secondDegreeTermSpans.some((value) =>
-        details.timeSpan.includes(value.toString()),
-      )
-    ) {
+    } else if (this.secondDegreeTermSpans.includes(studyTermSpan)) {
       fieldOfStudy.studiesType = mapToStudiesType(false, true);
     } else {
       throw new Error(
@@ -184,8 +189,9 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
       try {
         fieldOfStudy = await this.mapDetailsToModel(details);
       } catch (error) {
+        const report = analyzeErrorStack(toIBaseError(error));
         this.logger.warning(
-          `Mapping to model error. ${error} Insertion of this field of study skipped`,
+          `Failed to map the '${details.name}' field of study to database model. Write of this field to db skipped: ${prepareReportForLogging(report)}`,
         );
         continue;
       }
@@ -203,7 +209,7 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
         }
       } catch (error) {
         this.logger.warning(
-          `${error} Insertion of this field of study skipped`,
+          `Failed to write the '${fieldOfStudy.name}' field of study to database: '${error}'`,
         );
       }
     }

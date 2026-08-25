@@ -161,9 +161,8 @@ export abstract class BaseScraperModule {
   protected async fetchDirectusJSON(
     url: string,
     item: string,
-    init?: RequestInit,
   ): Promise<SourceResponse<unknown>> {
-    const response = await this.fetchJSON(url, item, init);
+    const response = await this.fetchJSON(url, item);
     return assertResponseStructure(response, item);
   }
 
