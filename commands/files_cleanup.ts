@@ -44,6 +44,11 @@ interface DBUsedFiles {
   relationData: DBRelation;
 }
 
+interface Stage1Result {
+  localFiles: LocalFileEntry[];
+  miniatureFiles: MiniatureEntry[];
+}
+
 const TIME_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day; anything newer than this will not get indexed
 
 const UUID_REGEX =
@@ -113,9 +118,7 @@ export default class CleanupFiles extends BaseCommandExtended {
 
   private async stage1CollectLocalFiles(
     task: TaskHandle,
-  ): Promise<
-    { localFiles: LocalFileEntry[]; miniatureFiles: MiniatureEntry[] } | string
-  > {
+  ): Promise<Stage1Result | string> {
     task.update("Stage 1 - Fetching files from local storage");
     const inputStoragePath = await this.promptForDirectory(
       "local files",
