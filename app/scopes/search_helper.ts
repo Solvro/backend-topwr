@@ -159,32 +159,32 @@ function handleRange<T extends LucidModel>(
       `Can't filter 'from'/'to' on types other than 'number'/'DateTime'. ` +
         `Type of '${column.columnName}' is '${columnType}'`,
     );
-  } else {
-    // verify using the same logic as for array of values
-    const invalid = arrayTypeCheckHelper([value], column);
-    if (invalid.length > 0) {
-      const invalidMessage = isFrom ? `[from]=${value}` : `[to]=${value}`;
-      throw new BadRequestException(
-        `invalid filter value: ${invalidMessage} ;` +
-          `for column: '${column.columnName}' ` +
-          `of type: '${columnType}'`,
-      );
-    }
+  }
+  // verify using the same logic as for array of values
+  const invalid = arrayTypeCheckHelper([value], column);
+  if (invalid.length > 0) {
+    const invalidMessage = isFrom ? `[from]=${value}` : `[to]=${value}`;
+    throw new BadRequestException(
+      `invalid filter value: ${invalidMessage} ;` +
+        `for column: '${column.columnName}' ` +
+        `of type: '${columnType}'`,
+    );
+  }
+
+  const date = new Date(value);
+
+  if (isFrom) {
+    query = query.where(column.columnName, ">=", date);
     if (columnType === "number") {
-      if (isFrom) {
-        query = query.where(column.columnName, ">=", Number(value));
-      } else {
-        query = query.where(column.columnName, "<=", Number(value));
-      }
-    } else {
-      const date = new Date(value);
-      if (isFrom) {
-        query = query.where(column.columnName, ">=", date);
-      } else {
-        query = query.where(column.columnName, "<=", date);
-      }
+      query = query.where(column.columnName, ">=", Number(value));
+    }
+  } else {
+    query = query.where(column.columnName, "<=", date);
+    if (columnType === "number") {
+      query = query.where(column.columnName, "<=", Number(value));
     }
   }
+
   return query;
 }
 
