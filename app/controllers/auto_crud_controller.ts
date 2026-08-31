@@ -390,6 +390,7 @@ export default abstract class AutoCrudController<
   protected async postStoreHook(ctx: HookContext<T>): Promise<void> {
     void ctx;
   }
+  private validationIssues: string[] = [];
 
   #modelCacheEntry?: AutogenCacheEntry;
 
@@ -452,44 +453,44 @@ export default abstract class AutoCrudController<
     return this.modelCacheEntry.updatePivotValidator(relationName);
   }
 
-  /**
-   * The actual self-validation function, does not cache!
-   */
-  public async doSelfValidate(): Promise<InternalControllerValidationError | null> {
-    const issues = [];
+  private static readonly requiredScopes = [
+    "preloadRelations",
+    "handleSearchQuery",
+    "handleSortQuery",
+  ];
 
-    // Verify scopes
-    const requiredScopes = [
-      "preloadRelations",
-      "handleSearchQuery",
-      "handleSortQuery",
-    ];
+  private async validateModelScopes() {
     const { smuggledScopes: smuggledMainScopes } = await smuggleScopes(
       this.model,
     );
-    for (const scope of requiredScopes) {
+    for (const scope of AutoCrudController.requiredScopes) {
       if (!(scope in this.model)) {
-        issues.push(`'${scope}' scope does not exist on the model`);
+        this.validationIssues.push(
+          `'${scope}' scope does not exist on the model`,
+        );
         continue;
       }
       try {
         // adonis will throw an error here if it's not a valid scope
         void smuggledMainScopes[scope];
       } catch {
-        issues.push(
+        this.validationIssues.push(
           `'${scope}' scope does not exist on the object passed to the this.model.query().withScopes() callback`,
         );
       }
     }
-
-    // Verify relations
+  }
+  /**
+   * Checks if the model relations are defined correctly.
+   */
+  private validateModelRelations() {
     for (const relationDef of this.queryRelations) {
       const relationChain = relationDef.split(".");
       let currentModel: LucidModel = this.model;
       for (const nextRelation of relationChain) {
         const relation = currentModel.$relationsDefinitions.get(nextRelation);
         if (relation === undefined) {
-          issues.push(
+          this.validationIssues.push(
             `Relation '${relationDef}' is not a valid relation: subrelation '${nextRelation}' does not exist on model '${currentModel.name}'`,
           );
           break;
@@ -498,21 +499,27 @@ export default abstract class AutoCrudController<
           try {
             relation.boot();
           } catch (e) {
-            issues.push(
+            this.validationIssues.push(
               // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-              `Issue with relation '${relationDef}': Failed to boot subrelation '${nextRelation}' on '${currentModel.name}': ${typeof e === "object" && "message" in e ? e.message : e}`,
+              `Issue with relation '${relationDef}': Failed to boot subrelation '${nextRelation}' on '${currentModel.name}': ${typeof e === "object" && e !== null && "message" in e ? e.message : e}`,
             );
           }
         }
         currentModel = relation.relatedModel();
       }
     }
+  }
 
-    // Verify CRUD relations
+  /**
+   * Checks if the CRUD relations are defined correctly.
+   */
+  private async validateCrudRelations() {
     for (const relationDef of this.crudRelations) {
       const relation = this.model.$relationsDefinitions.get(relationDef);
       if (relation === undefined) {
-        issues.push(`Relation '${relationDef}' is not a valid relation`);
+        this.validationIssues.push(
+          `Relation '${relationDef}' is not a valid relation`,
+        );
         continue;
       }
       if (
@@ -520,7 +527,7 @@ export default abstract class AutoCrudController<
         relation.type !== "manyToMany" &&
         relation.type !== "hasOne"
       ) {
-        issues.push(
+        this.validationIssues.push(
           `Unsupported '${relationDef}' CRUD relation: '${relation.type}' not supported`,
         );
         continue;
@@ -529,7 +536,7 @@ export default abstract class AutoCrudController<
         relation.type === "manyToMany" &&
         !validateTypedManyToManyRelation(relation)
       ) {
-        issues.push(
+        this.validationIssues.push(
           `ManyToMany relation '${relationDef}' isn't properly typed`,
         );
       }
@@ -537,25 +544,25 @@ export default abstract class AutoCrudController<
         try {
           relation.boot();
         } catch (e) {
-          issues.push(
+          this.validationIssues.push(
             // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-            `Failed to boot CRUD relation '${relationDef}': ${typeof e === "object" && "message" in e ? e.message : e}`,
+            `Failed to boot CRUD relation '${relationDef}': ${typeof e === "object" && e !== null && "message" in e ? e.message : e}`,
           );
         }
       }
       const relatedModel = relation.relatedModel();
       for (const [name, column] of relatedModel.$columnsDefinitions.entries()) {
         if (!validateColumnDef(column)) {
-          issues.push(
+          this.validationIssues.push(
             `Column '${name}' in related model of CRUD relation '${relationDef}' isn't properly typed`,
           );
         }
       }
       const { smuggledScopes: smuggledRelatedScopes } =
         await smuggleScopes(relatedModel);
-      for (const scope of requiredScopes) {
+      for (const scope of AutoCrudController.requiredScopes) {
         if (!(scope in relatedModel)) {
-          issues.push(
+          this.validationIssues.push(
             `'${scope}' scope does not exist on the related model of CRUD relation '${relationDef}'`,
           );
           continue;
@@ -564,17 +571,21 @@ export default abstract class AutoCrudController<
           // adonis will throw an error here if it's not a valid scope
           void smuggledRelatedScopes[scope];
         } catch {
-          issues.push(
+          this.validationIssues.push(
             `'${scope}' scope does not exist on the object passed to the .query().withScopes() callback for related model of CRUD relation '${relationDef}'`,
           );
         }
       }
     }
+  }
 
-    // Verify all columns are typed
+  /**
+   * Checks if the model columns are defined correctly.
+   */
+  private validateColumns() {
     for (const [name, columnn] of this.model.$columnsDefinitions.entries()) {
       if (!validateColumnDef(columnn)) {
-        issues.push(`Column '${name}' isn't properly typed`);
+        this.validationIssues.push(`Column '${name}' isn't properly typed`);
       }
     }
 
@@ -585,12 +596,22 @@ export default abstract class AutoCrudController<
       if (!(error instanceof BaseError)) {
         throw error;
       }
-      issues.push(error.message);
+      this.validationIssues.push(error.message);
     }
+  }
 
-    return issues.length === 0
+  /**
+   * The actual self-validation function, does not cache!
+   */
+  public async doSelfValidate(): Promise<InternalControllerValidationError | null> {
+    await this.validateModelScopes();
+    this.validateModelRelations();
+    await this.validateCrudRelations();
+    this.validateColumns();
+
+    return this.validationIssues.length === 0
       ? null
-      : new InternalControllerValidationError(issues);
+      : new InternalControllerValidationError(this.validationIssues);
   }
 
   /**
