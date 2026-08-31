@@ -8,6 +8,7 @@ import db from "@adonisjs/lucid/services/db";
 import { LucidModel } from "@adonisjs/lucid/types/model";
 
 import BaseCommandExtended from "#commands/base_command_extended";
+import { TaskHandle } from "#commands/db_scrape";
 import { getMorphMapAlias } from "#utils/permissions";
 
 export default class PermissionsCleanup extends BaseCommandExtended {
@@ -46,9 +47,9 @@ export default class PermissionsCleanup extends BaseCommandExtended {
     this.exitCode = tasks.getState() === "succeeded" ? 0 : 1;
   }
 
-  private async runInternal(
-    task: Parameters<Parameters<ReturnType<typeof this.ui.tasks>["add"]>[1]>[0],
-  ): Promise<string> {
+  private async stage1DiscoverAclModels(
+    task: TaskHandle,
+  ): Promise<{ model: LucidModel; alias: string }[]> {
     // Stage 1: Discover ACL-enabled models
     task.update("Stage 1 - Discovering ACL-enabled models");
     const models = await this.importModels();
@@ -65,7 +66,16 @@ export default class PermissionsCleanup extends BaseCommandExtended {
     task.update(
       `Found ${aclModels.length} ACL-enabled model(s): ${aclModels.map((m) => m.alias).join(", ")}`,
     );
+    return aclModels;
+  }
 
+  private async stage2CollectOrphanedIds(
+    task: TaskHandle,
+    aclModels: { model: LucidModel; alias: string }[],
+  ): Promise<
+    | { pendingDeletes: ExtendedMap<string, number[]>; totalOrphans: number }
+    | string
+  > {
     // Stage 2: Collect primary-key IDs of orphaned ACL rows (snapshot)
     //
     // We snapshot the exact IDs *before* asking for confirmation so that
@@ -157,6 +167,14 @@ export default class PermissionsCleanup extends BaseCommandExtended {
       this.logger.info(`  ${alias}: ${count} orphaned row(s)`);
     }
 
+    return { pendingDeletes, totalOrphans };
+  }
+
+  private async stage3ConfirmAndDelete(
+    task: TaskHandle,
+    pendingDeletes: ExtendedMap<string, number[]>,
+    totalOrphans: number,
+  ): Promise<string> {
     // Stage 3: Confirm and delete by collected IDs
     const proceed = await this.prompt.confirm(
       `Delete ${totalOrphans} orphaned ACL row(s)?`,
@@ -183,6 +201,18 @@ export default class PermissionsCleanup extends BaseCommandExtended {
     }
 
     return `Cleanup complete. Deleted ${deletedTotal} orphaned ACL row(s).`;
+  }
+
+  private async runInternal(task: TaskHandle): Promise<string> {
+    const aclModels = await this.stage1DiscoverAclModels(task);
+
+    const stage2Result = await this.stage2CollectOrphanedIds(task, aclModels);
+    if (typeof stage2Result === "string") {
+      return stage2Result;
+    }
+    const { pendingDeletes, totalOrphans } = stage2Result;
+
+    return this.stage3ConfirmAndDelete(task, pendingDeletes, totalOrphans);
   }
 
   private async importModels(): Promise<LucidModel[]> {
