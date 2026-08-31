@@ -44,6 +44,11 @@ interface DBUsedFiles {
   relationData: DBRelation;
 }
 
+interface Stage1Result {
+  localFiles: LocalFileEntry[];
+  miniatureFiles: MiniatureEntry[];
+}
+
 const TIME_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day; anything newer than this will not get indexed
 
 const UUID_REGEX =
@@ -111,14 +116,16 @@ export default class CleanupFiles extends BaseCommandExtended {
     return defaultOption;
   }
 
-  private async runInternal(task: TaskHandle) {
+  private async stage1CollectLocalFiles(
+    task: TaskHandle,
+  ): Promise<Stage1Result | string> {
     task.update("Stage 1 - Fetching files from local storage");
     const inputStoragePath = await this.promptForDirectory(
       "local files",
       STORAGE_PATH,
     );
     if (inputStoragePath === undefined) {
-      return task.error("Provided storage path is not a valid directory.");
+      return "Provided storage path is not a valid directory.";
     }
     this.storagePath = inputStoragePath;
     const inputMiniaturesStoragePath = await this.promptForDirectory(
@@ -126,9 +133,7 @@ export default class CleanupFiles extends BaseCommandExtended {
       MINIATURES_STORAGE_PATH,
     );
     if (inputMiniaturesStoragePath === undefined) {
-      return task.error(
-        "Provided miniatures storage path is not a valid directory.",
-      );
+      return "Provided miniatures storage path is not a valid directory.";
     }
     this.miniaturesStoragePath = inputMiniaturesStoragePath;
     task.update(`Will register files under path: ${this.storagePath}`);
@@ -142,8 +147,12 @@ export default class CleanupFiles extends BaseCommandExtended {
     task.update(
       `Found ${miniatureFiles.length} valid miniature files on local disk`,
     );
+    return { localFiles, miniatureFiles };
+  }
 
-    // ----
+  private async stage2FetchDbFileEntries(
+    task: TaskHandle,
+  ): Promise<DbFileEntry[]> {
     task.update("Stage 2 - Fetching files from FileEntries table");
     const fetchedFileEntries = await FileEntry.all();
     const dbFileEntry: DbFileEntry[] = fetchedFileEntries.map((row) => ({
@@ -151,7 +160,12 @@ export default class CleanupFiles extends BaseCommandExtended {
       createdAt: row.createdAt.toMillis(),
     }));
     task.update(`Found ${dbFileEntry.length} files in the FileEntry table`);
-    // ----
+    return dbFileEntry;
+  }
+
+  private async stage3FindFileEntryRelations(
+    task: TaskHandle,
+  ): Promise<DBRelation[]> {
     task.update("Stage 3 - Looking for models with relations to FileEntry");
     const relations: DBRelation[] = [];
     const models = await this.importModels();
@@ -173,7 +187,13 @@ export default class CleanupFiles extends BaseCommandExtended {
         (relation) => `${relation.model.name} - ${relation.column}`,
       ),
     );
-    // ----
+    return relations;
+  }
+
+  private async stage4IndexUsedFiles(
+    task: TaskHandle,
+    relations: DBRelation[],
+  ): Promise<DBUsedFiles[]> {
     task.update("Stage 4 - indexing files used by the related models");
     const usedFiles: DBUsedFiles[] = [];
     for (const relation of relations) {
@@ -188,8 +208,20 @@ export default class CleanupFiles extends BaseCommandExtended {
         uuids,
       } as DBUsedFiles);
     }
-    // ----
-    task.update("Stage 5 - comparison preparations");
+    return usedFiles;
+  }
+
+  private stage5PrepareComparisonSets(
+    localFiles: LocalFileEntry[],
+    miniatureFiles: MiniatureEntry[],
+    dbFileEntry: DbFileEntry[],
+    usedFiles: DBUsedFiles[],
+  ): {
+    localSet: Set<string>;
+    miniatureSet: Set<string>;
+    fileEntrySet: Set<string>;
+    modelSet: Set<string>;
+  } {
     const localSet: Set<string> = new Set<string>(
       localFiles.map((file) => file.uuid),
     );
@@ -209,7 +241,6 @@ export default class CleanupFiles extends BaseCommandExtended {
         localSet.delete(file.uuid);
         fileEntrySet.delete(file.uuid);
         modelSet.delete(file.uuid);
-        // Assuming the lifetime of a miniature is tied to the lifetime of the file, we should ignore it as well - worst case, it can be recomputed
         miniatureSet.delete(file.uuid);
       }
     }
@@ -221,88 +252,165 @@ export default class CleanupFiles extends BaseCommandExtended {
         miniatureSet.delete(file.uuid);
       }
     }
-    // ----
+    return { localSet, miniatureSet, fileEntrySet, modelSet };
+  }
+
+  private async stage6HandleOrphanedFiles(
+    task: TaskHandle,
+    localSet: Set<string>,
+    fileEntrySet: Set<string>,
+    localFiles: LocalFileEntry[],
+  ) {
     task.update("Stage 6 - orphaned files");
     const orphanedFiles = localSet.difference(fileEntrySet);
     if (orphanedFiles.size === 0) {
       task.update(`No orphaned files found`);
-    } else {
-      task.update(`Found ${orphanedFiles.size} orphaned files`);
-      await this.askForListing("List all orphaned files' ids?", orphanedFiles);
-      const orphanedConfirmation = await this.prompt.confirm(
-        "Delete all orphaned files from the file system?",
-        { default: this.force },
-      );
-      if (orphanedConfirmation) {
-        await this.removeOrphanedFiles(
-          task,
-          orphanedFiles,
-          localFiles,
-          localSet,
-        );
-      } else {
-        task.update(`Skipping deletion of orphaned files`);
-      }
+      return;
     }
+    task.update(`Found ${orphanedFiles.size} orphaned files`);
+    await this.askForListing("List all orphaned files' ids?", orphanedFiles);
+    const orphanedConfirmation = await this.prompt.confirm(
+      "Delete all orphaned files from the file system?",
+      { default: this.force },
+    );
+    if (orphanedConfirmation) {
+      await this.removeOrphanedFiles(task, orphanedFiles, localFiles, localSet);
+    } else {
+      task.update(`Skipping deletion of orphaned files`);
+    }
+  }
 
-    // ----
+  private async stage7HandleUnusedFiles(
+    task: TaskHandle,
+    fileEntrySet: Set<string>,
+    modelSet: Set<string>,
+    localFiles: LocalFileEntry[],
+    localSet: Set<string>,
+  ) {
     task.update("Stage 7 - unused files");
     const unusedFiles = fileEntrySet.difference(modelSet);
     if (unusedFiles.size === 0) {
       task.update(`No unused files found`);
-    } else {
-      task.update(`Found ${unusedFiles.size} unused files`);
-      await this.askForListing("List all unused files' ids?", unusedFiles);
-      const unusedConfirmation = await this.prompt.confirm(
-        "Delete all unused files from the file system and the database?",
-        { default: this.force },
-      );
-      if (unusedConfirmation) {
-        await this.removeUnusedFiles(task, unusedFiles, localFiles, localSet);
-      } else {
-        task.update(`Skipping deletion of unused files`);
-      }
+      return;
     }
+    task.update(`Found ${unusedFiles.size} unused files`);
+    await this.askForListing("List all unused files' ids?", unusedFiles);
+    const unusedConfirmation = await this.prompt.confirm(
+      "Delete all unused files from the file system and the database?",
+      { default: this.force },
+    );
+    if (unusedConfirmation) {
+      await this.removeUnusedFiles(task, unusedFiles, localFiles, localSet);
+    } else {
+      task.update(`Skipping deletion of unused files`);
+    }
+  }
 
-    // ----
+  private async stage8HandleGhostFiles(
+    task: TaskHandle,
+    fileEntrySet: Set<string>,
+    localSet: Set<string>,
+    usedFiles: DBUsedFiles[],
+  ) {
     task.update("Stage 8 - ghost files");
     const ghostFiles = fileEntrySet.difference(localSet);
     if (ghostFiles.size === 0) {
       task.update(`No ghost files found`);
-    } else {
-      task.update(`Found ${ghostFiles.size} ghost files`);
-      await this.askForListing("List all ghost files' ids?", ghostFiles);
-      const ghostConfirmation = await this.prompt.confirm(
-        "For all nullable references: Replace all ghost files references with null and delete them from FileEntry table?",
-        { default: this.force },
-      );
-      if (ghostConfirmation) {
-        await this.removeGhostFiles(task, usedFiles, ghostFiles);
-      } else {
-        task.update(`Skipping ghost file cleanup`);
-      }
+      return;
     }
-    // ----
+    task.update(`Found ${ghostFiles.size} ghost files`);
+    await this.askForListing("List all ghost files' ids?", ghostFiles);
+    const ghostConfirmation = await this.prompt.confirm(
+      "For all nullable references: Replace all ghost files references with null and delete them from FileEntry table?",
+      { default: this.force },
+    );
+    if (ghostConfirmation) {
+      await this.removeGhostFiles(task, usedFiles, ghostFiles);
+    } else {
+      task.update(`Skipping ghost file cleanup`);
+    }
+  }
+
+  private async stage9HandleOrphanedMiniatures(
+    task: TaskHandle,
+    miniatureSet: Set<string>,
+    localSet: Set<string>,
+    miniatureFiles: MiniatureEntry[],
+  ) {
     task.update("Stage 9 - orphaned miniatures");
     const orphanedMiniatures = miniatureSet.difference(localSet);
     if (orphanedMiniatures.size === 0) {
       task.update(`No orphaned miniatures found`);
-    } else {
-      task.update(`Found ${orphanedMiniatures.size} orphaned miniatures`);
-      await this.askForListing(
-        "List all orphaned miniatures' ids?",
-        orphanedMiniatures,
-      );
-      const miniatureConfirmation = await this.prompt.confirm(
-        "Delete all orphaned miniatures from the file system?",
-        { default: this.force },
-      );
-      if (miniatureConfirmation) {
-        await this.removeOrphanedMiniatures(task, miniatureSet, miniatureFiles);
-      } else {
-        task.update(`Skipping orphaned miniatures cleanup`);
-      }
+      return;
     }
+    task.update(`Found ${orphanedMiniatures.size} orphaned miniatures`);
+    await this.askForListing(
+      "List all orphaned miniatures' ids?",
+      orphanedMiniatures,
+    );
+    const miniatureConfirmation = await this.prompt.confirm(
+      "Delete all orphaned miniatures from the file system?",
+      { default: this.force },
+    );
+    if (miniatureConfirmation) {
+      await this.removeOrphanedMiniatures(task, miniatureSet, miniatureFiles);
+    } else {
+      task.update(`Skipping orphaned miniatures cleanup`);
+    }
+  }
+
+  private async runInternal(task: TaskHandle) {
+    const stage1Result = await this.stage1CollectLocalFiles(task);
+    if (typeof stage1Result === "string") {
+      return task.error(stage1Result);
+    }
+    const { localFiles, miniatureFiles } = stage1Result;
+
+    // ----
+    const dbFileEntry = await this.stage2FetchDbFileEntries(task);
+
+    // ----
+    const relations = await this.stage3FindFileEntryRelations(task);
+
+    // ----
+    const usedFiles = await this.stage4IndexUsedFiles(task, relations);
+
+    // ----
+    const { localSet, miniatureSet, fileEntrySet, modelSet } =
+      this.stage5PrepareComparisonSets(
+        localFiles,
+        miniatureFiles,
+        dbFileEntry,
+        usedFiles,
+      );
+
+    // ----
+    await this.stage6HandleOrphanedFiles(
+      task,
+      localSet,
+      fileEntrySet,
+      localFiles,
+    );
+
+    // ----
+    await this.stage7HandleUnusedFiles(
+      task,
+      fileEntrySet,
+      modelSet,
+      localFiles,
+      localSet,
+    );
+
+    // ----
+    await this.stage8HandleGhostFiles(task, fileEntrySet, localSet, usedFiles);
+
+    // ----
+    await this.stage9HandleOrphanedMiniatures(
+      task,
+      miniatureSet,
+      localSet,
+      miniatureFiles,
+    );
   }
 
   private async importModels(): Promise<LucidModel[]> {
