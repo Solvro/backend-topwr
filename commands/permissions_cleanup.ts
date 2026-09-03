@@ -11,6 +11,16 @@ import BaseCommandExtended from "#commands/base_command_extended";
 import { TaskHandle } from "#commands/db_scrape";
 import { getMorphMapAlias } from "#utils/permissions";
 
+interface AclModel {
+  model: LucidModel;
+  alias: string;
+}
+
+interface Stage2Result {
+  pendingDeletes: ExtendedMap<string, number[]>;
+  totalOrphans: number;
+}
+
 export default class PermissionsCleanup extends BaseCommandExtended {
   static readonly commandName = "permissions:cleanup";
   static readonly description =
@@ -47,13 +57,11 @@ export default class PermissionsCleanup extends BaseCommandExtended {
     this.exitCode = tasks.getState() === "succeeded" ? 0 : 1;
   }
 
-  private async stage1DiscoverAclModels(
-    task: TaskHandle,
-  ): Promise<{ model: LucidModel; alias: string }[]> {
+  private async stage1DiscoverAclModels(task: TaskHandle): Promise<AclModel[]> {
     // Stage 1: Discover ACL-enabled models
     task.update("Stage 1 - Discovering ACL-enabled models");
     const models = await this.importModels();
-    const aclModels: { model: LucidModel; alias: string }[] = [];
+    const aclModels: AclModel[] = [];
     for (const model of models) {
       if (!model.booted) {
         model.boot();
@@ -71,11 +79,8 @@ export default class PermissionsCleanup extends BaseCommandExtended {
 
   private async stage2CollectOrphanedIds(
     task: TaskHandle,
-    aclModels: { model: LucidModel; alias: string }[],
-  ): Promise<
-    | { pendingDeletes: ExtendedMap<string, number[]>; totalOrphans: number }
-    | string
-  > {
+    aclModels: AclModel[],
+  ): Promise<Stage2Result | string> {
     // Stage 2: Collect primary-key IDs of orphaned ACL rows (snapshot)
     //
     // We snapshot the exact IDs *before* asking for confirmation so that
