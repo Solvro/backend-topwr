@@ -76,7 +76,8 @@
     "pg": "^8.18.0",
     "pino-pretty": "^11.3.0",
     "reflect-metadata": "^0.2.2",
-    "sharp": "^0.34.5"
+    "sharp": "^0.34.5",
+    "ts-progress": "^0.1.9"
   },
   "devDependencies": {
     "@adonisjs/assembler": "^7.8.2",
