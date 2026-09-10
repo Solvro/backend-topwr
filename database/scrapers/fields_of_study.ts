@@ -4,13 +4,13 @@ import {
   prepareReportForLogging,
 } from "@solvro/error-handling/reporting";
 import * as cheerio from "cheerio";
-import Progress from "ts-progress";
 
 import { mapToStudiesType } from "#app/enums/studies_type";
 import { BaseScraperModule } from "#commands/db_scrape";
 import type { TaskHandle } from "#commands/db_scrape";
 import Department from "#models/department";
 import FieldOfStudyModel from "#models/field_of_study";
+import ProgressTracker from "#utils/progress_percent";
 
 type FieldOfStudyDetailKey = Exclude<keyof FieldOfStudyDetails, "url" | "name">;
 
@@ -87,7 +87,8 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
     this.basicSecondDegreeTermSpan,
     this.extendedSecondDegreeTermSpan,
   ];
-  private progressBar?: ReturnType<typeof Progress.create>;
+  private progressTracker?: ProgressTracker;
+  private readonly progressTrackerRefreshInterval = 150;
 
   private extendInit(studyLevel: string): RequestInit {
     const body = new URLSearchParams(this.basicInit.body as URLSearchParams);
@@ -176,61 +177,61 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
 
   private async scrapeFieldsOfStudy(fieldsOfStudies: FieldOfStudyBasic[]) {
     for (const basicField of fieldsOfStudies) {
+      const field = basicField as FieldOfStudyDetails;
+      const responseDetails = await fetch(field.url);
+      const htmlDetails = await responseDetails.text();
+      const detailPage = cheerio.load(htmlDetails);
+
+      field.department = detailPage(this.departmentSelector).text().trim();
+
+      for (const wrapper of detailPage(this.dataWrapperSelector).toArray()) {
+        const label = detailPage(wrapper)
+          .find("h3")
+          .text()
+          .trim()
+          .toLocaleLowerCase("pl");
+        const value = detailPage(wrapper).find("li").text().trim();
+        const key = LABELS[label];
+
+        if (key) {
+          field[key] = value;
+        }
+      }
+
+      let fieldOfStudy: FieldOfStudyModel;
       try {
-        const field = basicField as FieldOfStudyDetails;
-        const responseDetails = await fetch(field.url);
-        const htmlDetails = await responseDetails.text();
-        const detailPage = cheerio.load(htmlDetails);
-
-        field.department = detailPage(this.departmentSelector).text().trim();
-
-        for (const wrapper of detailPage(this.dataWrapperSelector).toArray()) {
-          const label = detailPage(wrapper)
-            .find("h3")
-            .text()
-            .trim()
-            .toLocaleLowerCase("pl");
-          const value = detailPage(wrapper).find("li").text().trim();
-          const key = LABELS[label];
-
-          if (key) {
-            field[key] = value;
-          }
-        }
-
-        let fieldOfStudy: FieldOfStudyModel;
-        try {
-          fieldOfStudy = await this.mapDetailsToModel(field);
-        } catch (error) {
-          const report = analyzeErrorStack(toIBaseError(error));
-          this.logger.warning(
-            `Failed to map the '${field.name}' field of study to database model. Write of this field to db skipped: ${prepareReportForLogging(report)}`,
-          );
-          continue;
-        }
-
-        const existingFieldOfStudy = await FieldOfStudyModel.findBy(
-          "name",
-          fieldOfStudy.name,
+        fieldOfStudy = await this.mapDetailsToModel(field);
+      } catch (error) {
+        const report = analyzeErrorStack(toIBaseError(error));
+        this.logger.warning(
+          `Failed to map the '${field.name}' field of study to database model. Write of this field to db skipped: ${prepareReportForLogging(report)}`,
         );
+        this.progressTracker?.update();
+        continue;
+      }
 
-        try {
-          if (existingFieldOfStudy !== null) {
-            existingFieldOfStudy.merge(fieldOfStudy.$attributes);
-            await existingFieldOfStudy.save();
-          } else {
-            await fieldOfStudy.save();
-          }
-        } catch (error) {
-          this.logger.warning(
-            `Failed to write the '${fieldOfStudy.name}' field of study to database: '${error}'`,
-          );
+      const existingFieldOfStudy = await FieldOfStudyModel.findBy(
+        "name",
+        fieldOfStudy.name,
+      );
+
+      try {
+        if (existingFieldOfStudy !== null) {
+          existingFieldOfStudy.merge(fieldOfStudy.$attributes);
+          await existingFieldOfStudy.save();
+        } else {
+          await fieldOfStudy.save();
         }
+      } catch (error) {
+        this.logger.warning(
+          `Failed to write the '${fieldOfStudy.name}' field of study to database: '${error}'`,
+        );
       } finally {
-        this.progressBar?.update();
+        this.progressTracker?.update();
       }
     }
   }
+
   async run(task: TaskHandle): Promise<string> {
     task.update("Starting fetching all fields of study");
 
@@ -244,13 +245,17 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
     );
     const totalStudiesAmount =
       firstDegreeStudies.length + secondDegreeStudies.length;
-    this.progressBar = Progress.create({ total: totalStudiesAmount });
+    this.progressTracker = new ProgressTracker(
+      totalStudiesAmount,
+      this.progressTrackerRefreshInterval,
+    );
 
     await Promise.all([
       this.scrapeFieldsOfStudy(firstDegreeStudies),
       this.scrapeFieldsOfStudy(secondDegreeStudies),
     ]);
-    this.progressBar.done();
+    this.progressTracker.done();
+
     return "Done";
   }
 }
