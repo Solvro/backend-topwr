@@ -165,9 +165,9 @@ export class JwtGuard implements GuardContract<User> {
     const accessToken = this.generateAccessToken(user.id);
     const refreshToken = await this.generateRefreshToken(user.id);
     return {
-      type: "bearer",
       accessToken,
       refreshToken,
+      type: "bearer",
       accessExpiresInMs: ACCESS_EXPIRES_IN_MS,
       refreshExpiresInMs: REFRESH_EXPIRES_IN_MS,
     };

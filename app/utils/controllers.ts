@@ -124,11 +124,11 @@ export async function importAllControllers(): Promise<ImportedApiVersion[]> {
       }
 
       controllers.set(controller, {
+        instance,
         apiVersion: version.apiVersion,
         name: controller,
         lazyImport: lazyImport as LazyImport<Constructor<BaseController>>,
         constructor: constructor as Constructor<BaseController>,
-        instance,
         configureRoutes: instance.$configureRoutes.bind(
           instance,
           lazyImport as LazyImport<Constructor<BaseController>>,

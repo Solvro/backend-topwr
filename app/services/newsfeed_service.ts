@@ -79,11 +79,11 @@ export default class NewsfeedService {
         .filter((cat) => cat.length > 0) ?? [];
 
     return {
+      categories,
       imageLink: optionMap(imageLink, makeUrlAbsolute),
       title: titleElement?.textContent.trim(),
       url: optionMap(titleElement?.getAttribute("href"), makeUrlAbsolute),
       date: DATE_REGEX.exec(dateText)?.[1] ?? undefined,
-      categories,
       previewText: newsfeedItem.querySelector("p.desc")?.textContent.trim(),
     };
   }
