@@ -155,6 +155,7 @@ export type ControllerAction =
 export default abstract class AutoCrudController<
   T extends LucidModel & Scopes<LucidModel>,
 > extends BaseController {
+  private static isValidated = false;
   /**
    * Relations which should be supported in queries
    * Supports nested relations
@@ -620,25 +621,28 @@ export default abstract class AutoCrudController<
    * @throws when this controller was implemented incorrectly
    */
   protected async selfValidate() {
-    // cache
-    const modelValidationCache = selfValidationCache.getOrInsertWith(
-      this.model,
-      () => new Map(),
-    );
-
-    const relationCacheKey = JSON.stringify([
-      this.queryRelations,
-      this.crudRelations,
-    ]);
-    const selfValidationResult =
-      await modelValidationCache.getOrInsertWithAsync(
-        relationCacheKey,
-        this.doSelfValidate.bind(this),
+    if (AutoCrudController.isValidated !== true) {
+      // cache
+      const modelValidationCache = selfValidationCache.getOrInsertWith(
+        this.model,
+        () => new Map(),
       );
-    if (selfValidationResult === null) {
-      return;
+
+      const relationCacheKey = JSON.stringify([
+        this.queryRelations,
+        this.crudRelations,
+      ]);
+      const selfValidationResult =
+        await modelValidationCache.getOrInsertWithAsync(
+          relationCacheKey,
+          this.doSelfValidate.bind(this),
+        );
+      if (selfValidationResult === null) {
+        AutoCrudController.isValidated = true;
+        return;
+      }
+      throw selfValidationResult;
     }
-    throw selfValidationResult;
   }
 
   private $configureBasicRoutes(
