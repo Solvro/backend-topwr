@@ -42,7 +42,7 @@ export default class ProgressTracker {
   private printProgress(): void {
     this.rendered = true;
     process.stdout.write(
-      `\r│ ${this.name}: ${this.current} / ${this.total} - ${Math.round((this.current / this.total) * 100)}% `,
+      `│ ${this.name}: ${this.current} / ${this.total} - ${Math.round((this.current / this.total) * 100)}% \r`,
     );
   }
 
@@ -52,7 +52,7 @@ export default class ProgressTracker {
   public done(): void {
     if (this.rendered) {
       process.stdout.write(
-        `\r│ ${this.name}: ${this.current} / ${this.total} - 100% \n`,
+        `│ ${this.name}: ${this.current} / ${this.total} - 100% \n`,
       );
     }
   }
