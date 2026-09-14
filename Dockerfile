@@ -4,7 +4,7 @@ RUN apk add --no-cache curl \
     && chown node:node /app
 USER node:node
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY --parents package.json package-lock.json patches/ ./
 
 # Production only deps stage
 FROM base AS prod-deps
