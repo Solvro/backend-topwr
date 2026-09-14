@@ -30,19 +30,19 @@ export default class ProgressTracker {
    * on the first call.git
    */
   public update(): void {
-    const now = performance.now();
+    this.current++;
 
-    if (this.lastRefresh === 0 || now - this.lastRefresh > REFRESH_INTERVAL) {
+    const now = performance.now();
+    if (now - this.lastRefresh > REFRESH_INTERVAL) {
       this.lastRefresh = now;
       this.printProgress();
     }
-    this.current++;
   }
 
   private printProgress(): void {
     this.rendered = true;
     process.stdout.write(
-      `\r ${this.name}: ${this.current} / ${this.total} - ${Math.round((this.current / this.total) * 100)}% `,
+      `\r│ ${this.name}: ${this.current} / ${this.total} - ${Math.round((this.current / this.total) * 100)}% `,
     );
   }
 
@@ -52,7 +52,7 @@ export default class ProgressTracker {
   public done(): void {
     if (this.rendered) {
       process.stdout.write(
-        `\r ${this.name}: ${this.current} / ${this.total} - 100% `,
+        `\r│ ${this.name}: ${this.current} / ${this.total} - 100% \n`,
       );
     }
   }
