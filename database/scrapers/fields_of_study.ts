@@ -209,10 +209,10 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
         continue;
       }
 
-      const existingFieldOfStudy = await FieldOfStudyModel.findBy(
-        "name",
-        fieldOfStudy.name,
-      );
+      const existingFieldOfStudy = await FieldOfStudyModel.findBy({
+        url: fieldOfStudy.url,
+        studiesType: fieldOfStudy.studiesType,
+      });
 
       try {
         if (existingFieldOfStudy !== null) {
