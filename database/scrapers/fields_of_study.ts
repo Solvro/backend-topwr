@@ -88,7 +88,6 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
     this.extendedSecondDegreeTermSpan,
   ];
   private progressTracker?: ProgressTracker;
-  private readonly progressTrackerRefreshInterval = 150;
 
   private extendInit(studyLevel: string): RequestInit {
     const body = new URLSearchParams(this.basicInit.body as URLSearchParams);
@@ -248,10 +247,7 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
 
     const totalStudiesAmount =
       firstDegreeStudies.length + secondDegreeStudies.length;
-    this.progressTracker = new ProgressTracker(
-      totalStudiesAmount,
-      this.progressTrackerRefreshInterval,
-    );
+    this.progressTracker = new ProgressTracker(totalStudiesAmount);
 
     await Promise.all([
       this.scrapeFieldsOfStudy(firstDegreeStudies),

@@ -1,25 +1,28 @@
+const REFRESH_INTERVAL = 100;
+
 /**
  * Displays rounded percentage progress in the terminal at a fixed interval.
  * Call `update()` after each processed item and `done()` when processing ends.
  */
 export default class ProgressTracker {
   private readonly total: number;
-  private actual = 0;
-  private refreshInterval = 0;
-  private lastRefresh = 0;
+  private current: number;
+  private lastRefresh: number;
+  private rendered: boolean;
   private readonly name: string;
 
   /**
    * Creates a progress tracker. Refreshing starts on the first `update()` call.
    *
    * @param total - Total number of items to process; should be greater than zero.
-   * @param refreshInterval - Time between terminal updates, in milliseconds.
    * @param name - Label displayed before the percentage. Defaults to "Progress".
    */
-  constructor(total: number, refreshInterval: number, name = "Progress") {
+  constructor(total: number, name = "Progress") {
     this.total = total;
-    this.refreshInterval = refreshInterval;
     this.name = name;
+    this.current = 0;
+    this.lastRefresh = performance.now();
+    this.rendered = false;
   }
 
   /**
@@ -29,19 +32,17 @@ export default class ProgressTracker {
   public update(): void {
     const now = performance.now();
 
-    if (
-      this.lastRefresh === 0 ||
-      now - this.lastRefresh > this.refreshInterval
-    ) {
+    if (this.lastRefresh === 0 || now - this.lastRefresh > REFRESH_INTERVAL) {
       this.lastRefresh = now;
       this.printProgress();
     }
-    this.actual++;
+    this.current++;
   }
 
   private printProgress(): void {
+    this.rendered = true;
     process.stdout.write(
-      `\r ${this.name}: ${this.actual} / ${this.total} - ${Math.round((this.actual / this.total) * 100)}% `,
+      `\r ${this.name}: ${this.current} / ${this.total} - ${Math.round((this.current / this.total) * 100)}% `,
     );
   }
 
@@ -49,8 +50,10 @@ export default class ProgressTracker {
    * Prints 100% regardless of the processed item count
    */
   public done(): void {
-    process.stdout.write(
-      `\r ${this.name}: ${this.actual} / ${this.total} - 100% `,
-    );
+    if (this.rendered) {
+      process.stdout.write(
+        `\r ${this.name}: ${this.current} / ${this.total} - 100% `,
+      );
+    }
   }
 }
