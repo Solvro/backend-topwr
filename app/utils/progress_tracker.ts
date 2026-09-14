@@ -41,15 +41,16 @@ export default class ProgressTracker {
 
   private printProgress(): void {
     process.stdout.write(
-      `\r ${this.name}: ${Math.round((this.actual / this.total) * 100)}% `,
+      `\r ${this.name}: ${this.actual} / ${this.total} - ${Math.round((this.actual / this.total) * 100)}% `,
     );
   }
 
   /**
-   * Prints 100% regardless of the processed item count, stops the refresh timer
-
+   * Prints 100% regardless of the processed item count
    */
   public done(): void {
-    process.stdout.write(`\r ${this.name}: 100% `);
+    process.stdout.write(
+      `\r ${this.name}: ${this.actual} / ${this.total} - 100% `,
+    );
   }
 }
