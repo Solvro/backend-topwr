@@ -232,7 +232,7 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
   }
 
   async run(task: TaskHandle): Promise<string> {
-    task.update("Starting fetching all fields of study");
+    task.update("Fetching a list of fields of study");
 
     const [firstDegreeStudies, secondDegreeStudies] = await Promise.all([
       this.fetchFieldsOfStudy(
@@ -245,9 +245,10 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
       ),
     ]);
 
+    task.update("Scraping each field of study");
     const totalStudiesAmount =
       firstDegreeStudies.length + secondDegreeStudies.length;
-    this.progressTracker = new ProgressTracker(totalStudiesAmount);
+    this.progressTracker = new ProgressTracker(totalStudiesAmount, "Scraping");
 
     await Promise.all([
       this.scrapeFieldsOfStudy(firstDegreeStudies),
