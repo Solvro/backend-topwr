@@ -10,7 +10,7 @@ import { BaseScraperModule } from "#commands/db_scrape";
 import type { TaskHandle } from "#commands/db_scrape";
 import Department from "#models/department";
 import FieldOfStudyModel from "#models/field_of_study";
-import ProgressTracker from "#utils/progress_percent";
+import ProgressTracker from "#utils/progress_tracker";
 
 type FieldOfStudyDetailKey = Exclude<keyof FieldOfStudyDetails, "url" | "name">;
 
@@ -235,14 +235,17 @@ export default class FieldsOfStudyScraper extends BaseScraperModule {
   async run(task: TaskHandle): Promise<string> {
     task.update("Starting fetching all fields of study");
 
-    const firstDegreeStudies = await this.fetchFieldsOfStudy(
-      this.url,
-      this.extendInit(this.firstDegreeStudyLevelParam),
-    );
-    const secondDegreeStudies = await this.fetchFieldsOfStudy(
-      this.url,
-      this.extendInit(this.secondDegreeStudyLevelParam),
-    );
+    const [firstDegreeStudies, secondDegreeStudies] = await Promise.all([
+      this.fetchFieldsOfStudy(
+        this.url,
+        this.extendInit(this.firstDegreeStudyLevelParam),
+      ),
+      this.fetchFieldsOfStudy(
+        this.url,
+        this.extendInit(this.secondDegreeStudyLevelParam),
+      ),
+    ]);
+
     const totalStudiesAmount =
       firstDegreeStudies.length + secondDegreeStudies.length;
     this.progressTracker = new ProgressTracker(

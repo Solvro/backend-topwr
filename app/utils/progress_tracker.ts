@@ -6,8 +6,8 @@ export default class ProgressTracker {
   private readonly total: number;
   private actual = 0;
   private refreshInterval = 0;
+  private lastRefresh = 0;
   private readonly name: string;
-  private refresher: ReturnType<typeof setInterval> | undefined;
 
   /**
    * Creates a progress tracker. Refreshing starts on the first `update()` call.
@@ -26,28 +26,31 @@ export default class ProgressTracker {
    * Increments the processed item count by one and starts the refresh timer
    * on the first call.git
    */
-  public update() {
-    if (this.actual === 0) {
-      this.refresher = setInterval(() => {
-        process.stdout.write(
-          `\r ${this.name}: ${Math.round((this.actual / this.total) * 100)}% `,
-        );
-      }, this.refreshInterval);
+  public update(): void {
+    const now = Date.now();
+
+    if (this.lastRefresh === 0) {
+      this.printProgress();
+    }
+
+    if (now - this.lastRefresh > this.refreshInterval) {
+      this.printProgress();
     }
     this.actual++;
+    this.lastRefresh = now;
+  }
+
+  private printProgress(): void {
+    process.stdout.write(
+      `\r ${this.name}: ${Math.round((this.actual / this.total) * 100)}% `,
+    );
   }
 
   /**
-   * Prints 100% regardless of the processed item count, stops the refresh timer,
-   * and synchronously invokes the optional callback.
-   *
-   * @param callback - Function to run after stopping the refresh timer.
+   * Prints 100% regardless of the processed item count, stops the refresh timer
+
    */
-  public done(callback?: () => void) {
+  public done(): void {
     process.stdout.write(`\r ${this.name}: 100% `);
-    this.refresher?.close();
-    if (callback !== undefined) {
-      callback();
-    }
   }
 }
