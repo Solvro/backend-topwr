@@ -27,17 +27,16 @@ export default class ProgressTracker {
    * on the first call.git
    */
   public update(): void {
-    const now = Date.now();
+    const now = performance.now();
 
-    if (this.lastRefresh === 0) {
-      this.printProgress();
-    }
-
-    if (now - this.lastRefresh > this.refreshInterval) {
+    if (
+      this.lastRefresh === 0 ||
+      now - this.lastRefresh > this.refreshInterval
+    ) {
+      this.lastRefresh = now;
       this.printProgress();
     }
     this.actual++;
-    this.lastRefresh = now;
   }
 
   private printProgress(): void {
