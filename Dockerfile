@@ -1,10 +1,11 @@
+# syntax=docker/dockerfile:1.26
 FROM node:22-alpine AS base
 RUN apk add --no-cache curl \
     && mkdir /app \
     && chown node:node /app
 USER node:node
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY --parents package.json package-lock.json patches/ ./
 
 # Production only deps stage
 FROM base AS prod-deps

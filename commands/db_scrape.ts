@@ -106,16 +106,18 @@ export abstract class BaseScraperModule {
    *
    * @param url - URL to fetch
    * @param item - type of data being fetched - this is used to generate accurate error context messages
+   * @param init - optional request initialization options passed to fetch
    * @throws when the response status code is outside of the 2xx range
    * @returns the HTTP response object
    */
   protected async fetchAndCheckStatus(
     url: string,
     item: string,
+    init?: RequestInit,
   ): Promise<Response> {
     let response;
     try {
-      response = await fetch(url);
+      response = await fetch(url, init);
     } catch (e) {
       throw new Error(`Failed to fetch ${item}`, { cause: e });
     }
@@ -132,11 +134,16 @@ export abstract class BaseScraperModule {
    *
    * @param url - URL to fetch
    * @param item - type of data being fetched - this is used to generate accurate error context messages
+   * @param init - optional request initialization options passed to fetch
    * @throws when the response status code is outside of the 2xx range, or if the response deserializes to something other than an object
    * @returns the desialized JSON response
    */
-  protected async fetchJSON(url: string, item: string): Promise<object> {
-    const response = await this.fetchAndCheckStatus(url, item);
+  protected async fetchJSON(
+    url: string,
+    item: string,
+    init?: RequestInit,
+  ): Promise<object> {
+    const response = await this.fetchAndCheckStatus(url, item, init);
     let result;
     try {
       result = await response.json();
