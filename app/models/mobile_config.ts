@@ -2,6 +2,7 @@ import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel } from "@adonisjs/lucid/orm";
+import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
 import { typedColumn } from "#decorators/typed_model";
 import { preloadRelations } from "#scopes/preload_helper";
@@ -56,6 +57,9 @@ export default class MobileConfig extends BaseModel {
   declare killswitchOfDoomAndDespair: boolean;
 
   @typedColumn.dateTime({ autoCreate: true })
+  declare globalLastModifiedAt: DateTime;
+
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
   @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
@@ -67,6 +71,14 @@ export default class MobileConfig extends BaseModel {
 
   public static async bumpTranslatorCache() {
     await MobileConfig.query().increment("translator_reference_number", 1);
+  }
+
+  public static async touchGlobalLastModified(trx?: TransactionClientContract) {
+    await MobileConfig.query(
+      trx === undefined ? undefined : { client: trx },
+    ).update({
+      global_last_modified_at: DateTime.now().toSQL(),
+    });
   }
 
   static readonly preloadRelations = preloadRelations();
