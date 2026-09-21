@@ -1,5 +1,6 @@
 import adonisString from "@poppinss/utils/string";
 import { BaseError } from "@solvro/error-handling/base";
+import type { DateTime } from "luxon";
 import assert from "node:assert";
 
 import type { HttpContext } from "@adonisjs/core/http";
@@ -44,6 +45,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "#exceptions/http_exceptions";
+import MobileConfig from "#models/mobile_config";
 import type { preloadRelations } from "#scopes/preload_helper";
 import type { handleSearchQuery } from "#scopes/search_helper";
 import type { handleSortQuery } from "#scopes/sort_helper";
@@ -755,14 +757,38 @@ export default abstract class AutoCrudController<
     return relationName;
   }
 
+  private async getGlobalLastModified(): Promise<DateTime> {
+    const config = await MobileConfig.query()
+      .select("global_last_modified_at")
+      .firstOrFail();
+    return config.globalLastModifiedAt;
+  }
+
   /**
    * Display a list of resource
    *
    * Return type set to Promise<unknown> to allow for method overrides
    */
   async index(httpCtx: HttpContext): Promise<unknown> {
-    const { request } = httpCtx;
+    const { request, response } = httpCtx;
     await this.selfValidate();
+
+    const requiredPermission = this.requiredPermissionFor("index");
+    const requiresAuth =
+      requiredPermission !== null && requiredPermission !== undefined;
+
+    let lastModifiedHttp: string | null = null;
+    if (!requiresAuth) {
+      const globalLastModified = await this.getGlobalLastModified();
+      lastModifiedHttp = globalLastModified.toHTTP();
+
+      const ifUnmodifiedSince = request.header("if-unmodified-since");
+      if (lastModifiedHttp !== null && ifUnmodifiedSince === lastModifiedHttp) {
+        response.status(304);
+        return response.send("");
+      }
+    }
+
     // Public by default; override requiredPermissionFor to restrict
     const data = await db.transaction(async (trx) => {
       await this.authenticate(httpCtx, "index", undefined, trx);
@@ -784,6 +810,11 @@ export default abstract class AutoCrudController<
       return await baseQuery.paginate(page ?? 1, limit ?? 10);
     }, transactionConfig);
 
+    if (requiresAuth) {
+      response.header("Cache-Control", "no-cache, no-store");
+    } else if (lastModifiedHttp !== null) {
+      response.header("Last-Modified", lastModifiedHttp);
+    }
     return data;
   }
 
@@ -793,8 +824,25 @@ export default abstract class AutoCrudController<
    * Return type set to Promise<unknown> to allow for method overrides
    */
   async show(httpCtx: HttpContext): Promise<unknown> {
-    const { request } = httpCtx;
+    const { request, response } = httpCtx;
     await this.selfValidate();
+
+    const requiredPermission = this.requiredPermissionFor("show");
+    const requiresAuth =
+      requiredPermission !== null && requiredPermission !== undefined;
+
+    let lastModifiedHttp: string | null = null;
+    if (!requiresAuth) {
+      const globalLastModified = await this.getGlobalLastModified();
+      lastModifiedHttp = globalLastModified.toHTTP();
+
+      const ifUnmodifiedSince = request.header("if-unmodified-since");
+      if (lastModifiedHttp !== null && ifUnmodifiedSince === lastModifiedHttp) {
+        response.status(304);
+        return response.send("");
+      }
+    }
+
     const data = await db.transaction(async (trx) => {
       await this.authenticate(httpCtx, "show", undefined, trx);
 
@@ -829,6 +877,13 @@ export default abstract class AutoCrudController<
     }, transactionConfig);
 
     await this.authorizeRecord(httpCtx, "show", data);
+
+    if (requiresAuth) {
+      response.header("Cache-Control", "no-cache, no-store");
+    } else if (lastModifiedHttp !== null) {
+      response.header("Last-Modified", lastModifiedHttp);
+    }
+
     return { data };
   }
 
@@ -874,6 +929,7 @@ export default abstract class AutoCrudController<
           code: "E_INTERNAL_CONTROLLER_ERROR",
           status: 500,
         });
+        await MobileConfig.touchGlobalLastModified(trx);
         return createdModel;
       },
 
@@ -967,6 +1023,7 @@ export default abstract class AutoCrudController<
         code: "E_DB_ERROR",
         status: 500,
       });
+      await MobileConfig.touchGlobalLastModified(trx);
       return row;
     }, transactionConfig);
     return {
@@ -1024,6 +1081,7 @@ export default abstract class AutoCrudController<
       if (morphAlias !== null) {
         await deletePermissionsForEntity(morphAlias, id, trx);
       }
+      await MobileConfig.touchGlobalLastModified(trx);
     }, transactionConfig);
 
     return {
@@ -1189,6 +1247,7 @@ export default abstract class AutoCrudController<
         code: "E_DB_ERROR",
         status: 500,
       });
+      await MobileConfig.touchGlobalLastModified(trx);
       return fetchedData;
     }, transactionConfig);
 
@@ -1272,6 +1331,7 @@ export default abstract class AutoCrudController<
         code: "E_DB_ERROR",
         status: 500,
       });
+      await MobileConfig.touchGlobalLastModified(trx);
       return fetchedData;
     }, transactionConfig);
     return {
@@ -1346,6 +1406,7 @@ export default abstract class AutoCrudController<
           code: "E_DB_ERROR",
           status: 500,
         });
+      await MobileConfig.touchGlobalLastModified(trx);
     }, transactionConfig);
 
     return { success: true };
@@ -1445,6 +1506,7 @@ export default abstract class AutoCrudController<
         );
       }
 
+      await MobileConfig.touchGlobalLastModified(trx);
       return deletedRows;
     }, transactionConfig);
 
@@ -1556,6 +1618,7 @@ export default abstract class AutoCrudController<
           "No relation attachments matched your query",
         );
       }
+      await MobileConfig.touchGlobalLastModified(trx);
     }, transactionConfig);
 
     return { success: true };
