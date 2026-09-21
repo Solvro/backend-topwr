@@ -152,12 +152,10 @@ export function applyInheritance(listing: ImportedApiVersion[]) {
   // sort the versions ascending
   listing.sort((a, b) => a.apiVersion - b.apiVersion);
   //first version's controllers
-  let previousVersion = listing[0];
-  //newer version's controllers
-  const nextVersions = listing.slice(1);
+  let previousVersion = [...listing].shift() as unknown as ImportedApiVersion;
 
   // iterate over the listing
-  for (const version of nextVersions) {
+  for (const version of listing) {
     // iterate over previous versions' controllers
     for (const [name, controller] of previousVersion.controllers.entries()) {
       // if missing in new version, add
