@@ -45,7 +45,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from "#exceptions/http_exceptions";
-import MobileConfig from "#models/mobile_config";
+import CacheState from "#models/cache_state";
 import type { preloadRelations } from "#scopes/preload_helper";
 import type { handleSearchQuery } from "#scopes/search_helper";
 import type { handleSortQuery } from "#scopes/sort_helper";
@@ -758,10 +758,10 @@ export default abstract class AutoCrudController<
   }
 
   private async getGlobalLastModified(): Promise<DateTime> {
-    const config = await MobileConfig.query()
-      .select("global_last_modified_at")
+    const config = await CacheState.query()
+      .select("last_modified_at")
       .firstOrFail();
-    return config.globalLastModifiedAt;
+    return config.lastModifiedAt;
   }
 
   /**
@@ -929,7 +929,7 @@ export default abstract class AutoCrudController<
           code: "E_INTERNAL_CONTROLLER_ERROR",
           status: 500,
         });
-        await MobileConfig.touchGlobalLastModified(trx);
+        await CacheState.touchGlobalLastModified(trx);
         return createdModel;
       },
 
@@ -1023,7 +1023,7 @@ export default abstract class AutoCrudController<
         code: "E_DB_ERROR",
         status: 500,
       });
-      await MobileConfig.touchGlobalLastModified(trx);
+      await CacheState.touchGlobalLastModified(trx);
       return row;
     }, transactionConfig);
     return {
@@ -1081,7 +1081,7 @@ export default abstract class AutoCrudController<
       if (morphAlias !== null) {
         await deletePermissionsForEntity(morphAlias, id, trx);
       }
-      await MobileConfig.touchGlobalLastModified(trx);
+      await CacheState.touchGlobalLastModified(trx);
     }, transactionConfig);
 
     return {
@@ -1247,7 +1247,7 @@ export default abstract class AutoCrudController<
         code: "E_DB_ERROR",
         status: 500,
       });
-      await MobileConfig.touchGlobalLastModified(trx);
+      await CacheState.touchGlobalLastModified(trx);
       return fetchedData;
     }, transactionConfig);
 
@@ -1331,7 +1331,7 @@ export default abstract class AutoCrudController<
         code: "E_DB_ERROR",
         status: 500,
       });
-      await MobileConfig.touchGlobalLastModified(trx);
+      await CacheState.touchGlobalLastModified(trx);
       return fetchedData;
     }, transactionConfig);
     return {
@@ -1406,7 +1406,7 @@ export default abstract class AutoCrudController<
           code: "E_DB_ERROR",
           status: 500,
         });
-      await MobileConfig.touchGlobalLastModified(trx);
+      await CacheState.touchGlobalLastModified(trx);
     }, transactionConfig);
 
     return { success: true };
@@ -1506,7 +1506,7 @@ export default abstract class AutoCrudController<
         );
       }
 
-      await MobileConfig.touchGlobalLastModified(trx);
+      await CacheState.touchGlobalLastModified(trx);
       return deletedRows;
     }, transactionConfig);
 
@@ -1618,7 +1618,7 @@ export default abstract class AutoCrudController<
           "No relation attachments matched your query",
         );
       }
-      await MobileConfig.touchGlobalLastModified(trx);
+      await CacheState.touchGlobalLastModified(trx);
     }, transactionConfig);
 
     return { success: true };
