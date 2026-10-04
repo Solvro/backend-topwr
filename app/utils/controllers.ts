@@ -151,7 +151,8 @@ export async function importAllControllers(): Promise<ImportedApiVersion[]> {
 export function applyInheritance(listing: ImportedApiVersion[]) {
   // sort the versions ascending
   listing.sort((a, b) => a.apiVersion - b.apiVersion);
-  let previousVersion = listing[0];
+  //first version's controllers
+  let previousVersion = [...listing].shift() as unknown as ImportedApiVersion;
 
   // iterate over the listing
   for (const version of listing) {
