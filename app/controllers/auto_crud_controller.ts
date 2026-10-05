@@ -764,6 +764,14 @@ export default abstract class AutoCrudController<
     return config.lastModifiedAt;
   }
 
+  private setCacheableHeaders(
+    response: HttpContext["response"],
+    lastModifiedHttp: string,
+  ) {
+    response.header("Last-Modified", lastModifiedHttp);
+    response.header("Cache-Control", "no-cache, must-revalidate");
+  }
+
   /**
    * Display a list of resource
    *
@@ -782,8 +790,9 @@ export default abstract class AutoCrudController<
       const globalLastModified = await this.getGlobalLastModified();
       lastModifiedHttp = globalLastModified.toHTTP();
 
-      const ifUnmodifiedSince = request.header("if-unmodified-since");
-      if (lastModifiedHttp !== null && ifUnmodifiedSince === lastModifiedHttp) {
+      const ifModifiedSince = request.header("if-modified-since");
+      if (lastModifiedHttp !== null && ifModifiedSince === lastModifiedHttp) {
+        this.setCacheableHeaders(response, lastModifiedHttp);
         response.status(304);
         return response.send("");
       }
@@ -813,7 +822,7 @@ export default abstract class AutoCrudController<
     if (requiresAuth) {
       response.header("Cache-Control", "no-cache, no-store");
     } else if (lastModifiedHttp !== null) {
-      response.header("Last-Modified", lastModifiedHttp);
+      this.setCacheableHeaders(response, lastModifiedHttp);
     }
     return data;
   }
@@ -836,8 +845,9 @@ export default abstract class AutoCrudController<
       const globalLastModified = await this.getGlobalLastModified();
       lastModifiedHttp = globalLastModified.toHTTP();
 
-      const ifUnmodifiedSince = request.header("if-unmodified-since");
-      if (lastModifiedHttp !== null && ifUnmodifiedSince === lastModifiedHttp) {
+      const ifModifiedSince = request.header("if-modified-since");
+      if (lastModifiedHttp !== null && ifModifiedSince === lastModifiedHttp) {
+        this.setCacheableHeaders(response, lastModifiedHttp);
         response.status(304);
         return response.send("");
       }
@@ -881,7 +891,7 @@ export default abstract class AutoCrudController<
     if (requiresAuth) {
       response.header("Cache-Control", "no-cache, no-store");
     } else if (lastModifiedHttp !== null) {
-      response.header("Last-Modified", lastModifiedHttp);
+      this.setCacheableHeaders(response, lastModifiedHttp);
     }
 
     return { data };
