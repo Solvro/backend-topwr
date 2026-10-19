@@ -19,6 +19,7 @@ import {
   InternalServerException,
   NotFoundException,
 } from "#exceptions/http_exceptions";
+import CacheState from "#models/cache_state";
 import CalendarEvent from "#models/calendar_event";
 
 const hideToggleValidator = vine.compile(
@@ -138,15 +139,17 @@ export default class EventCalendarController extends AutoCrudController<
         );
       }
     }
+    await CacheState.touchGlobalLastModified();
     response.status(204);
   }
 
-  async index({ request }: HttpContext): Promise<unknown> {
-    const { showHidden } = await showHiddenValidator.validate(request.qs());
-    const data = (await super.index({ request } as HttpContext)) as {
-      data: CalendarEvent[];
-    };
-    if (showHidden === true) {
+  async index(ctx: HttpContext): Promise<unknown> {
+    const { showHidden } = await showHiddenValidator.validate(ctx.request.qs());
+    const data = (await super.index(ctx)) as
+      | { data: CalendarEvent[] }
+      | undefined;
+    // undefined = 304 Not Modified, response already sent by super.index
+    if (data === undefined || showHidden === true) {
       return data;
     }
     return {
