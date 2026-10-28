@@ -2,8 +2,10 @@ import vine from "@vinejs/vine";
 import { DateTime } from "luxon";
 
 import { BaseModel } from "@adonisjs/lucid/orm";
+import db from "@adonisjs/lucid/services/db";
 
 import { typedColumn } from "#decorators/typed_model";
+import CacheState from "#models/cache_state";
 import { preloadRelations } from "#scopes/preload_helper";
 import { handleSearchQuery } from "#scopes/search_helper";
 import { handleSortQuery } from "#scopes/sort_helper";
@@ -62,11 +64,23 @@ export default class MobileConfig extends BaseModel {
   declare updatedAt: DateTime;
 
   public static async bumpCmsCache() {
-    await MobileConfig.query().increment("cms_reference_number", 1);
+    await db.transaction(async (trx) => {
+      await MobileConfig.query({ client: trx }).increment(
+        "cms_reference_number",
+        1,
+      );
+      await CacheState.touchGlobalLastModified(trx);
+    });
   }
 
   public static async bumpTranslatorCache() {
-    await MobileConfig.query().increment("translator_reference_number", 1);
+    await db.transaction(async (trx) => {
+      await MobileConfig.query({ client: trx }).increment(
+        "translator_reference_number",
+        1,
+      );
+      await CacheState.touchGlobalLastModified(trx);
+    });
   }
 
   static readonly preloadRelations = preloadRelations();
