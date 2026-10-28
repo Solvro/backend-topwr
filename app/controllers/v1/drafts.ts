@@ -25,6 +25,7 @@ import type {
 } from "#controllers/auto_crud_controller";
 import BaseController from "#controllers/base_controller";
 import { ForbiddenException } from "#exceptions/http_exceptions";
+import CacheState from "#models/cache_state";
 import GuideArticleDraft from "#models/guide_article_draft";
 import StudentOrganizationDraft from "#models/student_organization_draft";
 
@@ -407,6 +408,7 @@ export abstract class GenericDraftController<
         await deletePermissionsForEntity(morphAlias, draftId, trx);
       }
 
+      await CacheState.touchGlobalLastModified(trx);
       return { success: true, approvedId: approved.id };
     });
   }
