@@ -69,7 +69,7 @@ export async function listAllControllers(): Promise<ControllerListing[]> {
 
     // list directory files for the version
     const verDirReader = await fs.opendir(dir);
-    let controllerFile: Dirent | null = null;
+    let controllerFile: Dirent | null;
     while ((controllerFile = await verDirReader.read()) !== null) {
       // skip non-files
       if (!controllerFile.isFile()) {
@@ -115,8 +115,8 @@ export async function importAllControllers(): Promise<ImportedApiVersion[]> {
     for (const controller of version.controllers) {
       const lazyImport = lazyImportController(version.apiVersion, controller);
       const imported = await lazyImport();
-      const constructor = imported.default;
-      const instance = new constructor();
+      const ControllerClass = imported.default;
+      const instance = new ControllerClass();
       if (!(instance instanceof BaseController)) {
         throw new Error(
           `File app/controllers/v${version.apiVersion}/${controller}.ts doesn't default export a BaseController!`,

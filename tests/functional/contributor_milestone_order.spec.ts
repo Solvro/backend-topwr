@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { sign } from "jsonwebtoken";
 import crypto from "node:crypto";
 
 import { test } from "@japa/runner";
@@ -25,7 +25,7 @@ async function makeToken(user: User): Promise<string> {
     env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
   );
 
-  return jwt.sign({ isRefresh: false }, ACCESS_SECRET, {
+  return sign({ isRefresh: false }, ACCESS_SECRET, {
     subject: user.id.toString(),
     audience: AUDIENCE,
     issuer: ISSUER,
