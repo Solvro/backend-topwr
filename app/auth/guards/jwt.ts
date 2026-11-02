@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { sign, verify } from "jsonwebtoken";
 import { DateTime, Duration } from "luxon";
 import { createPublicKey, randomUUID } from "node:crypto";
 import type { UUID } from "node:crypto";
@@ -85,7 +85,7 @@ export class JwtGuard implements GuardContract<User> {
   declare [symbols.GUARD_KNOWN_EVENTS]: {};
 
   private generateAccessToken(userId: number): string {
-    return jwt.sign(
+    return sign(
       {
         isRefresh: false,
       },
@@ -110,7 +110,7 @@ export class JwtGuard implements GuardContract<User> {
     );
     dbToken.isValid = true;
     dbToken.id = randomUUID();
-    const payload = jwt.sign(
+    const payload = sign(
       {
         tokenId: dbToken.id,
         isRefresh: true,
@@ -131,7 +131,7 @@ export class JwtGuard implements GuardContract<User> {
   }
 
   private validateAccessToken(token: string): SupportedPayload {
-    return jwt.verify(token, ACCESS_SECRET, {
+    return verify(token, ACCESS_SECRET, {
       audience: AUDIENCE,
       issuer: ISSUER,
       ignoreExpiration: false,
@@ -142,7 +142,7 @@ export class JwtGuard implements GuardContract<User> {
     withDb: boolean,
     token: string,
   ): Promise<RefreshTokenPayload> {
-    const payload = jwt.verify(token, REFRESH_PUB, {
+    const payload = verify(token, REFRESH_PUB, {
       audience: AUDIENCE,
       issuer: ISSUER,
       allowInvalidAsymmetricKeyTypes: false,

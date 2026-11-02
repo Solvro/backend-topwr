@@ -1,4 +1,4 @@
-import jwt from "jsonwebtoken";
+import { sign } from "jsonwebtoken";
 import crypto from "node:crypto";
 
 import db from "@adonisjs/lucid/services/db";
@@ -19,7 +19,7 @@ export async function makeToken(user: User): Promise<string> {
     env.get("ACCESS_EXPIRES_IN_MS", "3600000"),
   );
 
-  return jwt.sign(
+  return sign(
     {
       isRefresh: false,
     },
