@@ -60,7 +60,8 @@ Vine.macro("foreignKey", (model: LucidModel) => {
     model.boot();
   }
   const autogen = AutogenCacheEntry.for(model);
-  const validator = autogen.primaryKeyField.columnOptions.meta.typing.validator;
+  const validator =
+    autogen.primaryKeyField.columnOptions.meta.typing.validator.clone();
   if (!("use" in validator && typeof validator.use === "function")) {
     throw new InvalidModelDefinition(
       `Model ${model.name}'s primary key validator does not have a use function???? (it should've been a VineNumber or a VineString anyway)`,
