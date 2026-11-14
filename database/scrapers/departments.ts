@@ -34,8 +34,7 @@ export default class DepartmentsScraper extends BaseScraperModule {
   static taskTitle = "Scrape departments and departments links";
 
   private readonly directusSchemas = ["Departments", "Departments_Links"];
-  private readonly addressRegex =
-    /\b\d{2}-\d{3}\s+[A-ZĄĆĘŁŃÓŚŹŻa-ząćęłńóśźż-]+$/;
+  private readonly addressRegex = /\b\d{2}-\d{3}\s+[A-ZĄĆĘŁŃÓŚŹŻ-]+$/i;
 
   async shouldRun(): Promise<boolean> {
     return await this.modelHasNoRows(DepartmentModel);
