@@ -1,8 +1,12 @@
+import type { JSONSchema7 } from "json-schema";
+
 import type { LucidModel } from "@adonisjs/lucid/types/model";
 
+import { validateColumnDef } from "#app/decorators/typed_model";
+import type { ValidatedColumnDef } from "#app/decorators/typed_model";
 import { AutogenCacheEntry } from "#utils/model_autogen";
 
-import { getExistingModels } from "./getExistingModels.js";
+import { getExistingModels } from "./get_existing_models.js";
 import { swaggerRegistry } from "./registry.js";
 
 export class AutoSwaggerService {
@@ -13,7 +17,7 @@ export class AutoSwaggerService {
     },
     paths: {},
     components: {
-      schemas: {} as Record<string, any>,
+      schemas: {} as Record<string, unknown>,
     },
   };
 
@@ -60,14 +64,17 @@ export class AutoSwaggerService {
           description: "Successful response",
           content: {
             "application/json": {
-              schema: operation.responseIsArray
-                ? {
-                    type: "array",
-                    items: {
+              schema:
+                operation.responseIsArray === true
+                  ? {
+                      type: "array",
+                      items: {
+                        $ref: `#/components/schemas/${operation.responseSchema}`,
+                      },
+                    }
+                  : {
                       $ref: `#/components/schemas/${operation.responseSchema}`,
                     },
-                  }
-                : { $ref: `#/components/schemas/${operation.responseSchema}` },
             },
           },
         };
@@ -81,7 +88,7 @@ export class AutoSwaggerService {
 
       const pathParameters = [
         ...operation.path.matchAll(/:([A-Za-z0-9_]+)|\{([^}]+)\}/g),
-      ].map((match) => match[1] ?? match[2]);
+      ].map((match) => match[1] || match[2]);
 
       if (pathParameters.length > 0) {
         openApiOperation.parameters = pathParameters.map((param) => ({
@@ -114,30 +121,38 @@ export class AutoSwaggerService {
     return paths;
   }
 
-  private applyColumnMetadata(model: LucidModel, schema: Record<string, any>) {
+  private applyColumnMetadata(model: LucidModel, schema: JSONSchema7) {
     const properties = schema.properties;
 
     if (properties === undefined) {
       return;
     }
 
-    for (const [name, field] of model.$columnsDefinitions.entries()) {
-      const property = properties[name];
-      const typing = field.meta?.typing;
-
-      if (property === undefined || typing === undefined) {
+    for (const [name, rawField] of model.$columnsDefinitions.entries()) {
+      if (!validateColumnDef(rawField)) {
         continue;
       }
+
+      const property = properties[name];
+
+      if (typeof property === "boolean") {
+        continue;
+      }
+
+      const field = rawField as ValidatedColumnDef;
+      const typing = field.meta.typing;
 
       if (typing.description !== undefined) {
         property.description = typing.description;
       }
 
       if (typing.dateFormat !== undefined) {
-        const isNullable =
-          Array.isArray(property.type) && property.type.includes("null");
+        const isNullable = Array.isArray(property.type)
+          ? property.type.includes("null")
+          : false;
 
         property.type = isNullable ? ["string", "null"] : "string";
+
         property.format =
           typing.dateFormat === "dateTime" ? "date-time" : typing.dateFormat;
       }

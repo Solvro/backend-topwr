@@ -734,7 +734,7 @@ export default abstract class AutoCrudController<
       method: "get",
       path: `/:id/${snakeCaseName}`,
       operationId: `${this.model.name}.relation.${relationName}.index`,
-      responseSchema: relation.relatedModel().name + "Response",
+      responseSchema: `${relation.relatedModel().name}Response`,
       responseIsArray:
         relation.type === "hasMany" || relation.type === "manyToMany",
     });
@@ -746,8 +746,8 @@ export default abstract class AutoCrudController<
         method: "post",
         path: `/:id/${snakeCaseName}`,
         operationId: `${this.model.name}.relation.${relationName}.store`,
-        requestSchema: relation.relatedModel().name + "Create",
-        responseSchema: relation.relatedModel().name + "Response",
+        requestSchema: `${relation.relatedModel().name}Create`,
+        responseSchema: `${relation.relatedModel().name}Response`,
       });
     } else if (relation.type === "hasOne") {
       router

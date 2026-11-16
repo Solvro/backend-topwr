@@ -6,7 +6,7 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import BaseController from "#controllers/base_controller";
 
-import { SwaggerRouteContext } from "../../docs/autoswagger/registry.js";
+import type { SwaggerRouteContext } from "../../docs/autoswagger/registry.js";
 
 export interface ControllerListing {
   apiVersion: number;
