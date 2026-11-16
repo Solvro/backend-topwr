@@ -1,13 +1,15 @@
 import { DateTime } from "luxon";
 
-import { BaseModel, column } from "@adonisjs/lucid/orm";
+import { BaseModel } from "@adonisjs/lucid/orm";
 import type { TransactionClientContract } from "@adonisjs/lucid/types/database";
 
+import { typedColumn } from "#app/decorators/typed_model";
+
 export default class CacheState extends BaseModel {
-  @column({ isPrimary: true })
+  @typedColumn({ type: "number", isPrimary: true })
   declare id: number;
 
-  @column.dateTime()
+  @typedColumn.dateTime({})
   declare lastModifiedAt: DateTime;
 
   public static async touchGlobalLastModified(

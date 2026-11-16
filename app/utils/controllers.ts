@@ -6,6 +6,8 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import BaseController from "#controllers/base_controller";
 
+import { SwaggerRouteContext } from "../../docs/autoswagger/registry.js";
+
 export interface ControllerListing {
   apiVersion: number;
   controllers: Set<string>;
@@ -17,7 +19,7 @@ export interface ImportedController {
   lazyImport: LazyImport<Constructor<BaseController>>;
   constructor: Constructor<BaseController>;
   instance: BaseController;
-  configureRoutes: () => void;
+  configureRoutes: (context: SwaggerRouteContext) => void;
 }
 
 export interface ImportedApiVersion {
@@ -129,10 +131,13 @@ export async function importAllControllers(): Promise<ImportedApiVersion[]> {
         lazyImport: lazyImport as LazyImport<Constructor<BaseController>>,
         constructor: constructor as Constructor<BaseController>,
         instance,
-        configureRoutes: instance.$configureRoutes.bind(
-          instance,
-          lazyImport as LazyImport<Constructor<BaseController>>,
-        ),
+        configureRoutes: (context) => {
+          instance.$configureRoutes(
+            lazyImport as LazyImport<Constructor<BaseController>>,
+            undefined,
+            context,
+          );
+        },
       });
     }
 
@@ -177,8 +182,12 @@ export async function configureAllRoutes(): Promise<void> {
     router
       .group(() => {
         for (const controller of version.controllers.values()) {
+          const swaggerContext: SwaggerRouteContext = {
+            basePath: `/api/v${version.apiVersion}/${controller.name}`,
+          };
+
           router
-            .group(controller.configureRoutes)
+            .group(() => controller.configureRoutes(swaggerContext))
             .prefix(`/${controller.name}`)
             .as(controller.name);
         }

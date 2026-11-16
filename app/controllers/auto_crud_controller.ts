@@ -66,6 +66,12 @@ import {
 } from "#utils/permissions";
 import { paginationValidator } from "#validators/pagination";
 
+import { swaggerRegistry } from "../../docs/autoswagger/registry.js";
+import type {
+  SwaggerOperation,
+  SwaggerRouteContext,
+} from "../../docs/autoswagger/registry.js";
+
 export interface Scopes<T extends LucidModel> {
   preloadRelations: ReturnType<typeof preloadRelations<T>>;
   handleSearchQuery: ReturnType<typeof handleSearchQuery<T>>;
@@ -396,6 +402,21 @@ export default abstract class AutoCrudController<
 
   #modelCacheEntry?: AutogenCacheEntry;
 
+  private swaggerContext?: SwaggerRouteContext;
+
+  private registerSwagger(
+    operation: Omit<SwaggerOperation, "path"> & { path: string },
+  ) {
+    if (this.swaggerContext === undefined) {
+      return;
+    }
+
+    swaggerRegistry.registerAtBasePath(this.swaggerContext.basePath, {
+      ...operation,
+      tag: operation.tag ?? this.model.name,
+    });
+  }
+
   private get modelCacheEntry(): AutogenCacheEntry {
     this.#modelCacheEntry ??= AutogenCacheEntry.for(this.model);
     return this.#modelCacheEntry;
@@ -649,18 +670,52 @@ export default abstract class AutoCrudController<
   ) {
     if (configurationOptions?.skipRoutes.index !== true) {
       router.get("/", [controller, "index"]).as("index");
+      this.registerSwagger({
+        method: "get",
+        path: "/",
+        operationId: `${this.model.name}.index`,
+        responseSchema: `${this.model.name}Response`,
+        responseIsArray: true,
+      });
     }
     if (configurationOptions?.skipRoutes.store !== true) {
       router.post("/", [controller, "store"]).as("store");
+
+      this.registerSwagger({
+        method: "post",
+        path: "/",
+        operationId: `${this.model.name}.store`,
+        requestSchema: `${this.model.name}Create`,
+        responseSchema: `${this.model.name}Response`,
+      });
     }
     if (configurationOptions?.skipRoutes.show !== true) {
       router.get("/:id", [controller, "show"]).as("show");
+
+      this.registerSwagger({
+        method: "get",
+        path: "/:id",
+        operationId: `${this.model.name}.show`,
+        responseSchema: `${this.model.name}Response`,
+      });
     }
     if (configurationOptions?.skipRoutes.destroy !== true) {
       router.delete("/:id", [controller, "destroy"]).as("destroy");
+      this.registerSwagger({
+        method: "delete",
+        path: "/:id",
+        operationId: `${this.model.name}.destroy`,
+      });
     }
     if (configurationOptions?.skipRoutes.update !== true) {
       router.patch("/:id", [controller, "update"]).as("update");
+      this.registerSwagger({
+        method: "patch",
+        path: "/:id",
+        operationId: `${this.model.name}.update`,
+        requestSchema: `${this.model.name}Update`,
+        responseSchema: `${this.model.name}Response`,
+      });
     }
   }
 
@@ -674,10 +729,26 @@ export default abstract class AutoCrudController<
       .as(`relation.${relationName}.index`);
     const relation = this.model.$relationsDefinitions.get(relationName);
     assert(relation !== undefined);
+
+    this.registerSwagger({
+      method: "get",
+      path: `/:id/${snakeCaseName}`,
+      operationId: `${this.model.name}.relation.${relationName}.index`,
+      responseSchema: relation.relatedModel().name + "Response",
+      responseIsArray:
+        relation.type === "hasMany" || relation.type === "manyToMany",
+    });
     if (relation.type === "hasMany") {
       router
         .post(`/:id/${snakeCaseName}`, [controller, "oneToManyRelationStore"])
         .as(`relation.${relationName}.store`);
+      this.registerSwagger({
+        method: "post",
+        path: `/:id/${snakeCaseName}`,
+        operationId: `${this.model.name}.relation.${relationName}.store`,
+        requestSchema: relation.relatedModel().name + "Create",
+        responseSchema: relation.relatedModel().name + "Response",
+      });
     } else if (relation.type === "hasOne") {
       router
         .post(`/:id/${snakeCaseName}`, [controller, "oneToOneRelationStore"])
@@ -689,12 +760,22 @@ export default abstract class AutoCrudController<
           "manyToManyRelationAttach",
         ])
         .as(`relation.${relationName}.attach`);
+      this.registerSwagger({
+        method: "post",
+        path: `/:localId/${snakeCaseName}/:relatedId`,
+        operationId: `${this.model.name}.relation.${relationName}.attach`,
+      });
       router
         .delete(`/:localId/${snakeCaseName}/:relatedId`, [
           controller,
           "manyToManyRelationDetach",
         ])
         .as(`relation.${relationName}.detach`);
+      this.registerSwagger({
+        method: "delete",
+        path: `/:localId/${snakeCaseName}/:relatedId`,
+        operationId: `${this.model.name}.relation.${relationName}.detach`,
+      });
       if (hasUpdatablePivotColumns(relation)) {
         router
           .patch(`/:localId/${snakeCaseName}/:relatedId`, [
@@ -702,6 +783,11 @@ export default abstract class AutoCrudController<
             "manyToManyRelationUpdatePivot",
           ])
           .as(`relation.${relationName}.updatePivot`);
+        this.registerSwagger({
+          method: "patch",
+          path: `/:localId/${snakeCaseName}/:relatedId`,
+          operationId: `${this.model.name}.relation.${relationName}.updatePivot`,
+        });
       }
     }
   }
@@ -721,7 +807,9 @@ export default abstract class AutoCrudController<
   $configureRoutes(
     controller: LazyImport<Constructor<AutoCrudController<T>>>,
     configurationOptions?: RouteConfigurationOptions,
+    swaggerContext?: SwaggerRouteContext,
   ) {
+    this.swaggerContext = swaggerContext;
     if (this.singletonId === undefined) {
       // basic routes
       this.$configureBasicRoutes(controller, configurationOptions);

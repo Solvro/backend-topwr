@@ -5,6 +5,8 @@ import type { Constructor, LazyImport } from "@adonisjs/core/types/http";
 
 import { ForbiddenException } from "#app/exceptions/http_exceptions";
 
+import type { SwaggerRouteContext } from "../../docs/autoswagger/registry.js";
+
 export default abstract class BaseController {
   /**
    * With the default implementation of `authenticate()`, if the user has any of the following roles, the permission checks are skipped.
@@ -61,5 +63,7 @@ export default abstract class BaseController {
    */
   abstract $configureRoutes(
     controller: LazyImport<Constructor<BaseController>>,
+    configurationOptions?: unknown,
+    swaggerContext?: SwaggerRouteContext,
   ): void;
 }

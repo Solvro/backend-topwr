@@ -7,7 +7,6 @@ import {
   BaseModel,
   afterFetch,
   afterFind,
-  column,
   computed,
 } from "@adonisjs/lucid/orm";
 
@@ -22,13 +21,13 @@ export default class FileEntry extends BaseModel {
   @typedColumn({ type: "uuid", isPrimary: true })
   declare id: UUID;
 
-  @column({ columnName: "file_extension" })
+  @typedColumn({ type: "string", columnName: "file_extension" })
   declare fileExtension: string;
 
-  @column.dateTime({ autoCreate: true })
+  @typedColumn.dateTime({ autoCreate: true })
   declare createdAt: DateTime;
 
-  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  @typedColumn.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime;
 
   @computed()
