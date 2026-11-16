@@ -24,7 +24,7 @@ export interface TopicOverview {
  * was this intended? idk, probably not ¯\_(ツ)_/¯
  * -- mini-bomba
  */
-export const TOPIC_NAME_REGEX = /^[a-zA-Z0-9-_.~%]{1,48}$/;
+export const TOPIC_NAME_REGEX = /^[\w\-.~%]{1,48}$/;
 
 export default class FirebaseTopic extends BaseModel {
   public static readonly selfAssignPrimaryKey = true;

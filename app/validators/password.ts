@@ -26,7 +26,7 @@ function newPassword(value: unknown, _: unknown, field: FieldContext) {
       field,
     );
   }
-  if (!/[0-9]/.test(value)) {
+  if (!/\d/.test(value)) {
     field.report(
       "The {{field}} field does not contain any digit",
       "newPasswordRule",
