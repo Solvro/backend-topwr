@@ -52,7 +52,7 @@ interface Stage1Result {
 const TIME_LIMIT_MS = 24 * 60 * 60 * 1000; // 1 day; anything newer than this will not get indexed
 
 const UUID_REGEX =
-  /^[0-9a-f]{8}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{4}\b-[0-9a-f]{12}$/i;
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export default class CleanupFiles extends BaseCommandExtended {
   static readonly commandName = "file_cleanup";
@@ -202,6 +202,7 @@ export default class CleanupFiles extends BaseCommandExtended {
         .select(relation.column)
         .exec();
       const key = relation.column as keyof LucidRow;
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const uuids = result.map((row) => row[key]);
       usedFiles.push({
         relationData: relation,
